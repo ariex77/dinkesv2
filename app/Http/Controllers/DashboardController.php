@@ -8,6 +8,7 @@ use App\Charts\StatusKaryawanChart;
 use App\Models\Cabang;
 use App\Models\Departemen;
 use App\Models\Karyawan;
+use App\Models\Lembur;
 use App\Models\Presensi;
 use App\Models\User;
 use App\Models\Userkaryawan;
@@ -50,7 +51,7 @@ class DashboardController extends Controller
                     'presensi_jamkerja.lintashari',
                     'presensi_izinabsen.keterangan as keterangan_izin',
                     'presensi_izinsakit.keterangan as keterangan_izin_sakit',
-                    'presensi_izincuti.keterangan as keterangan_izin_cuti'
+                    'presensi_izincuti.keterangan as keterangan_izin_cuti',
                 )
                 ->orderBy('tanggal', 'desc')
                 ->limit(30)
@@ -66,6 +67,17 @@ class DashboardController extends Controller
                 ->limit(30)
                 ->where('presensi.nik', $userkaryawan->nik)
                 ->first();
+
+            $data['lembur'] = Lembur::where('nik', $userkaryawan->nik)->where('status', 1)
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
+            $data['notiflembur'] = Lembur::where('nik', $userkaryawan->nik)
+                ->where('status', 1)
+                ->where('lembur_in', null)
+                ->orWhere('lembur_out', null)
+                ->where('status', 1)
+                ->count();
             return view('dashboard.karyawan', $data);
         } else {
 

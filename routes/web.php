@@ -20,13 +20,16 @@ use App\Http\Controllers\JamkerjaController;
 use App\Http\Controllers\JenistunjanganController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\LemburController;
 use App\Http\Controllers\PengajuanizinController;
 use App\Http\Controllers\PenyesuaiangajiController;
 use App\Http\Controllers\Permission_groupController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\PresensiistirahatController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SlipgajiController;
 use App\Http\Controllers\TunjanganController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WagatewayController;
@@ -254,6 +257,18 @@ Route::middleware('auth')->group(function () {
         Route::delete('/penyesuaiangaji/{kode_penyesuaian_gaji}/{nik}/deletekaryawan', 'destroykaryawan')->name('penyesuaiangaji.deletekaryawan')->can('penyesuaiangaji.delete');
     });
 
+
+    Route::controller(SlipgajiController::class)->group(function () {
+        Route::get('/slipgaji', 'index')->name('slipgaji.index')->can('slipgaji.index');
+        Route::get('/slipgaji/create', 'create')->name('slipgaji.create')->can('slipgaji.create');
+        Route::post('/slipgaji/store', 'store')->name('slipgaji.store')->can('slipgaji.create');
+        Route::get('/slipgaji/{kode_slip}/show', 'show')->name('slipgaji.show')->can('slipgaji.index');
+        Route::get('/slipgaji/{kode_slip}/edit', 'edit')->name('slipgaji.edit')->can('slipgaji.edit');
+        Route::put('/slipgaji/{kode_slip}/update', 'update')->name('slipgaji.update')->can('slipgaji.edit');
+        Route::delete('/slipgaji/{kode_slip}/delete', 'destroy')->name('slipgaji.delete')->can('slipgaji.delete');
+        Route::get('/slipgaji/{nik}/{bulan}/{tahun}/cetakslip', 'cetakslipgaji')->name('slipgaji.cetakslip')->can('slipgaji.index');
+    });
+
     Route::controller(HariliburController::class)->group(function () {
         Route::get('/harilibur', 'index')->name('harilibur.index')->can('harilibur.index');
         Route::get('/harilibur/create', 'create')->name('harilibur.create')->can('harilibur.create');
@@ -337,8 +352,28 @@ Route::middleware('auth')->group(function () {
         Route::post('/izincuti/{kode_izin_cuti}/storeapprove', 'storeapprove')->name('izincuti.storeapprove')->can('izincuti.approve');
     });
 
+    Route::controller(LemburController::class)->group(function () {
+        Route::get('/lembur', 'index')->name('lembur.index')->can('lembur.index');
+        Route::get('/lembur/create', 'create')->name('lembur.create')->can('lembur.create');
+        Route::post('/lembur', 'store')->name('lembur.store')->can('lembur.create');
+        Route::get('/lembur/{id}/edit', 'edit')->name('lembur.edit')->can('lembur.edit');
+        Route::put('/lembur/{id}', 'update')->name('lembur.update')->can('lembur.edit');
+        Route::delete('/lembur/{id}/delete', 'destroy')->name('lembur.delete')->can('lembur.delete');
+        Route::get('/lembur/{id}/approve', 'approve')->name('lembur.approve')->can('lembur.approve');
+        Route::get('/lembur/{id}/show', 'show')->name('lembur.show')->can('lembur.index');
+        Route::delete('/lembur/{id}/cancelapprove', 'cancelapprove')->name('lembur.cancelapprove')->can('lembur.approve');
+        Route::post('/lembur/{id}/storeapprove', 'storeapprove')->name('lembur.storeapprove')->can('lembur.approve');
+        Route::get('/lembur/{id}/createpresensi', 'createpresensi')->name('lembur.createpresensi');
+        Route::post('/lembur/storepresensi', 'storepresensi')->name('lembur.storepresensi');
+    });
+
     Route::controller(PengajuanizinController::class)->group(function () {
         Route::get('/pengajuanizin', 'index')->name('pengajuanizin.index');
+    });
+
+    Route::controller(PresensiistirahatController::class)->group(function () {
+        Route::get('/presensiistirahat/create', 'create')->name('presensiistirahat.create');
+        Route::post('/presensiistirahat', 'store')->name('presensiistirahat.store');
     });
 
 
@@ -359,6 +394,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(LaporanController::class)->group(function () {
         Route::get('/laporan/presensi', 'presensi')->name('laporan.presensi')->can('laporan.presensi');
         Route::post('/laporan/cetakpresensi', 'cetakpresensi')->name('laporan.cetakpresensi')->can('laporan.presensi');
+        Route::get('/laporan/cetakslipgaji', 'cetakpresensi');
     });
 
     Route::controller(FacerecognitionController::class)->group(function () {

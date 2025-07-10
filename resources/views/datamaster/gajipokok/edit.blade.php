@@ -24,17 +24,14 @@
 
 
 <script>
-    const select2NikEdit = $(".select2NikEdit");
-    if (select2NikEdit.length) {
-        select2NikEdit.each(function() {
-            var $this = $(this);
-            $this.wrap('<div class="position-relative"></div>').select2({
-                placeholder: 'Pilih Karyawan',
-                allowClear: true,
-                dropdownParent: $this.parent()
-            });
+    $(".select2NikEdit").each(function() {
+        var $this = $(this);
+        $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Pilih Karyawan',
+            allowClear: true,
+            dropdownParent: $this.parent()
         });
-    }
+    });
     $(".money").maskMoney();
     $(".flatpickr-date").flatpickr();
     $("#formcreateGajiPokok").submit(function(e) {

@@ -152,12 +152,14 @@
                         </div>
                     @else
                         <div class="avatar avatar-xs me-2">
-                            <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar" class="imaged w64 rounded">
+                            <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar"
+                                class="imaged w64 rounded">
                         </div>
                     @endif
                 @else
                     <div class="avatar avatar-xs me-2">
-                        <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar" class="imaged w64 rounded">
+                        <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar"
+                            class="imaged w64 rounded">
                     </div>
                 @endif
             </a>
@@ -234,7 +236,8 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/hadir.webp') }}" alt="" style="width: 50px" class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/hadir.webp') }}" alt="" style="width: 50px"
+                            class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">
                             Hadir
@@ -248,7 +251,8 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/sakit.png') }}" alt="" style="width: 50px" class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/sakit.png') }}" alt="" style="width: 50px"
+                            class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Sakit</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -260,7 +264,8 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/izin.webp') }}" alt="" style="width: 50px" class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/izin.webp') }}" alt="" style="width: 50px"
+                            class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Izin</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -272,7 +277,8 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/cuti.png') }}" alt="" style="width: 50px" class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/cuti.png') }}" alt="" style="width: 50px"
+                            class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Cuti</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -287,10 +293,54 @@
                 <a href="{{ route('karyawan.idcard', Crypt::encrypt($karyawan->nik)) }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt="" style="width: 50px" class="mb-0">
+                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt=""
+                                style="width: 50px" class="mb-0">
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 ID Card
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-3">
+                <a href="{{ route('presensiistirahat.create') }}">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/alarm.png') }}" alt=""
+                                style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Istirahat
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-3">
+                <a href="{{ route('lembur.index') }}">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt=""
+                                style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Lembur
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="col-3">
+                <a href="{{ route('slipgaji.index') }}">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt=""
+                                style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Slip Gaji
                             </span>
                         </div>
                     </div>
@@ -307,8 +357,8 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" data-toggle="tab" href="#profile" role="tab">
-                        Lembur
+                    <a class="nav-link" data-toggle="tab" href="#lembur" role="tab">
+                        Lembur <span class="badge badge-danger ml-1">{{ $notiflembur }}</span>
                     </a>
                 </li>
             </ul>
@@ -349,6 +399,18 @@
                                                         </span>
                                                     @endif
                                                 </span>
+
+                                                @if ($d->istirahat_in != null)
+                                                    <br>
+                                                    <span class="timepresence text-info">
+                                                        {{ date('H:i', strtotime($d->istirahat_in)) }} -
+                                                        @if ($d->istirahat_out != null)
+                                                            {{ date('H:i', strtotime($d->istirahat_out)) }}
+                                                        @else
+                                                            <ion-icon name="hourglass-outline"></ion-icon>
+                                                        @endif
+                                                    </span>
+                                                @endif
                                                 <br>
                                                 @if ($d->jam_in != null)
                                                     @php
@@ -367,7 +429,8 @@
                                         <div class="historidetail2">
                                             <h4>{{ $d->nama_jam_kerja }}</h4>
                                             <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
+                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
                                             </span>
                                         </div>
                                     </div>
@@ -377,7 +440,8 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
+                                                <ion-icon name="document-text-outline"
+                                                    style="font-size: 48px; color: #1f7ee4"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -390,7 +454,8 @@
                                         <div class="historidetail2">
                                             <h4>{{ $d->nama_jam_kerja }}</h4>
                                             <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
+                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
                                             </span>
                                         </div>
                                     </div>
@@ -400,7 +465,8 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
+                                                <ion-icon name="document-text-outline"
+                                                    style="font-size: 48px; color: #1f7ee4"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -413,7 +479,8 @@
                                         <div class="historidetail2">
                                             <h4>{{ $d->nama_jam_kerja }}</h4>
                                             <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
+                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
                                             </span>
                                         </div>
                                     </div>
@@ -423,7 +490,8 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="bag-add-outline" style="font-size: 48px; color: #d4095a"></ion-icon>
+                                                <ion-icon name="bag-add-outline"
+                                                    style="font-size: 48px; color: #d4095a"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -436,7 +504,8 @@
                                         <div class="historidetail2">
                                             <h4>{{ $d->nama_jam_kerja }}</h4>
                                             <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
+                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
                                             </span>
                                         </div>
                                     </div>
@@ -445,6 +514,66 @@
                         @endforeach
                     </div>
                 </div>
+            </div>
+            <div class="tab-pane fade" id="lembur" role="tabpanel">
+                @foreach ($lembur as $d)
+                    <a href="{{ route('lembur.createpresensi', Crypt::encrypt($d->id)) }}">
+                        <div class="card historicard historibordergreen mb-1">
+                            <div class="historicontent">
+                                <div class="historidetail1">
+                                    <div class="iconpresence">
+                                        <ion-icon name="timer-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
+                                    </div>
+                                    <div class="datepresence">
+                                        <h4>{{ DateToIndo($d->tanggal) }}</h4>
+                                        <h4 class="timepresence">
+                                            Lembur
+                                        </h4>
+
+                                        <p>{{ $d->keterangan }}</p>
+                                        @if ($d->lembur_in != null)
+                                            <span class="badge badge-success">
+                                                <ion-icon name="timer-outline"></ion-icon>
+                                                {{ date('H:i', strtotime($d->lembur_in)) }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-danger">
+                                                <ion-icon name="timer-outline"></ion-icon>
+                                                Belum Absen
+                                            </span>
+                                        @endif
+                                        -
+                                        @if ($d->lembur_out != null)
+                                            <span class="badge badge-success">
+                                                <ion-icon name="timer-outline"></ion-icon>
+                                                {{ date('H:i', strtotime($d->lembur_out)) }}
+                                            </span>
+                                        @else
+                                            <span class="badge badge-danger">
+                                                <ion-icon name="timer-outline"></ion-icon>
+                                                Belum Absen
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="historidetail2">
+                                    {{-- <h4>{{ $d->nama_jam_kerja }}</h4>
+                                
+                                    {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                    {{ date('H:i', strtotime($d->jam_pulang)) }}
+                                </span> --}}
+                                    <span class="timepresence">
+                                        {{ date('H:i', strtotime($d->lembur_mulai)) }} -
+                                        {{ date('H:i', strtotime($d->lembur_selesai)) }}
+                                        @if (date('Y-m-d', strtotime($d->lembur_selesai)) > date('Y-m-d', strtotime($d->lembur_mulai)))
+                                            <ion-icon name="caret-up-outline" style="color: green"></ion-icon>
+                                        @endif
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
             </div>
         </div>
     </div>

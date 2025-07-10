@@ -530,3 +530,19 @@ function getNamabulan($bulan)
     );
     return $namabulan[$bulan];
 }
+
+function hitungJam($startDate, $endDate)
+{
+    if ($startDate && $endDate) {
+        $start = new DateTime($startDate);
+        $end = new DateTime($endDate);
+
+        // Tambahkan 1 detik agar penghitungan inklusif
+        $timeDifference = $end->getTimestamp() - $start->getTimestamp() + 1;
+        $hourDifference = $timeDifference / 3600;
+
+        return $hourDifference;
+    } else {
+        return 0;
+    }
+}

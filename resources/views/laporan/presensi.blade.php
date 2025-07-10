@@ -44,6 +44,7 @@
                             <option value="">Format Laporan</option>
                             <option value="1" selected>Laporan Presensi</option>
                             <option value="2">Laporan Gaji</option>
+                            <option value="3">Slip Gaji</option>
                         </select>
                     </div>
                     {{-- <div class="form-group mb-3">

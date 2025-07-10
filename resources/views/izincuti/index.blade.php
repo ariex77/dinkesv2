@@ -20,12 +20,12 @@
                             <form action="{{ route('izincuti.index') }}">
                                 <div class="row">
                                     <div class="col-lg-6 col-sm-12 col-md-12">
-                                        <x-input-with-icon label="Dari" value="{{ Request('dari') }}" name="dari" icon="ti ti-calendar"
-                                            datepicker="flatpickr-date" />
+                                        <x-input-with-icon label="Dari" value="{{ Request('dari') }}" name="dari"
+                                            icon="ti ti-calendar" datepicker="flatpickr-date" />
                                     </div>
                                     <div class="col-lg-6 col-sm-12 col-md-12">
-                                        <x-input-with-icon label="Sampai" value="{{ Request('sampai') }}" name="sampai" icon="ti ti-calendar"
-                                            datepicker="flatpickr-date" />
+                                        <x-input-with-icon label="Sampai" value="{{ Request('sampai') }}" name="sampai"
+                                            icon="ti ti-calendar" datepicker="flatpickr-date" />
                                     </div>
                                 </div>
                                 <div class="row">
@@ -47,7 +47,8 @@
                                             <select name="kode_dept" id="kode_dept" class="form-select">
                                                 <option value="">Semua Departemen</option>
                                                 @foreach ($departemen as $d)
-                                                    <option value="{{ $d->kode_dept }}" {{ Request('kode_dept') == $d->kode_dept ? 'selected' : '' }}>
+                                                    <option value="{{ $d->kode_dept }}"
+                                                        {{ Request('kode_dept') == $d->kode_dept ? 'selected' : '' }}>
                                                         {{ textUpperCase($d->nama_dept) }}
                                                     </option>
                                                 @endforeach
@@ -60,17 +61,20 @@
                                         <div class="form-group">
                                             <select name="status" id="status" class="form-select">
                                                 <option value="">Semua Status</option>
-                                                <option value="0" {{ Request('status') == '0' ? 'selected' : '' }}>Pending</option>
-                                                <option value="1" {{ Request('status') == '1' ? 'selected' : '' }}>Disetujui</option>
-                                                <option value="2" {{ Request('status') == '2' ? 'selected' : '' }}>Ditolak</option>
+                                                <option value="0" {{ Request('status') == '0' ? 'selected' : '' }}>
+                                                    Pending</option>
+                                                <option value="1"
+                                                    {{ Request('status') == '1' ? 'selected' : '' }}>Disetujui</option>
+                                                <option value="2"
+                                                    {{ Request('status') == '2' ? 'selected' : '' }}>Ditolak</option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col">
-                                        <x-input-with-icon label="Nama Karyawan" name="nama_karyawan" value="{{ Request('nama_karyawan') }}"
-                                            icon="ti ti-user" />
+                                        <x-input-with-icon label="Nama Karyawan" name="nama_karyawan"
+                                            value="{{ Request('nama_karyawan') }}" icon="ti ti-user" />
                                     </div>
                                 </div>
                                 <div class="row">
@@ -132,7 +136,8 @@
                                                                     <i class="ti ti-external-link text-primary"></i>
                                                                 </a>
                                                             @elseif($d->status == 1)
-                                                                <form method="POST" name="deleteform" class="deleteform me-1"
+                                                                <form method="POST" name="deleteform"
+                                                                    class="deleteform me-1"
                                                                     action="{{ route('izincuti.cancelapprove', Crypt::encrypt($d->kode_izin_cuti)) }}">
                                                                     @csrf
                                                                     @method('DELETE')

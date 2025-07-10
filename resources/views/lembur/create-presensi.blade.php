@@ -311,36 +311,28 @@
                 <div class="jam-digital-malasngoding">
                     <p>{{ DateToIndo(date('Y-m-d')) }}</p>
                     <p id="jam"></p>
-                    <p>{{ $jam_kerja->nama_jam_kerja }} </p>
+                    {{-- <p>{{ $jam_kerja->nama_jam_kerja }} </p> --}}
                     <p style="display: flex; justify-content:space-between">
-                        <span> Masuk</span>
-                        <span>{{ date('H:i', strtotime($jam_kerja->jam_masuk)) }}</span>
+                        <span> Mulai Lembur</span>
+                        <span>{{ date('H:i', strtotime($lembur->lembur_mulai)) }}</span>
                     </p>
                     <p style="display: flex; justify-content:space-between">
-                        <span> Pulang</span>
-                        <span>{{ date('H:i', strtotime($jam_kerja->jam_pulang)) }}</span>
+                        <span> Selesai Lembur</span>
+                        <span>{{ date('H:i', strtotime($lembur->lembur_selesai)) }}</span>
                     </p>
-                </div>
-                <div id="listcabang">
-                    <div class="select-wrapper">
-                        <select name="cabang" id="cabang" class="form-control">
-                            @foreach ($cabang as $item)
-                                <option {{ $item->kode_cabang == $karyawan->kode_cabang ? 'selected' : '' }}
-                                    value="{{ $item->lokasi_cabang }}">
-                                    {{ $item->nama_cabang }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                 </div>
                 <div class="scan-buttons">
-                    <button class="btn btn-success bg-primary scan-button" id="absenmasuk" statuspresensi="masuk">
-                        <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
-                        <span style="font-size:14px">Masuk</span>
-                    </button>
-                    <button class="btn btn-danger scan-button" id="absenpulang" statuspresensi="pulang">
-                        <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
-                        <span style="font-size:14px">Pulang</span>
-                    </button>
+                    @if ($lembur->lembur_in == null)
+                        <button class="btn btn-success bg-primary scan-button" id="absenmasuk" statuspresensi="masuk">
+                            <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
+                            <span style="font-size:14px">Mulai Lembur</span>
+                        </button>
+                    @else
+                        <button class="btn btn-danger scan-button" id="absenpulang" statuspresensi="pulang">
+                            <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
+                            <span style="font-size:14px">Selesai Lembur</span>
+                        </button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -415,7 +407,7 @@
             let lokasi;
             // Variabel untuk menampung lokasi user
             let lokasi_user;
-            let lokasi_cabang = document.getElementById('cabang').value;
+            let lokasi_cabang = "{{ $lembur->kode_cabang }}"
             // Variabel map global
             let map;
             // alert(lokasi_cabang);
@@ -537,7 +529,7 @@
                     var long_kantor = lok[1];
                     console.log(position.coords.latitude + "," + position.coords.longitude);
                     // Mengambil radius dari variabel $lokasi_kantor->radius_cabang
-                    var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                    var radius = "{{ $lembur->radius_cabang }}";
 
                     // Menambahkan lapisan peta
                     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -596,7 +588,7 @@
                     }).addTo(map);
 
                     // Tambahkan lingkaran radius
-                    var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                    var radius = "{{ $lembur->radius_cabang }}";
                     var circle = L.circle([lat_kantor, long_kantor], {
                         color: 'red',
                         fillColor: '#f03',
@@ -654,7 +646,7 @@
 
                 async function getLabeledFaceDescriptions() {
                     const labels = [
-                        "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}"
+                        "{{ $lembur->nik }}-{{ getNamaDepan(strtolower($lembur->nama_karyawan)) }}"
                     ];
                     let namakaryawan;
                     let jmlwajah = "{{ $wajah == 0 ? 1 : $wajah }}";
@@ -807,7 +799,7 @@
 
                         let lastDetectionTime = 0;
                         const detectionInterval = isMobile ? 200 :
-                        100; // Mengurangi interval deteksi untuk lebih realtime
+                            100; // Mengurangi interval deteksi untuk lebih realtime
                         let isProcessing = false;
                         let consecutiveMatches = 0;
                         const requiredConsecutiveMatches = 2;
@@ -872,7 +864,7 @@
                                                             boxColor = '#4CAF50';
                                                             labelColor = 'rgba(76, 175, 80, 0.8)';
                                                             labelText =
-                                                                "{{ $karyawan->nama_karyawan }}";
+                                                                "{{ $lembur->nama_karyawan }}";
                                                             consecutiveMatches++;
                                                             if (consecutiveMatches >=
                                                                 requiredConsecutiveMatches) {
@@ -888,7 +880,7 @@
 
                                                         // Menghitung posisi tengah canvas dengan lebih tepat
                                                         const centerX = Math.round(canvas.width /
-                                                        2);
+                                                            2);
                                                         const centerY = Math.round(canvas.height /
                                                             2);
 
@@ -944,7 +936,7 @@
 
                                                         // Tambahkan garis pandu
                                                         ctx.strokeStyle =
-                                                        "rgba(255, 255, 255, 0.5)";
+                                                            "rgba(255, 255, 255, 0.5)";
                                                         ctx.lineWidth = 1;
                                                         ctx.setLineDash([5, 5]);
 
@@ -976,7 +968,7 @@
                                                         ctx.moveTo(fixedBox.x + (fixedBox.width *
                                                             2) / 3, fixedBox.y);
                                                         ctx.lineTo(fixedBox.x + (fixedBox.width *
-                                                            2) / 3, fixedBox.y + fixedBox
+                                                                2) / 3, fixedBox.y + fixedBox
                                                             .height);
                                                         ctx.stroke();
 
@@ -1062,12 +1054,12 @@
                                                 // Gambar box dengan sudut membulat
                                                 const radius = 8;
                                                 ctx.strokeStyle =
-                                                '#F44336'; // Warna merah untuk indikasi wajah tidak terdeteksi
+                                                    '#F44336'; // Warna merah untuk indikasi wajah tidak terdeteksi
                                                 ctx.lineWidth = 3;
                                                 ctx.beginPath();
                                                 ctx.moveTo(fixedBox.x + radius, fixedBox.y);
                                                 ctx.lineTo(fixedBox.x + fixedBox.width - radius, fixedBox
-                                                .y);
+                                                    .y);
                                                 ctx.quadraticCurveTo(fixedBox.x + fixedBox.width, fixedBox
                                                     .y,
                                                     fixedBox.x + fixedBox.width, fixedBox.y + radius);
@@ -1241,14 +1233,14 @@
                 } else {
                     $.ajax({
                         type: 'POST',
-                        url: "{{ route('presensi.store') }}",
+                        url: "{{ route('lembur.storepresensi') }}",
                         data: {
                             _token: "{{ csrf_token() }}",
                             image: image,
                             status: status,
                             lokasi: lokasi,
                             lokasi_cabang: lokasi_cabang,
-                            kode_jam_kerja: "{{ $jam_kerja->kode_jam_kerja }}"
+                            id_lembur: "{{ $lembur->id }}"
                         },
                         success: function(data) {
                             if (data.status == true) {
@@ -1322,14 +1314,14 @@
                 } else {
                     $.ajax({
                         type: 'POST',
-                        url: "{{ route('presensi.store') }}",
+                        url: "{{ route('lembur.storepresensi') }}",
                         data: {
                             _token: "{{ csrf_token() }}",
                             image: image,
                             status: status,
                             lokasi: lokasi,
                             lokasi_cabang: lokasi_cabang,
-                            kode_jam_kerja: "{{ $jam_kerja->kode_jam_kerja }}"
+                            id_lembur: "{{ $lembur->id }}"
                         },
                         success: function(data) {
                             if (data.status == true) {
@@ -1427,7 +1419,7 @@
                             ]).addTo(map);
 
                             // Tambahkan lingkaran radius
-                            var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                            var radius = "{{ $lembur->radius_cabang }}";
                             var circle = L.circle([lat_kantor, long_kantor], {
                                 color: 'red',
                                 fillColor: '#f03',
@@ -1442,7 +1434,7 @@
                             console.error("Error getting geolocation:", error);
 
                             // Tambahkan lingkaran radius tanpa marker user
-                            var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                            var radius = "{{ $lembur->radius_cabang }}";
                             var circle = L.circle([lat_kantor, long_kantor], {
                                 color: 'red',
                                 fillColor: '#f03',
@@ -1465,7 +1457,7 @@
                     } else {
                         // Jika geolocation tidak didukung
                         // Tambahkan lingkaran radius tanpa marker user
-                        var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                        var radius = "{{ $lembur->radius_cabang }}";
                         var circle = L.circle([lat_kantor, long_kantor], {
                             color: 'red',
                             fillColor: '#f03',

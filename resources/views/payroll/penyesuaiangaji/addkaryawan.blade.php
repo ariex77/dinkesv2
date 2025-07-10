@@ -18,17 +18,14 @@
     </div>
 </form>
 <script>
-    const select2Nik = $(".select2Nik");
-    if (select2Nik.length) {
-        select2Nik.each(function() {
-            var $this = $(this);
-            $this.wrap('<div class="position-relative"></div>').select2({
-                placeholder: 'Pilih Karyawan',
-                allowClear: true,
-                dropdownParent: $this.parent()
-            });
+    $(".select2Nik").each(function() {
+        var $this = $(this);
+        $this.wrap('<div class="position-relative"></div>').select2({
+            placeholder: 'Pilih Karyawan',
+            allowClear: true,
+            dropdownParent: $this.parent()
         });
-    }
+    });
 
     $(".money").maskMoney();
 

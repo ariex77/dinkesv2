@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Izinabsen;
 use App\Models\Izincuti;
 use App\Models\Izinsakit;
+use App\Models\Lembur;
 use App\Models\Pengaturanumum;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,7 @@ class Globalprovider extends ServiceProvider
             $notifikasi_izinabsen = Izinabsen::where('status', 0)->count();
             $notifikasi_izinsakit = Izinsakit::where('status', 0)->count();
             $notifikasi_izincuti = Izincuti::where('status', 0)->count();
+            $notifikasi_lembur = Lembur::where('status', 0)->count();
             $data_izinabsen = Izinabsen::select('presensi_izinabsen.nik', 'nama_karyawan', DB::raw('"i" as status'), 'presensi_izinabsen.created_at')
                 ->where('status', 0)
                 ->join('karyawan', 'presensi_izinabsen.nik', '=', 'karyawan.nik');
@@ -49,6 +51,7 @@ class Globalprovider extends ServiceProvider
                 'notifikasi_izinabsen' => $notifikasi_izinabsen,
                 'notifikasi_izinsakit' => $notifikasi_izinsakit,
                 'notifikasi_izincuti' => $notifikasi_izincuti,
+                'notifikasi_lembur' => $notifikasi_lembur,
                 'notifikasi_ajuan_absen' => $notifikasi_ajuan_absen,
                 'data_izin' => $data_izin,
                 'general_setting' => $general_setting

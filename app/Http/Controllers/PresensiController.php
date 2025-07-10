@@ -80,6 +80,14 @@ class PresensiController extends Controller
             $join->on('karyawan.nik', '=', 'presensi.nik');
         });
         $query->orderBy('nama_karyawan');
+        if (!empty($request->kode_cabang)) {
+            $query->where('karyawan.kode_cabang', $request->kode_cabang);
+        }
+
+        if (!empty($request->nama_karyawan)) {
+            $query->where('nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
+        }
+
         $karyawan = $query->paginate(10);
         $karyawan->appends(request()->all());
         $cabang = Cabang::orderBy('kode_cabang')->get();

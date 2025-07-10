@@ -18,8 +18,8 @@
                                 datepicker="flatpickr-date" />
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12 col-md-12">
-                                    <x-select label="Cabang" name="kode_cabang_search" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
-                                        selected="{{ Request('kode_cabang_search') }}" upperCase="true" select2="select2Kodecabangsearch" />
+                                    <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
+                                        selected="{{ Request('kode_cabang') }}" upperCase="true" select2="select2Kodecabangsearch" />
                                 </div>
                             </div>
                             <div class="row">

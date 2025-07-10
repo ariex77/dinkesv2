@@ -21,7 +21,8 @@
             <tr>
                 <td>
                     @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
-                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan" style="max-width: 100px;">
+                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan"
+                            style="max-width: 100px;">
                     @else
                         <img src="https://placehold.co/100x100?text=Logo" alt="Logo Default" style="max-width: 100px;">
                     @endif
@@ -32,7 +33,8 @@
                         <br>
                         {{ $generalsetting->nama_perusahaan }}
                         <br>
-                        PERIODE {{ date('d-m-Y', strtotime($periode_dari)) }} - {{ date('d-m-Y', strtotime($periode_sampai)) }}
+                        PERIODE {{ date('d-m-Y', strtotime($periode_dari)) }} -
+                        {{ date('d-m-Y', strtotime($periode_sampai)) }}
                     </h4>
                     <span style="font-style: italic;">{{ $generalsetting->alamat }}</span><br>
                     <span style="font-style: italic;">{{ $generalsetting->telepon }}</span>
@@ -149,7 +151,9 @@
                                         $textcolor = '';
 
                                         $ket_nama_jam_kerja =
-                                            '<h4 style="font-weight:bold; margin-bottom:10px">' . $d[$tanggal_presensi]['nama_jam_kerja'] . '</h4>';
+                                            '<h4 style="font-weight:bold; margin-bottom:10px">' .
+                                            $d[$tanggal_presensi]['nama_jam_kerja'] .
+                                            '</h4>';
                                         $ket_jadwal_kerja =
                                             '<p><span style="color:blue">' .
                                             date('H:i', strtotime($d[$tanggal_presensi]['jam_masuk'])) .
@@ -206,7 +210,12 @@
                                             $denda = 0;
                                         }
 
-                                        $ket_denda = $denda != 0 ? '<p><span style="color:red">Denda : ' . formatAngka($denda) . '</span></p>' : '';
+                                        $ket_denda =
+                                            $denda != 0
+                                                ? '<p><span style="color:red">Denda : ' .
+                                                    formatAngka($denda) .
+                                                    '</span></p>'
+                                                : '';
 
                                         $pulangcepat = hitungpulangcepat(
                                             $tanggal_presensi,
@@ -219,12 +228,16 @@
                                         );
 
                                         $ket_pulang_cepat =
-                                            $pulangcepat != null ? '<p><span style="color:red">PC : ' . $pulangcepat . ' Jam </span></p>' : '';
+                                            $pulangcepat != null
+                                                ? '<p><span style="color:red">PC : ' . $pulangcepat . ' Jam </span></p>'
+                                                : '';
                                         $color_pulang_cepat = $pulangcepat != null ? 'red' : '';
 
                                         $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
                                         $ket_potongan_jam = !empty($potongan_jam)
-                                            ? '<p><span style="color:red">PJ: ' . formatAngkaDesimal($potongan_jam) . ' Jam</span></p>'
+                                            ? '<p><span style="color:red">PJ: ' .
+                                                formatAngkaDesimal($potongan_jam) .
+                                                ' Jam</span></p>'
                                             : '';
 
                                         $ket =
@@ -320,8 +333,17 @@
 
                         @php
                             $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-                            $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
-                            $gaji_bersih = $d['gaji_pokok'] + $total_tunjangan - $total_potongan + $d['penambah'] - $d['pengurang'];
+                            $total_potongan =
+                                ROUND($jumlah_potongan_jam) +
+                                $total_denda +
+                                $d['bpjs_kesehatan'] +
+                                $d['bpjs_tenagakerja'];
+                            $gaji_bersih =
+                                $d['gaji_pokok'] +
+                                $total_tunjangan -
+                                $total_potongan +
+                                $d['penambah'] -
+                                $d['pengurang'];
                             $total_all_potongan += $total_potongan;
                             $total_gaji_pokok += $d['gaji_pokok'];
                             $total_bpjs_kesehatan += $d['bpjs_kesehatan'];
@@ -357,7 +379,8 @@
                     <th colspan="6">TOTAL</th>
                     <th style="text-align: right">{{ formatAngka($total_gaji_pokok) }}</th>
                     @foreach ($jenis_tunjangan as $d)
-                        <th style="text-align: right">{{ formatAngka(${'total_tunjangan_' . $d->kode_jenis_tunjangan}) }}</th>
+                        <th style="text-align: right">
+                            {{ formatAngka(${'total_tunjangan_' . $d->kode_jenis_tunjangan}) }}</th>
                     @endforeach
                     <th style="text-align: right">{{ formatAngka($total_bruto) }}</th>
                     <th colspan="2"></th>
@@ -375,3 +398,5 @@
         </table>
     </div>
 </body>
+
+</html>

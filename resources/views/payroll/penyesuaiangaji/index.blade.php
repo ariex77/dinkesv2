@@ -111,6 +111,7 @@
         $("#btnCreate").click(function() {
             $("#modal").modal("show");
             $(".modal-title").text("Tambah Penyesuaian Gaji");
+            $("#loadmodal").html('');
             $("#loadmodal").load("{{ route('penyesuaiangaji.create') }}");
         });
 
