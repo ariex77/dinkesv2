@@ -245,6 +245,7 @@ class LaporanController extends Controller
         $data['jmlhari'] = hitungJumlahHari($periode_dari, $periode_sampai) + 1;
         $data['denda_list'] = Denda::all()->toArray();
         $data['datalibur'] = getdatalibur($periode_dari, $periode_sampai);
+        $data['datalembur'] = getlembur($periode_dari, $periode_sampai);
         $data['generalsetting'] = $generalsetting;
 
         if (isset($_POST['exportButton'])) {
@@ -308,6 +309,7 @@ class LaporanController extends Controller
             });
             $data['laporan_presensi'] = $laporan_presensi;
             $data['jenis_tunjangan'] = $jenis_tunjangan;
+
 
             if ($user->hasRole('karyawan')) {
                 //dd($data);

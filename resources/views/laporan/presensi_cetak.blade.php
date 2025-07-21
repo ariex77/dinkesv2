@@ -16,6 +16,7 @@
 </head>
 
 <body>
+
     <div class="header" style="margin-bottom: 10px">
         <table>
             <tr>
@@ -55,6 +56,7 @@
                     <th colspan="{{ $jmlhari }}">Tanggal</th>
                     <th rowspan="3">Denda</th>
                     <th rowspan="3">Pot. Jam</th>
+                    <th rowspan="3">Lembur</th>
                     <th colspan="8">Rekap</th>
                 </tr>
                 <tr>
@@ -103,6 +105,7 @@
                         @php
                             $total_denda = 0;
                             $total_potongan_jam = 0;
+                            $total_jam_lembur = 0;
                             $jml_hadir = 0;
                             $jml_sakit = 0;
                             $jml_izin = 0;
@@ -123,6 +126,13 @@
                                 ];
 
                                 $ceklibur = ceklibur($datalibur, $search);
+                                $ceklembur = ceklembur($datalembur, $search);
+                                $lembur = hitungLembur($ceklembur);
+                                if (!empty($ceklembur)) {
+                                    $jml_jam_lembur = $lembur;
+                                } else {
+                                    $jml_jam_lembur = 0;
+                                }
                                 $nama_hari = getHari($tanggal_presensi);
                             @endphp
                             @if (isset($d[$tanggal_presensi]))
@@ -139,7 +149,7 @@
                                         $ket_jadwal_kerja =
                                             '<p><span style="color:blue">' .
                                             date('H:i', strtotime($d[$tanggal_presensi]['jam_masuk'])) .
-                                            '-' .
+                                            ' - ' .
                                             date('H:i', strtotime($d[$tanggal_presensi]['jam_pulang'])) .
                                             '</span></p>';
                                         $jam_masuk = $tanggal_presensi . ' ' . $d[$tanggal_presensi]['jam_masuk'];
@@ -225,6 +235,12 @@
                                                 ' Jam</span></p>'
                                             : '';
 
+                                        $ket_jam_lembur =
+                                            $jml_jam_lembur > 0
+                                                ? '<p><span style="color:rgb(11, 153, 179)"> Lembur :' .
+                                                    $jml_jam_lembur .
+                                                    ' Jam</span></p>'
+                                                : '';
                                         $ket =
                                             $ket_nama_jam_kerja .
                                             $ket_jadwal_kerja .
@@ -232,7 +248,8 @@
                                             $ket_terlambat .
                                             $ket_denda .
                                             $ket_pulang_cepat .
-                                            $ket_potongan_jam;
+                                            $ket_potongan_jam .
+                                            $ket_jam_lembur;
                                         // $ket =
                                         //     $ket_nama_jam_kerja .
                                         //     $ket_jadwal_kerja .
@@ -307,6 +324,7 @@
                                     $bgcolor = 'red';
                                     $textcolor = 'white';
                                     $ket = '';
+
                                     //var_dump($ceklibur);
                                     if (!empty($ceklibur)) {
                                         $bgcolor = 'green';
@@ -314,16 +332,28 @@
                                         $jml_libur++;
                                         $ket = $ceklibur[0]['keterangan'];
                                     }
+
+                                    if (!empty($ceklembur)) {
+                                        $bgcolor = 'white';
+                                        $textcolor = 'black';
+                                        $ket_jam_lembur =
+                                            '<p><span style="color:rgb(11, 153, 179)"> Lembur :' .
+                                            $jml_jam_lembur .
+                                            ' Jam</span></p>';
+                                        $ket = $ket_jam_lembur;
+                                    }
                                 @endphp
                             @endif
                             @php
                                 $total_denda += $denda;
                                 $total_potongan_jam += $potongan_jam;
+                                $total_jam_lembur += $jml_jam_lembur;
 
                                 $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
                             @endphp
                             <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}">
                                 {!! $ket !!}
+
                             </td>
                             @php
                                 $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
@@ -331,6 +361,7 @@
                         @endwhile
                         <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
                         <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
+                        <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
                         <td style="text-align:center">{{ $jml_hadir }}</td>
                         <td style="text-align:center">{{ $jml_izin }}</td>
                         <td style="text-align:center">{{ $jml_sakit }}</td>

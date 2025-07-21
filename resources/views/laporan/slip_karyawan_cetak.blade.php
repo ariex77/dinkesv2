@@ -176,14 +176,6 @@
                 $total_potongan_jam = 0;
                 $total_tunjangan = 0;
 
-                // Kalkulasi tunjangan
-                foreach ($jenis_tunjangan as $j) {
-                    $total_tunjangan += $d[$j->kode_jenis_tunjangan];
-                }
-
-                // Kalkulasi bruto
-                $bruto = $d['gaji_pokok'] + $total_tunjangan;
-
                 // Kalkulasi upah per jam
                 $upah_perjam = $d['gaji_pokok'] / $generalsetting->total_jam_bulan;
             @endphp
@@ -198,6 +190,14 @@
                         'tanggal' => $tanggal_presensi,
                     ];
                     $ceklibur = ceklibur($datalibur, $search);
+                    $ceklembur = ceklembur($datalembur, $search);
+                    $lembur = hitungLembur($ceklembur);
+                    if (!empty($ceklembur)) {
+                        $jml_jam_lembur = $lembur;
+                    } else {
+                        $jml_jam_lembur = 0;
+                    }
+
                 @endphp
 
                 @if (isset($d[$tanggal_presensi]))
@@ -254,7 +254,7 @@
                 $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
                 $total_potongan =
                     ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
-                $gaji_bersih = $d['gaji_pokok'] + $total_tunjangan - $total_potongan + $d['penambah'] - $d['pengurang'];
+
             @endphp
 
             <!-- Slip akan ditampilkan dalam container flex untuk layout horizontal -->
@@ -268,6 +268,7 @@
                     $total_denda = 0;
                     $total_potongan_jam = 0;
                     $total_tunjangan = 0;
+                    $total_jam_lembur = 0;
 
                     // Kalkulasi tunjangan
                     foreach ($jenis_tunjangan as $j) {
@@ -291,6 +292,13 @@
                             'tanggal' => $tanggal_presensi,
                         ];
                         $ceklibur = ceklibur($datalibur, $search);
+                        $ceklembur = ceklembur($datalembur, $search);
+                        $lembur = hitungLembur($ceklembur);
+                        if (!empty($ceklembur)) {
+                            $jml_jam_lembur = $lembur;
+                        } else {
+                            $jml_jam_lembur = 0;
+                        }
                     @endphp
 
                     @if (isset($d[$tanggal_presensi]))
@@ -338,6 +346,7 @@
                     @php
                         $total_denda += $denda;
                         $total_potongan_jam += $potongan_jam;
+                        $total_jam_lembur += $jml_jam_lembur;
                         $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                     @endphp
                 @endwhile
@@ -401,9 +410,27 @@
                             </div>
                         @endif
                     @endforeach
+                    @if ($total_jam_lembur > 0)
+                        <div class="row">
+                            <span>Lembur {{ formatAngkaDesimal($total_jam_lembur) }} jam </span>
+                            <span class="currency">
+                                @php
+                                    $upah_lembur = ROUND($upah_perjam) * ROUND($total_jam_lembur, 2);
+                                @endphp
+                                {{ formatAngka($upah_lembur) }}
+                            </span>
+                        </div>
+                    @else
+                        @php
+                            $upah_lembur = 0;
+                        @endphp
+                    @endif
                     <div class="row" style="font-weight: bold; border-top: 1px dotted #333; padding-top: 2px;">
                         <span>Sub Total</span>
-                        <span class="currency">{{ number_format($bruto, 0, ',', '.') }}</span>
+                        @php
+                            $bruto_total = $bruto + ROUND($upah_lembur);
+                        @endphp
+                        <span class="currency">{{ number_format($bruto_total, 0, ',', '.') }}</span>
                     </div>
 
                     <!-- Potongan -->
@@ -458,6 +485,15 @@
                     <div class="total-section">
                         <div class="net-salary">
                             <span>GAJI BERSIH</span>
+                            @php
+                                $gaji_bersih =
+                                    $d['gaji_pokok'] +
+                                    $total_tunjangan -
+                                    $total_potongan +
+                                    $d['penambah'] -
+                                    $d['pengurang'] +
+                                    ROUND($upah_lembur);
+                            @endphp
                             <span class="currency">{{ number_format($gaji_bersih, 0, ',', '.') }}</span>
                         </div>
                     </div>

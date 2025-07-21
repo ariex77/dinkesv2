@@ -1245,7 +1245,7 @@
                         },
                         success: function(data) {
                             if (data.status == true) {
-                                notifikasi_absenmasuk.play();
+                                //notifikasi_absenmasuk.play();
                                 swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil',
@@ -1259,13 +1259,13 @@
                         },
                         error: function(xhr) {
                             if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
-                                notifikasi_radius.play();
+                                //notifikasi_radius.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
-                                notifikasi_mulaiabsen.play();
+                                //notifikasi_mulaiabsen.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
-                                notifikasi_akhirabsen.play();
+                                //notifikasi_akhirabsen.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
-                                notifikasi_sudahabsen.play();
+                                //notifikasi_sudahabsen.play();
                             }
                             swal.fire({
                                 icon: 'error',
@@ -1326,7 +1326,7 @@
                         },
                         success: function(data) {
                             if (data.status == true) {
-                                notifikasi_absenpulang.play();
+                                //notifikasi_absenpulang.play();
                                 swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil',
@@ -1342,11 +1342,11 @@
                             if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
                                 notifikasi_radius.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
-                                notifikasi_mulaiabsen.play();
+                                //notifikasi_mulaiabsen.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
-                                notifikasi_akhirabsen.play();
+                                //notifikasi_akhirabsen.play();
                             } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
-                                notifikasi_sudahabsenpulang.play();
+                                //notifikasi_sudahabsenpulang.play();
                             }
                             swal.fire({
                                 icon: 'error',

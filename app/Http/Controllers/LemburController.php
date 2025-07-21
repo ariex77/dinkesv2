@@ -110,7 +110,7 @@ class LemburController extends Controller
         try {
             Lembur::create([
                 'nik' => $nik,
-                'tanggal' => date('Y-m-d'),
+                'tanggal' => date('Y-m-d', strtotime($request->dari)),
                 'lembur_mulai' => $request->dari,
                 'lembur_selesai' => $request->sampai,
                 'keterangan' => $request->keterangan,
@@ -153,7 +153,7 @@ class LemburController extends Controller
         try {
             Lembur::where('id', $id)->update([
                 'nik' => $request->nik,
-                'tanggal' => date('Y-m-d'),
+                'tanggal' => date('Y-m-d', strtotime($request->dari)),
                 'lembur_mulai' => $request->dari,
                 'lembur_selesai' => $request->sampai,
                 'keterangan' => $request->keterangan,

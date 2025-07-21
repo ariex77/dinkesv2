@@ -331,8 +331,10 @@
                                             // Menambahkan nol di depan bulan jika bulan kurang dari 10
 
                                             $bulan = str_pad($bulan, 2, '0', STR_PAD_LEFT);
+                                            $bulan_next = str_pad($d->bulan, 2, '0', STR_PAD_LEFT);
                                             $periode_dari = $tahun . '-' . $bulan . '-' . $periode_laporan_dari;
-                                            $periode_sampai = $tahun . '-' . $bulan . '-' . $periode_laporan_sampai;
+                                            $periode_sampai =
+                                                $tahun . '-' . $bulan_next . '-' . $periode_laporan_sampai;
 
                                         @endphp
                                         {{ DateToIndo($periode_dari) }}

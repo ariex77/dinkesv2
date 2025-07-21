@@ -28,7 +28,7 @@ class GeneralsettingController extends Controller
             'periode_laporan_dari' => 'required',
             'periode_laporan_sampai' => 'required',
             'domain_email' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/',
-            
+
         ]);
 
         try {
@@ -47,12 +47,14 @@ class GeneralsettingController extends Controller
                 'periode_laporan_sampai' => $request->periode_laporan_sampai,
                 'periode_laporan_next_bulan' => $request->has('periode_laporan_next_bulan') ? true : false,
                 'batasi_absen' => $request->has('batasi_absen') ? true : false,
+                'multi_lokasi' => $request->has('multi_lokasi') ? true : false,
                 'batas_jam_absen' => $request->batas_jam_absen,
                 'cloud_id' => $request->cloud_id,
                 'api_key' => $request->api_key,
                 'domain_email' => $request->domain_email,
                 'domain_wa_gateway' => $request->domain_wa_gateway,
                 'wa_api_key' => $request->wa_api_key,
+                'notifikasi_wa' => $request->has('notifikasi_wa') ? true : false,
             ];
 
             if ($request->hasFile('logo')) {

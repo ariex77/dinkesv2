@@ -30,10 +30,8 @@
                 <tr>
                     <th>Waktu Lembur</th>
                     <td class="text-end">
-                        @php
-                            $lama = hitungJam($lembur->lembur_in, $lembur->lembur_out);
-                        @endphp
-                        {{ round($lama, 2) }} Jam
+                        {{ date('d-m-Y H:i:s', strtotime($lembur->lembur_mulai)) }} -
+                        {{ date('d-m-Y H:i:s', strtotime($lembur->lembur_selesai)) }}
                     </td>
                 </tr>
                 <tr>
@@ -47,10 +45,12 @@
 
     <div class="row">
         <div class="col">
-            <button class="btn btn-primary w-100" name="approve" type="submit" value="approve"><i class="ti ti-thumb-up me-1"></i> Approve </button>
+            <button class="btn btn-primary w-100" name="approve" type="submit" value="approve"><i
+                    class="ti ti-thumb-up me-1"></i> Approve </button>
         </div>
         <div class="col">
-            <button class="btn btn-danger w-100" name="tolak" type="submit" value="tolak"><i class="ti ti-thumb-down me-1"></i> Tolak </button>
+            <button class="btn btn-danger w-100" name="tolak" type="submit" value="tolak"><i
+                    class="ti ti-thumb-down me-1"></i> Tolak </button>
         </div>
     </div>
 

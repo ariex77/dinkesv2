@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Detailharilibur;
+use App\Models\Lembur;
 use App\Models\Tutuplaporan;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redirect;
@@ -542,6 +543,104 @@ function hitungJam($startDate, $endDate)
         $hourDifference = $timeDifference / 3600;
 
         return $hourDifference;
+    } else {
+        return 0;
+    }
+}
+
+
+function getlembur($dari, $sampai)
+{
+    $no = 1;
+    $lembur = [];
+    $ceklembur = Lembur::select(
+        'nik',
+        'tanggal',
+        'lembur_mulai',
+        'lembur_selesai',
+        'lembur_in',
+        'lembur_out',
+    )
+        ->whereBetween('tanggal', [$dari, $sampai])
+        ->get();
+
+
+    foreach ($ceklembur as $d) {
+        $lembur[] = [
+            'nik' => $d->nik,
+            'tanggal' => $d->tanggal,
+            'lembur_mulai' => $d->lembur_mulai,
+            'lembur_selesai' => $d->lembur_selesai,
+            'lembur_in' => $d->lembur_in,
+            'lembur_out' => $d->lembur_out,
+        ];
+    }
+
+    return $lembur;
+}
+
+
+
+function ceklembur($array, $search_list)
+{
+
+    // Create the result array
+    $result = array();
+
+    // Iterate over each array element
+    foreach ($array as $key => $value) {
+
+        // Iterate over each search condition
+        foreach ($search_list as $k => $v) {
+
+            // If the array element does not meet
+            // the search condition then continue
+            // to the next element
+            if (!isset($value[$k]) || $value[$k] != $v) {
+
+                // Skip two loops
+                continue 2;
+            }
+        }
+
+        // Append array element's key to the
+        //result array
+        $result[] = $value;
+    }
+
+    // Return result
+    return $result;
+}
+
+function hitungjamlembur($jam1, $jam2)
+{
+    $j1 = strtotime($jam1);
+    $j2 = strtotime($jam2);
+
+    $diffterlambat = $j2 - $j1;
+
+    $jamterlambat = floor($diffterlambat / (60 * 60));
+    $menitterlambat = floor(($diffterlambat - ($jamterlambat * (60 * 60))) / 60);
+
+    $desimalterlambat = $jamterlambat + ROUND(($menitterlambat / 60), 2);
+
+    return $desimalterlambat;
+}
+
+function hitungLembur($datalembur)
+{
+    if (!empty($datalembur) && $datalembur[0]['lembur_in'] && $datalembur[0]['lembur_out']) {
+        $lembur_mulai = $datalembur[0]['lembur_mulai'];
+        $lembur_selesai = $datalembur[0]['lembur_selesai'];
+        $lembur_in = $datalembur[0]['lembur_in'];
+        $lembur_out = $datalembur[0]['lembur_out'];
+
+
+        $start_lembur = $lembur_in < $lembur_mulai ? $lembur_mulai  : $lembur_in;
+        $end_lembur = $lembur_out > $lembur_selesai ? $lembur_selesai : $lembur_out;
+
+        $jam_lembur = hitungjamlembur($start_lembur, $end_lembur);
+        return $jam_lembur;
     } else {
         return 0;
     }

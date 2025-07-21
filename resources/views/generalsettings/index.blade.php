@@ -158,13 +158,16 @@
     <div class="col-lg-4 col-sm-12 col-xs-12">
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('generalsetting.update', Crypt::encrypt($setting->id)) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('generalsetting.update', Crypt::encrypt($setting->id)) }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    <x-input-with-icon-label label="Nama Perusahaan" name="nama_perusahaan" icon="ti ti-home" :value="$setting->nama_perusahaan ?? ''" />
+                    <x-input-with-icon-label label="Nama Perusahaan" name="nama_perusahaan" icon="ti ti-home"
+                        :value="$setting->nama_perusahaan ?? ''" />
                     <x-textarea-label label="Alamat Perusahaan" name="alamat" icon="ti ti-map-pin" :value="$setting->alamat ?? ''" />
                     <x-input-with-icon-label label="Telepon" name="telepon" icon="ti ti-phone" :value="$setting->telepon ?? ''" />
-                    <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan" icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
+                    <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan"
+                        icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
                     <label for="" style="font-weight: 600" class="form-label">Denda</label>
                     <div class="checkbox-wrapper-55">
                         <label class="rocker rocker-small">
@@ -183,15 +186,16 @@
                     </div>
                     <div class="row">
                         <div class="col">
-                            <x-input-with-icon-label label="Periode Laporan Dari" icon="ti ti-calendar" name="periode_laporan_dari"
-                                :value="$setting->periode_laporan_dari ?? ''" />
+                            <x-input-with-icon-label label="Periode Laporan Dari" icon="ti ti-calendar"
+                                name="periode_laporan_dari" :value="$setting->periode_laporan_dari ?? ''" />
                         </div>
                         <div class="col">
-                            <x-input-with-icon-label label="Periode Laporan Sampai" icon="ti ti-calendar" name="periode_laporan_sampai"
-                                :value="$setting->periode_laporan_sampai ?? ''" />
+                            <x-input-with-icon-label label="Periode Laporan Sampai" icon="ti ti-calendar"
+                                name="periode_laporan_sampai" :value="$setting->periode_laporan_sampai ?? ''" />
                         </div>
                     </div>
-                    <label for="" style="font-weight: 600" class="form-label">Periode Laporan Lintas Bulan</label>
+                    <label for="" style="font-weight: 600" class="form-label">Periode Laporan Lintas
+                        Bulan</label>
                     <div class="checkbox-wrapper-55">
                         <label class="rocker rocker-small">
                             <input type="checkbox" name="periode_laporan_next_bulan" @checked($setting->periode_laporan_next_bulan ?? false)>
@@ -207,21 +211,43 @@
                             <span class="switch-right">No</span>
                         </label>
                     </div>
-                    <x-input-with-icon-label label="Batas Jam Absen (Dalam Jam)" name="batas_jam_absen" icon="ti ti-clock" :value="$setting->batas_jam_absen ?? ''" />
+                    <label for="" style="font-weight: 600" class="form-label">Multi Lokasi</label>
+                    <div class="checkbox-wrapper-55">
+                        <label class="rocker rocker-small">
+                            <input type="checkbox" name="multi_lokasi" @checked($setting->multi_lokasi ?? false)>
+                            <span class="switch-left">Yes</span>
+                            <span class="switch-right">No</span>
+                        </label>
+                    </div>
+
+                    <label for="" style="font-weight: 600" class="form-label">Notifikasi WA</label>
+                    <div class="checkbox-wrapper-55">
+                        <label class="rocker rocker-small">
+                            <input type="checkbox" name="notifikasi_wa" @checked($setting->notifikasi_wa ?? false)>
+                            <span class="switch-left">Yes</span>
+                            <span class="switch-right">No</span>
+                        </label>
+                    </div>
+                    <x-input-with-icon-label label="Batas Jam Absen (Dalam Jam)" name="batas_jam_absen"
+                        icon="ti ti-clock" :value="$setting->batas_jam_absen ?? ''" />
                     <x-input-with-icon-label label="Cloud Id" name="cloud_id" icon="ti ti-cloud" :value="$setting->cloud_id ?? ''" />
                     <x-input-with-icon-label label="API Key" name="api_key" icon="ti ti-key" :value="$setting->api_key ?? ''" />
-                    <x-input-with-icon-label label="Domain Email (contoh: adamadifa.site)" name="domain_email" icon="ti ti-mail" :value="$setting->domain_email ?? ''" />
-                    <x-input-with-icon-label label="Domain WA Gateway (contoh: https://wa.adamadifa.site)" name="domain_wa_gateway"
-                        icon="ti ti-message" :value="$setting->domain_wa_gateway ?? ''" />
-                    <x-input-with-icon-label label="WA API Key" name="wa_api_key" icon="ti ti-brand-whatsapp" :value="$setting->wa_api_key ?? ''" />
+                    <x-input-with-icon-label label="Domain Email (contoh: adamadifa.site)" name="domain_email"
+                        icon="ti ti-mail" :value="$setting->domain_email ?? ''" />
+                    <x-input-with-icon-label label="Domain WA Gateway (contoh: https://wa.adamadifa.site)"
+                        name="domain_wa_gateway" icon="ti ti-message" :value="$setting->domain_wa_gateway ?? ''" />
+                    <x-input-with-icon-label label="WA API Key" name="wa_api_key" icon="ti ti-brand-whatsapp"
+                        :value="$setting->wa_api_key ?? ''" />
                     <div class="form-group mb-3">
                         <label for="logo" style="font-weight: 600" class="form-label">Logo Perusahaan</label>
                         <input type="file" class="form-control" name="logo" id="logo">
                         <div class="mt-2 text-center">
                             @if ($setting->logo && Storage::exists('public/logo/' . $setting->logo))
-                                <img src="{{ asset('storage/logo/' . $setting->logo) }}" alt="Logo Perusahaan" style="max-width: 200px;">
+                                <img src="{{ asset('storage/logo/' . $setting->logo) }}" alt="Logo Perusahaan"
+                                    style="max-width: 200px;">
                             @else
-                                <img src="https://placehold.co/200x200?text=Logo+Perusahaan&font=roboto" alt="Logo Default" style="max-width: 200px;">
+                                <img src="https://placehold.co/200x200?text=Logo+Perusahaan&font=roboto"
+                                    alt="Logo Default" style="max-width: 200px;">
                             @endif
                         </div>
                     </div>
