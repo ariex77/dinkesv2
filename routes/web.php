@@ -398,6 +398,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::controller(FacerecognitionController::class)->group(function () {
+        Route::post('/facerecognition/hapus-semua/{nik}', 'destroyAll')->name('facerecognition.destroyAll')->can('karyawan.edit');
         Route::get('/facerecognition/{nik}/create', 'create')->name('facerecognition.create');
         Route::post('/facerecognition/store', 'store')->name('facerecognition.store');
         Route::delete('/facerecognition/{id}/delete', 'destroy')->name('facerecognition.delete');

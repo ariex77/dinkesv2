@@ -152,14 +152,12 @@
                         </div>
                     @else
                         <div class="avatar avatar-xs me-2">
-                            <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar"
-                                class="imaged w64 rounded">
+                            <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar" class="imaged w64 rounded">
                         </div>
                     @endif
                 @else
                     <div class="avatar avatar-xs me-2">
-                        <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar"
-                            class="imaged w64 rounded">
+                        <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" alt="avatar" class="imaged w64 rounded">
                     </div>
                 @endif
             </a>
@@ -178,7 +176,7 @@
                             @endphp
                             @if ($presensi && $presensi->foto_in != null)
                                 @php
-                                    $path = Storage::url('uploads/absensi/' . $presensi->foto_in);
+                                    $path = Storage::url('uploads/absensi/' . $presensi->foto_in . '?v=' . time());
                                 @endphp
                                 <img src="{{ url($path) }}" alt="" class="imaged w48">
                             @else
@@ -207,7 +205,7 @@
                             @endphp
                             @if ($presensi && $presensi->foto_out != null)
                                 @php
-                                    $path = Storage::url('uploads/absensi/' . $presensi->foto_out);
+                                    $path = Storage::url('uploads/absensi/' . $presensi->foto_out . '?v=' . time());
                                 @endphp
                                 <img src="{{ url($path) }}" alt="" class="imaged w48">
                             @else
@@ -236,8 +234,7 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/hadir.webp') }}" alt="" style="width: 50px"
-                            class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/hadir.webp') }}" alt="" style="width: 50px" class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">
                             Hadir
@@ -251,8 +248,7 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/sakit.png') }}" alt="" style="width: 50px"
-                            class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/sakit.png') }}" alt="" style="width: 50px" class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Sakit</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -264,8 +260,7 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/izin.webp') }}" alt="" style="width: 50px"
-                            class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/izin.webp') }}" alt="" style="width: 50px" class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Izin</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -277,8 +272,7 @@
             <div class="col-3">
                 <div class="card">
                     <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/cuti.png') }}" alt="" style="width: 50px"
-                            class="mb-1">
+                        <img src="{{ asset('assets/template/img/3d/cuti.png') }}" alt="" style="width: 50px" class="mb-1">
                         <br>
                         <span style="font-size: 0.8rem; font-weight:500">Cuti</span>
                         <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
@@ -293,8 +287,7 @@
                 <a href="{{ route('karyawan.idcard', Crypt::encrypt($karyawan->nik)) }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt=""
-                                style="width: 50px" class="mb-0">
+                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt="" style="width: 50px" class="mb-0">
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 ID Card
@@ -307,8 +300,7 @@
                 <a href="{{ route('presensiistirahat.create') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/alarm.png') }}" alt=""
-                                style="width: 50px" class="mb-0">
+                            <img src="{{ asset('assets/template/img/3d/alarm.png') }}" alt="" style="width: 50px" class="mb-0">
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Istirahat
@@ -321,8 +313,7 @@
                 <a href="{{ route('lembur.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt=""
-                                style="width: 50px" class="mb-0">
+                            <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt="" style="width: 50px" class="mb-0">
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Lembur
@@ -336,8 +327,7 @@
                 <a href="{{ route('slipgaji.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt=""
-                                style="width: 50px" class="mb-0">
+                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 50px" class="mb-0">
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Slip Gaji
@@ -440,8 +430,7 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="document-text-outline"
-                                                    style="font-size: 48px; color: #1f7ee4"></ion-icon>
+                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -465,8 +454,7 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="document-text-outline"
-                                                    style="font-size: 48px; color: #1f7ee4"></ion-icon>
+                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -490,8 +478,7 @@
                                     <div class="historicontent">
                                         <div class="historidetail1">
                                             <div class="iconpresence">
-                                                <ion-icon name="bag-add-outline"
-                                                    style="font-size: 48px; color: #d4095a"></ion-icon>
+                                                <ion-icon name="bag-add-outline" style="font-size: 48px; color: #d4095a"></ion-icon>
                                             </div>
                                             <div class="datepresence">
                                                 <h4>{{ DateToIndo($d->tanggal) }}</h4>
@@ -558,7 +545,7 @@
                                 </div>
                                 <div class="historidetail2">
                                     {{-- <h4>{{ $d->nama_jam_kerja }}</h4>
-                                
+
                                     {{ date('H:i', strtotime($d->jam_masuk)) }} -
                                     {{ date('H:i', strtotime($d->jam_pulang)) }}
                                 </span> --}}

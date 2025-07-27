@@ -11,36 +11,41 @@
         }
     </style> --}}
     <style>
+        /* Tambahan agar kamera portrait dan rounded di semua device */
         .webcam-capture {
-            display: inline-block;
-            width: 100% !important;
-            margin: 0 !important;
-            margin-top: 30px !important;
-            margin-bottom: 60px !important;
-            padding: 10px !important;
-            height: calc(100vh - 120px) !important;
-            border-radius: 15px;
+            width: 100%;
+            max-width: 98vw;
+            height: 240px;
+            /* Tinggi tetap sesuai simulator */
+            margin: 0 auto;
+            padding: 0;
+            border-radius: 24px;
             overflow: hidden;
+            background: #222;
             position: relative;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.10);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .webcam-capture video {
-            display: inline-block;
+        .webcam-capture video,
+        .webcam-capture canvas {
             width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
             height: 100% !important;
-            border-radius: 15px;
             object-fit: cover;
+            /* Pastikan proporsional */
+            border-radius: 24px !important;
+            display: block;
+            /* background: #222; */
         }
+
+
 
         #map {
-            height: 120px;
-            width: 50%;
-            position: absolute;
-            top: 55px;
-            left: 20px;
-            z-index: 10;
+            height: 200px;
+            width: 100%;
+            margin-bottom: 10px;
             opacity: 0.8;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -89,22 +94,17 @@
         }
 
         #content-section {
-            margin-top: 45px;
+            margin-top: 60px !important;
             padding: 0 !important;
             /* Menghapus padding */
             position: relative;
             z-index: 1;
-            height: calc(100vh - 45px);
+
             overflow: hidden;
         }
 
         /* Style untuk tombol scan */
         .scan-buttons {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            right: 0;
-            z-index: 20;
             display: flex;
             justify-content: center;
             gap: 10px;
@@ -113,12 +113,14 @@
 
         #listcabang {
             position: absolute;
-            bottom: 100px;
-            left: 0;
-            right: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 20px;
+            width: 92%;
             display: flex;
             justify-content: center;
             z-index: 20;
+            margin-top: 0;
         }
 
         #listcabang .select-wrapper {
@@ -237,7 +239,7 @@
         .jam-digital-malasngoding {
             background-color: rgba(39, 39, 39, 0.7);
             position: absolute;
-            top: 55px;
+            top: 65px;
             /* Di bawah header */
             right: 15px;
             /* Menambah margin kanan */
@@ -282,8 +284,171 @@
         .face-detection-label.unknown {
             background-color: rgba(244, 67, 54, 0.8);
         }
+
+        /* Modern Presensi Content Wrapper */
+        .presensi-content-modern {
+            background: linear-gradient(135deg, #e0f7fa 0%, #fff 100%);
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
+            padding: 18px 10px 24px 10px;
+            margin: 10px 0;
+        }
+
+        .presensi-content-modern,
+        .presensi-content-modern * {
+            font-family: 'Poppins', sans-serif !important;
+        }
+
+        .camera-section {
+            padding: 2px;
+            position: relative;
+        }
+
+        .info-section {
+            background: transparent;
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            backdrop-filter: blur(6px);
+            color: #222;
+            font-size: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .info-section p {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .location-section {
+            margin-bottom: 12px;
+        }
+
+        .map-section {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.10);
+            margin-bottom: 14px;
+        }
+
+        .action-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .action-section .scan-button {
+            flex: 1;
+            font-size: 18px;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.10);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .action-section .scan-button:active {
+            transform: scale(0.97);
+            box-shadow: 0 1px 4px rgba(44, 62, 80, 0.12);
+        }
+
+        /* Tambahan style jadwal kerja modern */
+        .jadwalkerja-row {
+            background: linear-gradient(90deg, #35796A 0%, #24584C 100%);
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(44, 62, 80, 0.13);
+            margin-bottom: 6px;
+            padding: 8px 0 4px 0;
+            display: flex;
+            justify-content: space-between;
+            border: none;
+            position: relative;
+        }
+
+        .jadwalkerja-col:not(:last-child) {
+            border-right: 1.5px solid rgba(255, 255, 255, 0.22);
+        }
+
+        .jadwalkerja-col {
+            padding: 0 6px;
+        }
+
+        .jadwalkerja-icon {
+            font-size: 28px;
+            color: #FFD600;
+            margin-bottom: 2px;
+        }
+
+        .jadwalkerja-label {
+            font-size: 13px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+
+        .jadwalkerja-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        /* Modern absolute tanggal & jam di kamera */
+        .abs-tanggal-modern {
+            position: absolute;
+            top: 12px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.10);
+            border-radius: 10px;
+            padding: 4px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #222;
+            z-index: 10;
+            backdrop-filter: blur(4px);
+        }
+
+        .abs-jam-modern {
+            position: absolute;
+            top: 12px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.75);
+            box-shadow: 0 2px 8px rgba(44, 62, 80, 0.10);
+            border-radius: 10px;
+            padding: 4px 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #222;
+            z-index: 10;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+
+        /* Style absolute untuk maps agar menempel di bawah kamera dan di atas listcabang */
+        .map-absolute-section {
+            position: absolute;
+            bottom: 60px;
+            width: 92%;
+            /* Setelah kamera */
+            z-index: 15;
+            width: 100%;
+            padding: 0 0 10px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .map-absolute-section #map {
+            height: 120px;
+            width: 80%;
+            margin: 0 auto;
+            opacity: 0.45;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <!-- Import Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <div id="header-section">
         <div class="appHeader bg-primary text-light">
@@ -297,53 +462,71 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row" style="margin-top: 0; height: 100%;">
-            <div class="col" id="facedetection">
-                <div class="webcam-capture"></div>
-                <div id="map">
-                    <div id="map-loading">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+        <div class="presensi-content-modern">
+            <div class="camera-section" style="position:relative;">
+                <div class="row" style="margin-top: 0;">
+                    <div class="col" id="facedetection" style="position:relative;">
+                        <!-- Absolute Tanggal & Jam -->
+                        <div class="abs-tanggal-modern">{{ DateToIndo(date('Y-m-d')) }}</div>
+                        <div class="abs-jam-modern"><span id="jam"></span></div>
+                        <div class="webcam-capture"></div>
+                        <!-- MAPS ABSOLUTE -->
+                        <div class="map-absolute-section">
+                            <div id="map">
+                                <div id="map-loading">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <div class="mt-2">Memuat peta...</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-2">Memuat peta...</div>
+                        @if ($general_setting->multi_lokasi)
+                            <div id="listcabang">
+                                <div class="select-wrapper">
+                                    <select name="cabang" id="cabang" class="form-control">
+                                        @foreach ($cabang as $item)
+                                            <option {{ $item->kode_cabang == $karyawan->kode_cabang ? 'selected' : '' }}
+                                                value="{{ $item->lokasi_cabang }}">
+                                                {{ $item->nama_cabang }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        @endif
+                        <!-- Info jam digital dipindah ke info-section -->
                     </div>
                 </div>
-                <div class="jam-digital-malasngoding">
-                    <p>{{ DateToIndo(date('Y-m-d')) }}</p>
-                    <p id="jam"></p>
-                    <p>{{ $jam_kerja->nama_jam_kerja }} </p>
-                    <p style="display: flex; justify-content:space-between">
-                        <span> Masuk</span>
-                        <span>{{ date('H:i', strtotime($jam_kerja->jam_masuk)) }}</span>
-                    </p>
-                    <p style="display: flex; justify-content:space-between">
-                        <span> Pulang</span>
-                        <span>{{ date('H:i', strtotime($jam_kerja->jam_pulang)) }}</span>
-                    </p>
-                </div>
-                @if ($general_setting->multi_lokasi)
-                    <div id="listcabang">
-                        <div class="select-wrapper">
-                            <select name="cabang" id="cabang" class="form-control">
-                                @foreach ($cabang as $item)
-                                    <option {{ $item->kode_cabang == $karyawan->kode_cabang ? 'selected' : '' }}
-                                        value="{{ $item->lokasi_cabang }}">
-                                        {{ $item->nama_cabang }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+            </div>
+            <div class="info-section">
+                <div class="row jadwalkerja-row">
+                    <div class="col text-center jadwalkerja-col">
+                        <ion-icon name="person-outline" class="jadwalkerja-icon"></ion-icon>
+                        <div class="jadwalkerja-label">Shift</div>
+                        <div class="jadwalkerja-value">{{ $jam_kerja->nama_jam_kerja }}</div>
                     </div>
-                @endif
-                <div class="scan-buttons">
-                    <button class="btn btn-success bg-primary scan-button" id="absenmasuk" statuspresensi="masuk">
-                        <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
-                        <span style="font-size:14px">Masuk</span>
-                    </button>
-                    <button class="btn btn-danger scan-button" id="absenpulang" statuspresensi="pulang">
-                        <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
-                        <span style="font-size:14px">Pulang</span>
-                    </button>
+                    <div class="col text-center jadwalkerja-col">
+                        <ion-icon name="log-in-outline" class="jadwalkerja-icon"></ion-icon>
+                        <div class="jadwalkerja-label">Jam Masuk</div>
+                        <div class="jadwalkerja-value">{{ date('H:i', strtotime($jam_kerja->jam_masuk)) }}</div>
+                    </div>
+                    <div class="col text-center jadwalkerja-col">
+                        <ion-icon name="log-out-outline" class="jadwalkerja-icon"></ion-icon>
+                        <div class="jadwalkerja-label">Jam Pulang</div>
+                        <div class="jadwalkerja-value">{{ date('H:i', strtotime($jam_kerja->jam_pulang)) }}</div>
+                    </div>
                 </div>
+            </div>
+            <!-- <div class="map-section"> ... </div> -->
+            <div class="action-section">
+                <button class="btn btn-success bg-primary scan-button" id="absenmasuk" statuspresensi="masuk">
+                    <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
+                    <span style="font-size:14px">Masuk</span>
+                </button>
+                <button class="btn btn-danger scan-button" id="absenpulang" statuspresensi="pulang">
+                    <ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon>
+                    <span style="font-size:14px">Pulang</span>
+                </button>
             </div>
         </div>
     </div>
@@ -444,40 +627,39 @@
             // Mengambil nilai face recognition dari variabel $general_setting->face_recognition
             let faceRecognition = "{{ $general_setting->face_recognition }}";
 
-            // Deteksi perangkat mobile
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator
-                .userAgent);
-
+            // --- Tambahkan deteksi device mobile di awal script ---
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            console.log(isMobile);
             // Fungsi untuk inisialisasi webcam
             function initWebcam() {
                 // Inisialisasi webcam dengan pengaturan yang sesuai
                 Webcam.set({
                     // Tinggi webcam
-                    height: isMobile ? 360 : 480,
+                    height: 480,
                     // Lebar webcam
-                    width: isMobile ? 480 : 640,
+                    width: 640,
                     // Format gambar
                     image_format: 'jpeg',
                     // Kualitas gambar
-                    jpeg_quality: isMobile ? 85 : 95,
+                    jpeg_quality: isMobile ? 80 : 95,
                     // Frame rate
-                    fps: isMobile ? 25 : 30,
+                    fps: isMobile ? 15 : 30,
                     // Konstrain untuk video
                     constraints: {
                         video: {
                             // Lebar ideal
                             width: {
-                                ideal: isMobile ? 480 : 640
+                                ideal: isMobile ? 240 : 640
                             },
                             // Tinggi ideal
                             height: {
-                                ideal: isMobile ? 360 : 480
+                                ideal: isMobile ? 180 : 480
                             },
                             // Menggunakan kamera depan
                             facingMode: "user",
                             // Frame rate ideal
                             frameRate: {
-                                ideal: isMobile ? 25 : 30
+                                ideal: isMobile ? 15 : 30
                             }
                         }
                     }
@@ -616,15 +798,16 @@
 
             // Jika face recognition diaktifkan
             if (faceRecognition == 1) {
+
                 // Tambahkan indikator loading dengan styling yang lebih baik
                 const loadingIndicator = document.createElement('div');
                 loadingIndicator.id = 'face-recognition-loading';
                 loadingIndicator.innerHTML = `
-                    <div class="spinner-border text-light" role="status">
-                        <span class="sr-only">Memuat pengenalan wajah...</span>
-                    </div>
-                    <div class="mt-2 text-light">Memuat model pengenalan wajah...</div>
-                `;
+    <div class="spinner-border text-light" role="status">
+        <span class="sr-only">Memuat pengenalan wajah...</span>
+    </div>
+    <div class="mt-2 text-light">Memuat model pengenalan wajah...</div>
+`;
                 loadingIndicator.style.position = 'absolute';
                 loadingIndicator.style.top = '50%';
                 loadingIndicator.style.left = '50%';
@@ -634,7 +817,11 @@
                 document.getElementById('facedetection').appendChild(loadingIndicator);
 
                 // Preload model di background
-                const modelLoadingPromise = Promise.all([
+                const modelLoadingPromise = isMobile ? Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                ]) : Promise.all([
                     faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
                     faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
                     faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
@@ -643,6 +830,34 @@
                 // Mulai pengenalan wajah setelah model dimuat
                 modelLoadingPromise.then(() => {
                     document.getElementById('face-recognition-loading').remove();
+
+                    // Debugging: Periksa video stream sebelum memulai face recognition
+                    const video = document.querySelector('.webcam-capture video');
+                    if (video) {
+                        console.log('Video element found:', video);
+                        console.log('Video readyState:', video.readyState);
+                        console.log('Video dimensions:', video.videoWidth, 'x', video.videoHeight);
+                        console.log('Video paused:', video.paused);
+                        console.log('Video srcObject:', video.srcObject);
+
+                        // Tambahkan event listener untuk monitoring video
+                        video.addEventListener('loadedmetadata', () => {
+                            console.log('Video metadata loaded:', video.videoWidth, 'x', video.videoHeight);
+                        });
+
+                        video.addEventListener('canplay', () => {
+                            console.log('Video can play');
+                        });
+
+                        video.addEventListener('playing', () => {
+                            console.log('Video is playing');
+                        });
+
+                        video.addEventListener('error', (e) => {
+                            console.error('Video error:', e);
+                        });
+                    }
+
                     startFaceRecognition();
                 }).catch(err => {
                     console.error("Error loading models:", err);
@@ -667,11 +882,11 @@
                     const faceDataLoading = document.createElement('div');
                     faceDataLoading.id = 'face-data-loading';
                     faceDataLoading.innerHTML = `
-                        <div class="spinner-border text-light" role="status">
-                            <span class="sr-only">Memuat data wajah...</span>
-                        </div>
-                        <div class="mt-2 text-light">Memuat data wajah...</div>
-                    `;
+        <div class="spinner-border text-light" role="status">
+            <span class="sr-only">Memuat data wajah...</span>
+        </div>
+        <div class="mt-2 text-light">Memuat data wajah...</div>
+    `;
                     faceDataLoading.style.position = 'absolute';
                     faceDataLoading.style.top = '50%';
                     faceDataLoading.style.left = '50%';
@@ -681,7 +896,6 @@
                     document.getElementById('facedetection').appendChild(faceDataLoading);
 
                     try {
-                        // Tambahkan timestamp untuk mencegah cache
                         const timestamp = new Date().getTime();
                         const response = await fetch(`/facerecognition/getwajah?t=${timestamp}`);
                         const data = await response.json();
@@ -693,7 +907,8 @@
                                 let validFaceFound = false;
 
                                 // Proses setiap data wajah yang diterima
-                                for (const faceData of data) {
+                                // Batasi hanya 5 foto pertama yang diproses
+                                for (const faceData of data.slice(0, 5)) {
                                     try {
                                         console.log('Memproses data wajah:', faceData);
                                         console.log('NIK:', faceData.nik);
@@ -702,56 +917,55 @@
                                         // Cek keberadaan file foto wajah terlebih dahulu
                                         const checkImage = async (label, wajahFile) => {
                                             try {
-                                                // Tambahkan timestamp untuk mencegah cache
                                                 const imagePath =
                                                     `/storage/uploads/facerecognition/${label}/${wajahFile}?t=${timestamp}`;
-                                                console.log('Mencoba mengakses file:',
-                                                    imagePath);
+                                                console.log('Mencoba mengakses file:', imagePath);
 
                                                 const response = await fetch(imagePath);
                                                 if (!response.ok) {
                                                     console.warn(
-                                                        `File foto wajah ${wajahFile} tidak ditemukan untuk ${label}`
-                                                    );
+                                                        `File foto wajah ${wajahFile} tidak ditemukan untuk ${label}`);
                                                     return null;
                                                 }
-                                                console.log('File wajah berhasil diakses:',
-                                                    imagePath);
+                                                console.log('File wajah berhasil diakses:', imagePath);
                                                 return await faceapi.fetchImage(imagePath);
                                             } catch (err) {
-                                                console.error(
-                                                    `Error checking image ${wajahFile} for ${label}:`,
-                                                    err);
+                                                console.error(`Error checking image ${wajahFile} for ${label}:`, err);
                                                 return null;
                                             }
                                         };
 
-                                        // Gunakan nilai dari key wajah sebagai nama file
                                         const img = await checkImage(label, faceData.wajah);
 
                                         if (img) {
                                             try {
-                                                console.log('Memulai deteksi wajah untuk file:',
-                                                    faceData.wajah);
-                                                // Deteksi wajah dengan SSD MobileNet dan threshold yang lebih seimbang
-                                                const detections = await faceapi.detectSingleFace(
-                                                        img, new faceapi.SsdMobilenetv1Options({
-                                                            minConfidence: 0.5
-                                                        }))
-                                                    .withFaceLandmarks()
-                                                    .withFaceDescriptor();
-
+                                                console.log('Memulai deteksi wajah untuk file:', faceData.wajah);
+                                                let detections;
+                                                if (isMobile) {
+                                                    detections = await faceapi.detectSingleFace(
+                                                            img, new faceapi.TinyFaceDetectorOptions({
+                                                                inputSize: 160,
+                                                                scoreThreshold: 0.5
+                                                            })
+                                                        )
+                                                        .withFaceLandmarks()
+                                                        .withFaceDescriptor();
+                                                } else {
+                                                    detections = await faceapi.detectSingleFace(
+                                                            img, new faceapi.SsdMobilenetv1Options({
+                                                                minConfidence: 0.5
+                                                            })
+                                                        )
+                                                        .withFaceLandmarks()
+                                                        .withFaceDescriptor();
+                                                }
                                                 if (detections) {
-                                                    console.log(
-                                                        'Wajah berhasil dideteksi dan descriptor dibuat'
-                                                    );
+                                                    console.log('Wajah berhasil dideteksi dan descriptor dibuat');
                                                     descriptions.push(detections.descriptor);
                                                     validFaceFound = true;
                                                 }
                                             } catch (err) {
-                                                console.error(
-                                                    `Error processing image ${faceData.wajah} for ${label}:`,
-                                                    err);
+                                                console.error(`Error processing image ${faceData.wajah} for ${label}:`, err);
                                             }
                                         }
                                     } catch (err) {
@@ -766,8 +980,7 @@
                                     namakaryawan = label;
                                 }
 
-                                return new faceapi.LabeledFaceDescriptors(namakaryawan,
-                                    descriptions);
+                                return new faceapi.LabeledFaceDescriptors(namakaryawan, descriptions);
                             })
                         );
 
@@ -788,44 +1001,126 @@
 
                         const video = document.querySelector('.webcam-capture video');
 
-                        if (!video || !video.readyState) {
-                            console.log('Video not ready, waiting...');
+                        if (!video) {
+                            console.error('Video element tidak ditemukan');
                             setTimeout(startFaceRecognition, 1000);
                             return;
                         }
 
+                        // Tunggu video benar-benar ready dengan lebih patient
+                        if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
+                            console.log('Video belum ready, waiting... readyState:', video.readyState);
+                            setTimeout(startFaceRecognition, 500);
+                            return;
+                        }
+
+                        console.log('Video ready:', video.videoWidth, 'x', video.videoHeight);
+
+                        // Dapatkan parent element terlebih dahulu
+                        const parent = video.parentElement;
+                        if (!parent) {
+                            console.error('Parent video tidak ditemukan');
+                            return;
+                        }
+
+                        // Periksa apakah canvas sudah ada untuk menghindari duplikasi
+                        const existingCanvas = parent.querySelector('canvas');
+                        if (existingCanvas) {
+                            console.log('Canvas sudah ada, menghapus yang lama');
+                            existingCanvas.remove();
+                        }
+
                         const canvas = faceapi.createCanvasFromMedia(video);
+
+                        // Tunggu sebentar untuk memastikan video dimensions sudah stabil
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        // Set dimensi canvas sesuai dengan video
+                        const videoWidth = video.videoWidth || video.clientWidth;
+                        const videoHeight = video.videoHeight || video.clientHeight;
+
+                        console.log('Setting canvas dimensions:', videoWidth, 'x', videoHeight);
+
+                        canvas.width = videoWidth;
+                        canvas.height = videoHeight;
                         canvas.style.position = 'absolute';
                         canvas.style.top = '0';
                         canvas.style.left = '0';
-                        canvas.style.zIndex = '1';
-                        document.getElementById('facedetection').appendChild(canvas);
+                        canvas.style.width = '100%';
+                        canvas.style.height = '100%';
+                        canvas.style.pointerEvents = 'none';
+                        canvas.style.zIndex = '10'; // Pastikan canvas di atas video
+
+                        // Mirror canvas jika video di-mirror
+                        const videoStyle = window.getComputedStyle(video);
+                        if (videoStyle.transform.includes('matrix(-1')) {
+                            canvas.style.transform = 'scaleX(-1)';
+                        }
+
+                        // Append canvas ke parent yang sama dengan video
+                        parent.appendChild(canvas);
+                        console.log('Canvas berhasil ditambahkan ke parent');
+
+                        // --- ABSEN BUTTONS ---
+                        let absenButtons = [document.getElementById('absenmasuk'), document.getElementById('absenpulang')];
+                        absenButtons.forEach(btn => btn.disabled = true);
 
                         const ctx = canvas.getContext("2d");
+                        if (!ctx) {
+                            console.error('Tidak bisa mendapatkan canvas context');
+                            return;
+                        }
 
                         const displaySize = {
-                            width: video.videoWidth,
-                            height: video.videoHeight
+                            width: videoWidth,
+                            height: videoHeight
                         };
                         faceapi.matchDimensions(canvas, displaySize);
 
+                        console.log('Face recognition setup completed, starting detection...');
+
+                        // PERBAIKAN UTAMA: Variable untuk anti-flicker yang lebih stabil
                         let lastDetectionTime = 0;
-                        const detectionInterval = isMobile ? 200 :
-                            100; // Mengurangi interval deteksi untuk lebih realtime
+                        let detectionInterval = isMobile ? 400 : 100; // Interval lebih stabil untuk mobile
                         let isProcessing = false;
                         let consecutiveMatches = 0;
-                        const requiredConsecutiveMatches = 2;
+                        const requiredConsecutiveMatches = isMobile ? 2 : 4; // Lebih mudah untuk mobile
+
+                        // PERBAIKAN: Anti-flicker system yang lebih reliable
+                        let stableDetectionCount = 0;
+                        let noFaceCount = 0;
+                        const minStableFrames = isMobile ? 2 : 3; // Minimum frame untuk stabilitas
+                        const maxNoFaceFrames = isMobile ? 4 : 5; // Maximum frame tanpa wajah sebelum reset
+
+                        // State tracking untuk smoothing
+                        let lastValidDetection = null;
+                        let detectionHistory = [];
+                        const historySize = isMobile ? 3 : 5;
 
                         async function detectFaces() {
                             try {
-                                const detection = await faceapi.detectSingleFace(video, new faceapi
-                                        .SsdMobilenetv1Options({
-                                            minConfidence: 0.6
-                                        }))
-                                    .withFaceLandmarks()
-                                    .withFaceDescriptor();
+                                // Pastikan video masih aktif
+                                if (video.paused || video.ended) {
+                                    console.log('Video tidak aktif, menghentikan deteksi');
+                                    return [];
+                                }
 
-                                return detection ? [detection] : [];
+                                if (isMobile) {
+                                    const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
+                                            inputSize: 160,
+                                            scoreThreshold: 0.4 // Sedikit lebih rendah untuk mobile
+                                        }))
+                                        .withFaceLandmarks()
+                                        .withFaceDescriptor();
+                                    return detection ? [detection] : [];
+                                } else {
+                                    const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({
+                                            minConfidence: 0.5
+                                        }))
+                                        .withFaceLandmarks()
+                                        .withFaceDescriptor();
+                                    return detection ? [detection] : [];
+                                }
                             } catch (error) {
                                 console.error("Error dalam deteksi wajah:", error);
                                 return [];
@@ -833,6 +1128,19 @@
                         }
 
                         function updateCanvas() {
+                            // Periksa apakah video dan canvas masih valid
+                            if (!video || !canvas || !ctx) {
+                                console.error('Video, canvas atau context tidak valid');
+                                return;
+                            }
+
+                            // Periksa apakah video masih memiliki dimensi valid
+                            if (!video.videoWidth || !video.videoHeight) {
+                                console.log('Video dimensions tidak valid, menunggu...');
+                                setTimeout(updateCanvas, 500);
+                                return;
+                            }
+
                             if (!isProcessing) {
                                 const now = Date.now();
                                 if (now - lastDetectionTime > detectionInterval) {
@@ -841,350 +1149,221 @@
 
                                     detectFaces()
                                         .then(detections => {
-                                            const resizedDetections = faceapi.resizeResults(detections,
-                                                displaySize);
+                                            const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+                                            // PERBAIKAN: Update detection history untuk smoothing
+                                            const hasFace = resizedDetections && resizedDetections.length > 0;
+                                            detectionHistory.push(hasFace);
+                                            if (detectionHistory.length > historySize) {
+                                                detectionHistory.shift();
+                                            }
+
+                                            // Hitung persentase deteksi positif dalam history
+                                            const positiveDetections = detectionHistory.filter(d => d).length;
+                                            const detectionRatio = positiveDetections / detectionHistory.length;
+
+                                            // PERBAIKAN: Stabilitas berdasarkan history
+                                            if (hasFace && detectionRatio >= 0.6) { // 60% dari history harus positif
+                                                stableDetectionCount++;
+                                                noFaceCount = 0;
+                                                lastValidDetection = resizedDetections[0];
+                                            } else if (!hasFace) {
+                                                noFaceCount++;
+                                                if (noFaceCount >= maxNoFaceFrames) {
+                                                    stableDetectionCount = 0;
+                                                    lastValidDetection = null;
+                                                }
+                                            }
+
                                             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                                            // Reset status deteksi setiap kali update
+                                            // Reset status deteksi
                                             faceRecognitionDetected = 0;
 
-                                            if (resizedDetections.length > 0) {
-                                                resizedDetections.forEach((detection) => {
-                                                    if (detection.descriptor) {
-                                                        const match = faceMatcher.findBestMatch(
-                                                            detection.descriptor);
-                                                        //console.log('Hasil matching:', match.toString());
-                                                        //console.log('Distance:', match.distance);
+                                            // PERBAIKAN: Tampilkan deteksi hanya jika sudah stabil
+                                            const shouldShowDetection = stableDetectionCount >= minStableFrames && lastValidDetection;
 
-                                                        const box = detection.detection.box;
-                                                        const isUnknown = match.toString().includes(
-                                                            "unknown");
-                                                        const isNotRecognized = match.distance >
-                                                            0.55;
+                                            if (shouldShowDetection) {
+                                                const detection = lastValidDetection;
 
-                                                        // Menentukan warna berdasarkan kondisi
-                                                        let boxColor, labelColor, labelText;
+                                                if (detection && detection.descriptor) {
+                                                    const match = faceMatcher.findBestMatch(detection.descriptor);
 
-                                                        if (isUnknown || isNotRecognized) {
-                                                            // Wajah tidak dikenali - warna kuning
-                                                            boxColor = '#FFC107';
-                                                            labelColor = 'rgba(255, 193, 7, 0.8)';
-                                                            labelText = 'Wajah Tidak Dikenali';
-                                                            consecutiveMatches = 0;
-                                                        } else {
-                                                            // Wajah dikenali - warna hijau
-                                                            boxColor = '#4CAF50';
-                                                            labelColor = 'rgba(76, 175, 80, 0.8)';
-                                                            labelText =
-                                                                "{{ $karyawan->nama_karyawan }}";
-                                                            consecutiveMatches++;
-                                                            if (consecutiveMatches >=
-                                                                requiredConsecutiveMatches) {
-                                                                faceRecognitionDetected = 1;
-                                                            }
+                                                    const box = detection.detection.box;
+                                                    const isUnknown = match.toString().includes("unknown");
+                                                    const isNotRecognized = match.distance > 0.55;
+
+                                                    // Menentukan warna berdasarkan kondisi
+                                                    let boxColor, labelColor, labelText;
+
+                                                    if (isUnknown || isNotRecognized) {
+                                                        // Wajah tidak dikenali - warna kuning
+                                                        boxColor = '#FFC107';
+                                                        labelColor = 'rgba(255, 193, 7, 0.8)';
+                                                        labelText = 'Wajah Tidak Dikenali';
+                                                        consecutiveMatches = 0;
+                                                    } else {
+                                                        // Wajah dikenali - warna hijau
+                                                        boxColor = '#4CAF50';
+                                                        labelColor = 'rgba(76, 175, 80, 0.8)';
+                                                        labelText = "{{ $karyawan->nama_karyawan }}";
+                                                        consecutiveMatches++;
+                                                        if (consecutiveMatches >= requiredConsecutiveMatches) {
+                                                            faceRecognitionDetected = 1;
                                                         }
-
-                                                        // Menggunakan style modern untuk box deteksi wajah
-                                                        ctx.strokeStyle = boxColor;
-                                                        ctx.lineWidth = 3;
-                                                        ctx.lineJoin = 'round';
-                                                        ctx.lineCap = 'round';
-
-                                                        // Menghitung posisi tengah canvas dengan lebih tepat
-                                                        const centerX = Math.round(canvas.width /
-                                                            2);
-                                                        const centerY = Math.round(canvas.height /
-                                                            2);
-
-                                                        // Ukuran tetap untuk box deteksi
-                                                        const boxWidth = 280;
-                                                        const boxHeight = 320;
-
-                                                        // Menghitung posisi box agar berada di tengah dengan lebih tepat
-                                                        const fixedBox = {
-                                                            x: centerX - (boxWidth / 2),
-                                                            y: centerY - (boxHeight / 2),
-                                                            width: boxWidth,
-                                                            height: boxHeight
-                                                        };
-
-                                                        // Gambar box dengan sudut membulat
-                                                        const radius = 8;
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(fixedBox.x + radius, fixedBox.y);
-                                                        ctx.lineTo(fixedBox.x + fixedBox.width -
-                                                            radius, fixedBox.y);
-                                                        ctx.quadraticCurveTo(fixedBox.x + fixedBox
-                                                            .width, fixedBox.y,
-                                                            fixedBox.x + fixedBox.width,
-                                                            fixedBox.y + radius);
-                                                        ctx.lineTo(fixedBox.x + fixedBox.width,
-                                                            fixedBox.y + fixedBox.height -
-                                                            radius);
-                                                        ctx.quadraticCurveTo(fixedBox.x + fixedBox
-                                                            .width, fixedBox.y + fixedBox
-                                                            .height,
-                                                            fixedBox.x + fixedBox.width -
-                                                            radius, fixedBox.y + fixedBox.height
-                                                        );
-                                                        ctx.lineTo(fixedBox.x + radius, fixedBox.y +
-                                                            fixedBox.height);
-                                                        ctx.quadraticCurveTo(fixedBox.x, fixedBox
-                                                            .y + fixedBox.height,
-                                                            fixedBox.x, fixedBox.y + fixedBox
-                                                            .height - radius);
-                                                        ctx.lineTo(fixedBox.x, fixedBox.y + radius);
-                                                        ctx.quadraticCurveTo(fixedBox.x, fixedBox.y,
-                                                            fixedBox.x + radius, fixedBox
-                                                            .y);
-                                                        ctx.closePath();
-                                                        ctx.stroke();
-
-                                                        // Tambahkan efek glow
-                                                        ctx.shadowColor = labelColor;
-                                                        ctx.shadowBlur = 10;
-                                                        ctx.stroke();
-                                                        ctx.shadowBlur = 0;
-
-                                                        // Tambahkan garis pandu
-                                                        ctx.strokeStyle =
-                                                            "rgba(255, 255, 255, 0.5)";
-                                                        ctx.lineWidth = 1;
-                                                        ctx.setLineDash([5, 5]);
-
-                                                        // Garis pandu horizontal
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(fixedBox.x, fixedBox.y + fixedBox
-                                                            .height / 3);
-                                                        ctx.lineTo(fixedBox.x + fixedBox.width,
-                                                            fixedBox.y + fixedBox.height / 3);
-                                                        ctx.stroke();
-
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(fixedBox.x, fixedBox.y + (
-                                                            fixedBox.height * 2) / 3);
-                                                        ctx.lineTo(fixedBox.x + fixedBox.width,
-                                                            fixedBox.y + (fixedBox.height *
-                                                                2) / 3);
-                                                        ctx.stroke();
-
-                                                        // Garis pandu vertikal
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(fixedBox.x + fixedBox.width / 3,
-                                                            fixedBox.y);
-                                                        ctx.lineTo(fixedBox.x + fixedBox.width / 3,
-                                                            fixedBox.y + fixedBox.height);
-                                                        ctx.stroke();
-
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(fixedBox.x + (fixedBox.width *
-                                                            2) / 3, fixedBox.y);
-                                                        ctx.lineTo(fixedBox.x + (fixedBox.width *
-                                                                2) / 3, fixedBox.y + fixedBox
-                                                            .height);
-                                                        ctx.stroke();
-
-                                                        // Reset line style
-                                                        ctx.setLineDash([]);
-
-                                                        // Label dengan style modern
-                                                        const fontSize = 16;
-                                                        ctx.font =
-                                                            `${fontSize}px 'Arial', sans-serif`;
-                                                        const textWidth = ctx.measureText(labelText)
-                                                            .width;
-
-                                                        // Background untuk label
-                                                        const labelPadding = 5;
-                                                        const labelHeight = fontSize +
-                                                            labelPadding * 2;
-                                                        const labelWidth = textWidth +
-                                                            labelPadding * 2;
-                                                        const labelX = fixedBox.x + (fixedBox
-                                                            .width - labelWidth) / 2;
-                                                        const labelY = fixedBox.y + fixedBox
-                                                            .height + 5;
-
-                                                        // Gambar background label dengan sudut membulat
-                                                        ctx.fillStyle = labelColor;
-                                                        ctx.beginPath();
-                                                        ctx.moveTo(labelX + radius, labelY);
-                                                        ctx.lineTo(labelX + labelWidth - radius,
-                                                            labelY);
-                                                        ctx.quadraticCurveTo(labelX + labelWidth,
-                                                            labelY, labelX + labelWidth,
-                                                            labelY + radius);
-                                                        ctx.lineTo(labelX + labelWidth, labelY +
-                                                            labelHeight - radius);
-                                                        ctx.quadraticCurveTo(labelX + labelWidth,
-                                                            labelY + labelHeight, labelX +
-                                                            labelWidth - radius, labelY +
-                                                            labelHeight);
-                                                        ctx.lineTo(labelX + radius, labelY +
-                                                            labelHeight);
-                                                        ctx.quadraticCurveTo(labelX, labelY +
-                                                            labelHeight, labelX, labelY +
-                                                            labelHeight - radius);
-                                                        ctx.lineTo(labelX, labelY + radius);
-                                                        ctx.quadraticCurveTo(labelX, labelY,
-                                                            labelX + radius, labelY);
-                                                        ctx.closePath();
-                                                        ctx.fill();
-
-                                                        // Teks label
-                                                        ctx.fillStyle = 'white';
-                                                        ctx.textAlign = 'left';
-                                                        ctx.textBaseline = 'middle';
-                                                        ctx.fillText(labelText, labelX +
-                                                            labelPadding, labelY + labelHeight /
-                                                            2);
-
-                                                        // Tambahkan petunjuk posisi wajah di bawah label
-                                                        const guideText =
-                                                            "Posisikan wajah di dalam kotak";
-                                                        ctx.font = "14px Arial";
-                                                        ctx.fillStyle = "white";
-                                                        ctx.textAlign = "center";
-                                                        ctx.fillText(guideText, centerX, labelY +
-                                                            labelHeight + 20);
                                                     }
-                                                });
-                                            } else {
-                                                // Jika tidak ada wajah terdeteksi, tetap tampilkan kotak
-                                                const centerX = Math.round(canvas.width / 2);
-                                                const centerY = Math.round(canvas.height / 2);
-                                                const boxWidth = 280;
-                                                const boxHeight = 320;
 
-                                                const fixedBox = {
-                                                    x: centerX - (boxWidth / 2),
-                                                    y: centerY - (boxHeight / 2),
-                                                    width: boxWidth,
-                                                    height: boxHeight
-                                                };
+                                                    // Menggunakan style modern untuk box deteksi wajah
+                                                    ctx.strokeStyle = boxColor;
+                                                    ctx.lineWidth = 3;
+                                                    ctx.lineJoin = 'round';
+                                                    ctx.lineCap = 'round';
 
-                                                // Gambar box dengan sudut membulat
-                                                const radius = 8;
-                                                ctx.strokeStyle =
-                                                    '#F44336'; // Warna merah untuk indikasi wajah tidak terdeteksi
-                                                ctx.lineWidth = 3;
-                                                ctx.beginPath();
-                                                ctx.moveTo(fixedBox.x + radius, fixedBox.y);
-                                                ctx.lineTo(fixedBox.x + fixedBox.width - radius, fixedBox
-                                                    .y);
-                                                ctx.quadraticCurveTo(fixedBox.x + fixedBox.width, fixedBox
-                                                    .y,
-                                                    fixedBox.x + fixedBox.width, fixedBox.y + radius);
-                                                ctx.lineTo(fixedBox.x + fixedBox.width, fixedBox.y +
-                                                    fixedBox.height - radius);
-                                                ctx.quadraticCurveTo(fixedBox.x + fixedBox.width, fixedBox
-                                                    .y + fixedBox.height,
-                                                    fixedBox.x + fixedBox.width - radius, fixedBox.y +
-                                                    fixedBox.height);
-                                                ctx.lineTo(fixedBox.x + radius, fixedBox.y + fixedBox
-                                                    .height);
-                                                ctx.quadraticCurveTo(fixedBox.x, fixedBox.y + fixedBox
-                                                    .height,
-                                                    fixedBox.x, fixedBox.y + fixedBox.height - radius);
-                                                ctx.lineTo(fixedBox.x, fixedBox.y + radius);
-                                                ctx.quadraticCurveTo(fixedBox.x, fixedBox.y, fixedBox.x +
-                                                    radius, fixedBox.y);
-                                                ctx.closePath();
-                                                ctx.stroke();
+                                                    // Fungsi menggambar kotak dengan sudut membulat
+                                                    function drawRoundedRect(ctx, x, y, width, height, radius) {
+                                                        ctx.beginPath();
+                                                        ctx.moveTo(x + radius, y);
+                                                        ctx.lineTo(x + width - radius, y);
+                                                        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                                                        ctx.lineTo(x + width, y + height - radius);
+                                                        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                                                        ctx.lineTo(x + radius, y + height);
+                                                        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                                                        ctx.lineTo(x, y + radius);
+                                                        ctx.quadraticCurveTo(x, y, x + radius, y);
+                                                        ctx.closePath();
+                                                        ctx.stroke();
+                                                    }
 
-                                                // Tambahkan efek glow
-                                                ctx.shadowColor = 'rgba(244, 67, 54, 0.5)';
-                                                ctx.shadowBlur = 10;
-                                                ctx.stroke();
-                                                ctx.shadowBlur = 0;
+                                                    // Gambar kotak deteksi wajah selalu persegi (square) dan terpusat
+                                                    const squareSize = Math.min(box.width, box.height);
+                                                    const squareX = box.x + (box.width - squareSize) / 2;
+                                                    const squareY = box.y + (box.height - squareSize) / 2;
 
-                                                // Tambahkan garis pandu
-                                                ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-                                                ctx.lineWidth = 1;
-                                                ctx.setLineDash([5, 5]);
+                                                    // Kotak modern dengan efek glow
+                                                    ctx.save();
+                                                    ctx.shadowColor = boxColor.includes('#4CAF50') ? 'rgba(76, 175, 80, 0.6)' :
+                                                        'rgba(255, 193, 7, 0.6)';
+                                                    ctx.shadowBlur = 18;
+                                                    ctx.strokeStyle = boxColor;
+                                                    ctx.lineWidth = 3;
+                                                    drawRoundedRect(ctx, squareX, squareY, squareSize, squareSize, 16);
+                                                    ctx.restore();
 
-                                                // Garis pandu horizontal
-                                                ctx.beginPath();
-                                                ctx.moveTo(fixedBox.x, fixedBox.y + fixedBox.height / 3);
-                                                ctx.lineTo(fixedBox.x + fixedBox.width, fixedBox.y +
-                                                    fixedBox.height / 3);
-                                                ctx.stroke();
+                                                    // Garis pandu horizontal
+                                                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                                                    ctx.lineWidth = 1;
+                                                    ctx.setLineDash([5, 5]);
 
-                                                ctx.beginPath();
-                                                ctx.moveTo(fixedBox.x, fixedBox.y + (fixedBox.height * 2) /
-                                                    3);
-                                                ctx.lineTo(fixedBox.x + fixedBox.width, fixedBox.y + (
-                                                    fixedBox.height * 2) / 3);
-                                                ctx.stroke();
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(box.x, box.y + box.height / 3);
+                                                    ctx.lineTo(box.x + box.width, box.y + box.height / 3);
+                                                    ctx.stroke();
 
-                                                // Garis pandu vertikal
-                                                ctx.beginPath();
-                                                ctx.moveTo(fixedBox.x + fixedBox.width / 3, fixedBox.y);
-                                                ctx.lineTo(fixedBox.x + fixedBox.width / 3, fixedBox.y +
-                                                    fixedBox.height);
-                                                ctx.stroke();
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(box.x, box.y + (box.height * 2) / 3);
+                                                    ctx.lineTo(box.x + box.width, box.y + (box.height * 2) / 3);
+                                                    ctx.stroke();
 
-                                                ctx.beginPath();
-                                                ctx.moveTo(fixedBox.x + (fixedBox.width * 2) / 3, fixedBox
-                                                    .y);
-                                                ctx.lineTo(fixedBox.x + (fixedBox.width * 2) / 3, fixedBox
-                                                    .y + fixedBox.height);
-                                                ctx.stroke();
+                                                    // Garis pandu vertikal
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(box.x + box.width / 3, box.y);
+                                                    ctx.lineTo(box.x + box.width / 3, box.y + box.height);
+                                                    ctx.stroke();
 
-                                                // Reset line style
-                                                ctx.setLineDash([]);
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(box.x + (box.width * 2) / 3, box.y);
+                                                    ctx.lineTo(box.x + (box.width * 2) / 3, box.y + box.height);
+                                                    ctx.stroke();
 
-                                                // Label dengan style modern
+                                                    // Reset line style
+                                                    ctx.setLineDash([]);
+
+                                                    // Label dengan style modern
+                                                    const fontSize = 13;
+                                                    ctx.font = `${fontSize}px 'Arial', sans-serif`;
+                                                    const textWidth = ctx.measureText(labelText).width;
+
+                                                    // Background label lebih rapat dan proporsional
+                                                    const labelPadding = 3;
+                                                    const labelHeight = fontSize + labelPadding * 2;
+                                                    const labelWidth = Math.max(textWidth + labelPadding * 2, squareSize * 0.6);
+                                                    const labelX = squareX + (squareSize - labelWidth) / 2;
+                                                    const labelY = squareY + squareSize + 4;
+
+                                                    // Gambar background label dengan sudut membulat
+                                                    ctx.fillStyle = labelColor;
+                                                    ctx.beginPath();
+                                                    ctx.moveTo(labelX + 8, labelY);
+                                                    ctx.lineTo(labelX + labelWidth - 8, labelY);
+                                                    ctx.quadraticCurveTo(labelX + labelWidth, labelY, labelX + labelWidth, labelY + 8);
+                                                    ctx.lineTo(labelX + labelWidth, labelY + labelHeight - 8);
+                                                    ctx.quadraticCurveTo(labelX + labelWidth, labelY + labelHeight, labelX + labelWidth -
+                                                        8, labelY + labelHeight);
+                                                    ctx.lineTo(labelX + 8, labelY + labelHeight);
+                                                    ctx.quadraticCurveTo(labelX, labelY + labelHeight, labelX, labelY + labelHeight - 8);
+                                                    ctx.lineTo(labelX, labelY + 8);
+                                                    ctx.quadraticCurveTo(labelX, labelY, labelX + 8, labelY);
+                                                    ctx.closePath();
+                                                    ctx.fill();
+
+                                                    // Teks label
+                                                    ctx.fillStyle = 'white';
+                                                    ctx.textAlign = 'center';
+                                                    ctx.textBaseline = 'middle';
+                                                    ctx.fillText(labelText, squareX + squareSize / 2, labelY + labelHeight / 2);
+
+                                                    // Update status tombol absen
+                                                    absenButtons.forEach(btn => btn.disabled = false);
+                                                }
+                                            } else if (noFaceCount >= maxNoFaceFrames) {
+                                                // Tampilkan label di tengah canvas dengan tampilan menarik
                                                 const label = "Wajah Tidak Terdeteksi";
-                                                const fontSize = 16;
-                                                ctx.font = `${fontSize}px 'Arial', sans-serif`;
+                                                const fontSize = 28;
+                                                ctx.font = `bold ${fontSize}px Arial`;
+                                                ctx.textAlign = "center";
+                                                ctx.textBaseline = "middle";
+                                                const centerX = canvas.width / 2;
+                                                const centerY = canvas.height / 2;
+
+                                                // Ukuran background
+                                                const paddingX = 32;
+                                                const paddingY = 18;
                                                 const textWidth = ctx.measureText(label).width;
+                                                const boxWidth = textWidth + paddingX * 2;
+                                                const boxHeight = fontSize + paddingY * 2;
+                                                const boxX = centerX - boxWidth / 2;
+                                                const boxY = centerY - boxHeight / 2;
 
-                                                // Background untuk label
-                                                const labelPadding = 5;
-                                                const labelHeight = fontSize + labelPadding * 2;
-                                                const labelWidth = textWidth + labelPadding * 2;
-                                                const labelX = fixedBox.x + (fixedBox.width - labelWidth) /
-                                                    2;
-                                                const labelY = fixedBox.y + fixedBox.height + 5;
-
-                                                // Gambar background label dengan sudut membulat
-                                                ctx.fillStyle = 'rgba(244, 67, 54, 0.8)';
+                                                // Background semi transparan & rounded
+                                                ctx.save();
+                                                ctx.globalAlpha = 0.85;
+                                                ctx.fillStyle = "#F44336";
                                                 ctx.beginPath();
-                                                ctx.moveTo(labelX + radius, labelY);
-                                                ctx.lineTo(labelX + labelWidth - radius, labelY);
-                                                ctx.quadraticCurveTo(labelX + labelWidth, labelY, labelX +
-                                                    labelWidth, labelY + radius);
-                                                ctx.lineTo(labelX + labelWidth, labelY + labelHeight -
-                                                    radius);
-                                                ctx.quadraticCurveTo(labelX + labelWidth, labelY +
-                                                    labelHeight, labelX + labelWidth -
-                                                    radius, labelY + labelHeight);
-                                                ctx.lineTo(labelX + radius, labelY + labelHeight);
-                                                ctx.quadraticCurveTo(labelX, labelY + labelHeight, labelX,
-                                                    labelY + labelHeight - radius);
-                                                ctx.lineTo(labelX, labelY + radius);
-                                                ctx.quadraticCurveTo(labelX, labelY, labelX + radius,
-                                                    labelY);
+                                                ctx.moveTo(boxX + 16, boxY);
+                                                ctx.lineTo(boxX + boxWidth - 16, boxY);
+                                                ctx.quadraticCurveTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + 16);
+                                                ctx.lineTo(boxX + boxWidth, boxY + boxHeight - 16);
+                                                ctx.quadraticCurveTo(boxX + boxWidth, boxY + boxHeight, boxX + boxWidth - 16, boxY +
+                                                    boxHeight);
+                                                ctx.lineTo(boxX + 16, boxY + boxHeight);
+                                                ctx.quadraticCurveTo(boxX, boxY + boxHeight, boxX, boxY + boxHeight - 16);
+                                                ctx.lineTo(boxX, boxY + 16);
+                                                ctx.quadraticCurveTo(boxX, boxY, boxX + 16, boxY);
                                                 ctx.closePath();
                                                 ctx.fill();
+                                                ctx.restore();
 
-                                                // Teks label
-                                                ctx.fillStyle = 'white';
-                                                ctx.textAlign = 'left';
-                                                ctx.textBaseline = 'middle';
-                                                ctx.fillText(label, labelX + labelPadding, labelY +
-                                                    labelHeight / 2);
+                                                // Efek shadow/glow pada teks
+                                                ctx.save();
+                                                ctx.shadowColor = "#fff";
+                                                ctx.shadowBlur = 8;
+                                                ctx.fillStyle = "#fff";
+                                                ctx.fillText(label, centerX, centerY);
+                                                ctx.restore();
 
-                                                // Tambahkan petunjuk posisi wajah
-                                                const guideText = "Posisikan wajah di dalam kotak";
-                                                ctx.font = "14px Arial";
-                                                ctx.fillStyle = "white";
-                                                ctx.textAlign = "center";
-                                                ctx.fillText(guideText, centerX, labelY + labelHeight + 20);
-
-                                                // Reset status deteksi
-                                                consecutiveMatches = 0;
+                                                // Disable tombol absen
+                                                absenButtons.forEach(btn => btn.disabled = true);
                                             }
 
                                             isProcessing = false;
@@ -1196,12 +1375,17 @@
                                 }
                             }
 
-                            // Lanjutkan loop animasi
-                            requestAnimationFrame(updateCanvas);
+                            // PERBAIKAN: Gunakan setTimeout untuk mobile agar lebih stabil
+                            if (isMobile) {
+                                setTimeout(updateCanvas, detectionInterval);
+                            } else {
+                                requestAnimationFrame(updateCanvas);
+                            }
                         }
 
                         // Mulai loop animasi
                         updateCanvas();
+
                     } catch (error) {
                         console.error("Error starting face recognition:", error);
                         // Coba inisialisasi ulang face recognition jika terjadi error
@@ -1239,6 +1423,9 @@
                             $("#absenmasuk").html(
                                 '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Masuk</span>'
                             );
+                            $("#absenpulang").html(
+                                '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
+                            )
                         }
                     })
                     return false;
@@ -1288,6 +1475,9 @@
                                     $("#absenmasuk").html(
                                         '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Masuk</span>'
                                     );
+                                    $("#absenpulang").html(
+                                        '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
+                                    )
                                 }
 
                             });
@@ -1317,8 +1507,8 @@
                         didClose: function() {
                             $("#absenmasuk").prop('disabled', false);
                             $("#absenpulang").prop('disabled', false);
-                            $("#absenmasuk").html(
-                                '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Masuk</span>'
+                            $("#absenpulang").html(
+                                '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
                             );
                         }
                     })
@@ -1365,7 +1555,7 @@
                                 text: xhr.responseJSON.message,
                                 didClose: function() {
                                     $("#absenmasuk").prop('disabled', false);
-                                    $("#absenpulang").prop('disabled', false);
+                                    $("#absenpulang").prop('disabled', true);
                                     $("#absenpulang").html(
                                         '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
                                     );
@@ -1414,58 +1604,55 @@
                     // Jika geolocation tersedia, tambahkan marker lokasi user
                     if (navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(function(position) {
-                            // Update lokasi user
-                            lokasi = position.coords.latitude + "," + position.coords.longitude;
-                            map = L.map('map').setView([position.coords.latitude, position.coords
-                                .longitude
-                            ], 18);
+                                // Update lokasi user
+                                lokasi = position.coords.latitude + "," + position.coords.longitude;
+                                map = L.map('map').setView([position.coords.latitude, position.coords.longitude], 18);
 
-                            // Tambahkan tile layer
-                            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                maxZoom: 19,
-                                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            }).addTo(map);
-                            // Tambahkan marker untuk lokasi user
-                            var marker = L.marker([position.coords.latitude, position.coords
-                                .longitude
-                            ]).addTo(map);
+                                // Tambahkan tile layer
+                                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                    maxZoom: 19,
+                                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                }).addTo(map);
+                                // Tambahkan marker untuk lokasi user
+                                var marker = L.marker([position.coords.latitude, position.coords.longitude]).addTo(map);
 
-                            // Tambahkan lingkaran radius
-                            var radius = "{{ $lokasi_kantor->radius_cabang }}";
-                            var circle = L.circle([lat_kantor, long_kantor], {
-                                color: 'red',
-                                fillColor: '#f03',
-                                fillOpacity: 0.5,
-                                radius: radius
-                            }).addTo(map);
+                                // Tambahkan lingkaran radius
+                                var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                                var circle = L.circle([lat_kantor, long_kantor], {
+                                    color: 'red',
+                                    fillColor: '#f03',
+                                    fillOpacity: 0.5,
+                                    radius: radius
+                                }).addTo(map);
 
-                            // Sembunyikan indikator loading
-                            document.getElementById('map-loading').style.display = 'none';
-                        }, function(error) {
-                            // Tangani error geolocation
-                            console.error("Error getting geolocation:", error);
+                                // Sembunyikan indikator loading
+                                document.getElementById('map-loading').style.display = 'none';
+                            },
+                            function(error) {
+                                // Tangani error geolocation
+                                console.error("Error getting geolocation:", error);
 
-                            // Tambahkan lingkaran radius tanpa marker user
-                            var radius = "{{ $lokasi_kantor->radius_cabang }}";
-                            var circle = L.circle([lat_kantor, long_kantor], {
-                                color: 'red',
-                                fillColor: '#f03',
-                                fillOpacity: 0.5,
-                                radius: radius
-                            }).addTo(map);
+                                // Tambahkan lingkaran radius tanpa marker user
+                                var radius = "{{ $lokasi_kantor->radius_cabang }}";
+                                var circle = L.circle([lat_kantor, long_kantor], {
+                                    color: 'red',
+                                    fillColor: '#f03',
+                                    fillOpacity: 0.5,
+                                    radius: radius
+                                }).addTo(map);
 
-                            // Sembunyikan indikator loading
-                            document.getElementById('map-loading').style.display = 'none';
+                                // Sembunyikan indikator loading
+                                document.getElementById('map-loading').style.display = 'none';
 
-                            // Tampilkan pesan error
-                            document.getElementById('map-loading').innerHTML =
-                                'Gagal mendapatkan lokasi. Silakan cek izin lokasi.';
-                            document.getElementById('map-loading').style.display = 'block';
-                            setTimeout(function() {
-                                document.getElementById('map-loading').style.display =
-                                    'none';
-                            }, 3000);
-                        });
+                                // Tampilkan pesan error
+                                document.getElementById('map-loading').innerHTML =
+                                    'Gagal mendapatkan lokasi. Silakan cek izin lokasi.';
+                                document.getElementById('map-loading').style.display = 'block';
+                                setTimeout(function() {
+                                    document.getElementById('map-loading').style.display =
+                                        'none';
+                                }, 3000);
+                            });
                     } else {
                         // Jika geolocation tidak didukung
                         // Tambahkan lingkaran radius tanpa marker user

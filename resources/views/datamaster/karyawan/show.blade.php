@@ -219,9 +219,16 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="card card-action mb-4">
-                    <div class="card-header align-items-center">
-                        <a href="#" class="btn btn-primary" id="btnAddface"><i class="ti ti-face-id me-1"></i>
-                            Tambah Wajah</a>
+                    <div class="card-header align-items-center d-flex justify-content-between">
+                        <div>
+                            <a href="#" class="btn btn-primary" id="btnAddface"><i class="ti ti-face-id me-1"></i> Tambah Wajah</a>
+                        </div>
+                        <div>
+                            <form id="formHapusSemuaWajah" method="POST" action="{{ route('facerecognition.destroyAll', Crypt::encrypt($karyawan->nik)) }}" style="display:inline">
+                                @csrf
+                                <button type="button" class="btn btn-danger" id="btnHapusSemuaWajah"><i class="ti ti-trash me-1"></i>Hapus Semua Wajah</button>
+                            </form>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="row g-3">
@@ -263,6 +270,20 @@
 </div>
 <x-modal-form id="modal" show="loadmodal" size="modal-lg" />
 <!--/ User Profile Content -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnHapusSemua = document.getElementById('btnHapusSemuaWajah');
+        if (btnHapusSemua) {
+            btnHapusSemua.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Yakin ingin menghapus SEMUA data wajah karyawan ini?')) {
+                    document.getElementById('formHapusSemuaWajah').submit();
+                }
+            });
+        }
+    });
+</script>
 
 <!-- Modal Foto Wajah -->
 <div class="modal fade" id="modalFotoWajah" tabindex="-1" aria-labelledby="modalFotoWajahLabel" aria-hidden="true">

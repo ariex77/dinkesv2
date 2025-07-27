@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Jamkerja;
 use App\Models\Karyawan;
 use App\Models\LogAbsen;
+use App\Models\Pengaturanumum;
 use App\Models\Presensi;
 use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
@@ -25,7 +26,7 @@ class PresensiController extends Controller
         $scan           = $data['scan'];
 
 
-
+        $generalsetting = Pengaturanumum::where('id', 1)->first();
         $karyawan       = Karyawan::where('pin', $pin)->first();
 
         if ($karyawan == null) {
@@ -123,7 +124,10 @@ class PresensiController extends Controller
                             'status' => 'h'
                         ]);
                     }
-
+                    if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
+                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
+                        $this->sendwa($karyawan->no_hp, $message);
+                    }
 
                     return response()->json(['status' => true, 'message' => 'Berhasil Absen Masuk', 'notifikasi' => 'notifikasi_absenmasuk'], 200);
                 } catch (\Exception $e) {
@@ -148,6 +152,10 @@ class PresensiController extends Controller
                         'status' => 'h'
                     ]);
                 }
+                if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
+                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
+                    $this->sendwa($karyawan->no_hp, $message);
+                }
                 return response()->json(['status' => true, 'message' => 'Berhasil Absen Pulang', 'notifikasi' => 'notifikasi_absenpulang'], 200);
             } catch (\Exception $e) {
                 return response()->json(['status' => false, 'message' => $e->getMessage()], 400);
@@ -156,6 +164,72 @@ class PresensiController extends Controller
     }
 
 
+    function sendwa($no_hp, $message)
+    {
+        $generalsetting = Pengaturanumum::where('id', 1)->first();
+        // $url = $generalsetting->domain_wa_gateway . "/send-message"; // Ganti dengan URL gateway Anda
+        $apiKey = $generalsetting->wa_api_key; // Ganti dengan API key Anda
+
+        // $data = [
+        //     "to" => $no_hp, // Nomor tujuan (bisa 08xxx atau 62xxx)
+        //     "text" => $message
+        // ];
+
+        // $ch = curl_init($url);
+        // curl_setopt($ch, CURLOPT_POST, 1);
+        // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        //     "Content-Type: application/json",
+        //     "x-api-key: $apiKey"
+        // ]);
+
+        // $response = curl_exec($ch);
+        // $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // curl_close($ch);
+
+
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'https://api.fonnte.com/send',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => array(
+                'target' => $no_hp,
+                'message' => $message,
+                // 'url' => 'https://md.fonnte.com/images/wa-logo.png',
+                'filename' => 'filename',
+                'schedule' => 0,
+                'typing' => true,
+                'delay' => '2',
+                'countryCode' => '62',
+                // 'file' => new CURLFile("localfile.jpg"),
+                // 'location' => '-7.983908, 112.621391',
+                'followup' => 0,
+            ),
+            CURLOPT_HTTPHEADER => array(
+                'Authorization: ' . $apiKey
+            ),
+        ));
+
+        $response = curl_exec($curl);
+        if (curl_errno($curl)) {
+            $error_msg = curl_error($curl);
+        }
+        curl_close($curl);
+
+        if (isset($error_msg)) {
+            echo $error_msg;
+        }
+        //echo $response;
+    }
     public function log(Request $request)
     {
         LogAbsen::create([

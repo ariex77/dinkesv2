@@ -52,14 +52,14 @@ function getdocMarker($file)
 
 function getfotoPelanggan($file)
 {
-    $url = url('/storage/pelanggan/' . $file);
+    $url = url('/storage/pelanggan/' . $file . '?v=' . time());
     return $url;
 }
 
 
 function getfotoKaryawan($file)
 {
-    $url = url('/storage/karyawan/' . $file);
+    $url = url('/storage/karyawan/' . $file . '?v=' . time());
     return $url;
 }
 

@@ -48,7 +48,7 @@ class KaryawanController extends Controller
         if (!empty($request->nama_karyawan)) {
             $query->where('nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
         }
-        $query->orderBy('tanggal_masuk', 'desc');
+        $query->orderBy('nama_karyawan', 'asc');
         $karyawan = $query->paginate(15);
 
         $data['karyawan'] = $karyawan;

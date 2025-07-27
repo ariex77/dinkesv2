@@ -143,16 +143,6 @@
                 <div class="webcam-capture"></div>
                 <div class="face-guide"></div>
                 <div class="status-indicator"></div>
-                <div class="guide-text">
-                    Posisikan wajah Anda di dalam kotak panduan
-                </div>
-                <div class="position-guide">
-                    <div class="position-arrow arrow-left">←</div>
-                    <div class="position-arrow arrow-right">→</div>
-                    <div class="position-arrow arrow-up">↑</div>
-                    <div class="position-arrow arrow-down">↓</div>
-                    <div class="position-arrow arrow-zoom">↔</div>
-                </div>
                 <div class="loading-overlay">
                     <div class="text-center">
                         <div class="spinner-border text-light mb-2" role="status">
@@ -165,12 +155,13 @@
         </div>
     </div>
     <div class="row mt-3">
-        <div class="col">
-            <button id="btnAmbilfoto" class="btn btn-primary w-100 btn-capture" disabled>
-                <i class="ti ti-camera me-1"></i>Ambil Foto
+        <div class="col mb-2">
+            <button id="btnMulaiRekam" class="btn btn-success w-100 mb-2">
+                <i class="ti ti-video me-1"></i>Mulai Rekam Wajah (5 Gambar)
             </button>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -231,53 +222,72 @@
         console.log('Webcam started successfully');
     }
 
-    // Fungsi untuk mengupdate panduan posisi
-    function updatePositionGuide(box, centerX, centerY) {
-        const arrows = {
-            left: document.querySelector('.arrow-left'),
-            right: document.querySelector('.arrow-right'),
-            up: document.querySelector('.arrow-up'),
-            down: document.querySelector('.arrow-down'),
-            zoom: document.querySelector('.arrow-zoom')
-        };
 
-        // Reset semua arrow
-        Object.values(arrows).forEach(arrow => {
-            arrow.style.opacity = '0';
-        });
 
-        const faceCenterX = box.x + box.width / 2;
-        const faceCenterY = box.y + box.height / 2;
-
-        // Tentukan arrow mana yang harus ditampilkan
-        if (Math.abs(faceCenterX - centerX) > 50) {
-            if (faceCenterX < centerX) {
-                arrows.right.style.opacity = '1';
-            } else {
-                arrows.left.style.opacity = '1';
-            }
+    // --- Penambahan logika multi-capture dengan instruksi arah wajah ---
+    const DIRECTIONS = [{
+            key: 'front',
+            label: 'Lurus ke depan'
+        },
+        {
+            key: 'left',
+            label: 'Tengok ke kiri'
+        },
+        {
+            key: 'right',
+            label: 'Tengok ke kanan'
+        },
+        {
+            key: 'up',
+            label: 'Tengok ke atas'
+        },
+        {
+            key: 'down',
+            label: 'Tengok ke bawah'
         }
+    ];
+    const IMAGES_PER_DIRECTION = 1;
+    const TOTAL_IMAGES = 5;
+    let capturedImages = [];
+    let currentDirectionIndex = 0;
+    let currentImageInDirection = 0;
+    let isMultiCaptureActive = false;
 
-        if (Math.abs(faceCenterY - centerY) > 50) {
-            if (faceCenterY < centerY) {
-                arrows.down.style.opacity = '1';
-            } else {
-                arrows.up.style.opacity = '1';
+    function showDirectionInstruction() {
+        const guideText = document.querySelector('.guide-text');
+        if (currentDirectionIndex < DIRECTIONS.length) {
+            if (guideText) {
+                guideText.textContent =
+                    `Arahkan wajah: ${DIRECTIONS[currentDirectionIndex].label} (${currentImageInDirection+1}/${IMAGES_PER_DIRECTION})`;
             }
-        }
-
-        if (box.width < 200 || box.width > 300) {
-            arrows.zoom.style.opacity = '1';
+        } else {
+            if (guideText) {
+                guideText.textContent = 'Selesai mengambil gambar, menyimpan...';
+            }
         }
     }
 
-    // Fungsi untuk mengambil foto
+    function startMultiCapture() {
+        capturedImages = [];
+        currentDirectionIndex = 0;
+        currentImageInDirection = 0;
+        isMultiCaptureActive = true;
+        showDirectionInstruction();
+    }
+
+    function stopMultiCapture() {
+        isMultiCaptureActive = false;
+        showDirectionInstruction();
+    }
+
+    // Fungsi untuk mengambil foto (multi-capture)
     function capturePhoto() {
         if (isProcessing || !isFaceDetected) return;
+        if (!isMultiCaptureActive) return;
 
         const currentTime = Date.now();
-        if (currentTime - lastCaptureTime < MIN_CAPTURE_INTERVAL) {
-            return; // Mencegah pengambilan foto terlalu cepat
+        if (currentTime - lastCaptureTime < 400) {
+            return; // Jeda antar-capture
         }
 
         isProcessing = true;
@@ -286,25 +296,49 @@
         loadingOverlay.style.display = 'flex';
 
         Webcam.snap(function(uri) {
-            image = uri;
+            capturedImages.push({
+                direction: DIRECTIONS[currentDirectionIndex].key,
+                image: uri
+            });
+            currentImageInDirection++;
+
+            // Tampilkan instruksi berikutnya
+            if (currentImageInDirection >= IMAGES_PER_DIRECTION) {
+                currentDirectionIndex++;
+                currentImageInDirection = 0;
+            }
+            showDirectionInstruction();
+
+            if (capturedImages.length >= TOTAL_IMAGES) {
+                // Selesai, kirim ke backend
+                sendImagesToBackend();
+                stopMultiCapture();
+            }
         });
 
+        setTimeout(() => {
+            isProcessing = false;
+            loadingOverlay.style.display = 'none';
+        }, 200);
+    }
+
+    function sendImagesToBackend() {
+        const loadingOverlay = document.querySelector('.loading-overlay');
+        loadingOverlay.style.display = 'flex';
         $.ajax({
             type: 'POST',
             url: "{{ route('facerecognition.store') }}",
             data: {
                 _token: "{{ csrf_token() }}",
                 nik: "{{ $nik }}",
-                image: image,
+                images: JSON.stringify(capturedImages),
             },
             success: function(data) {
                 loadingOverlay.style.display = 'none';
-                isProcessing = false;
-                consecutiveGoodPositions = 0; // Reset counter setelah berhasil
                 swal.fire({
                     icon: 'success',
                     title: 'Berhasil',
-                    text: 'Wajah Berhasil Di Daftarkan',
+                    text: '5 Gambar wajah berhasil disimpan',
                     showConfirmButton: false,
                     timer: 1500,
                 }).then(function() {
@@ -313,17 +347,18 @@
             },
             error: function(xhr) {
                 loadingOverlay.style.display = 'none';
-                isProcessing = false;
                 swal.fire({
                     icon: 'error',
                     title: 'Oops...',
-                    text: xhr.responseJSON.message,
+                    text: xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Gagal menyimpan gambar',
                     showConfirmButton: false,
                     timer: 1500,
                 });
             }
         });
     }
+    // --- END Penambahan logika multi-capture ---
+
 
     // Fungsi untuk mendeteksi wajah
     async function detectFace() {
@@ -340,7 +375,7 @@
             }
 
             const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({
-                minConfidence: 0.7,
+                minConfidence: 0.5, // lebih toleran
                 maxResults: 1
             })).withFaceLandmarks();
 
@@ -351,24 +386,23 @@
                 const faceCenterX = box.x + box.width / 2;
                 const faceCenterY = box.y + box.height / 2;
 
-                // Update panduan posisi
-                updatePositionGuide(box, centerX, centerY);
+
 
                 // Cek apakah wajah berada di area yang tepat
                 const isInPosition =
-                    Math.abs(faceCenterX - centerX) < 50 &&
-                    Math.abs(faceCenterY - centerY) < 50 &&
-                    box.width > 200 && box.width < 300;
+                    Math.abs(faceCenterX - centerX) < 90 &&
+                    Math.abs(faceCenterY - centerY) < 90 &&
+                    box.width > 120 && box.width < 400; // lebih fleksibel
 
                 const statusIndicator = document.querySelector('.status-indicator');
-                const btnAmbilfoto = document.getElementById('btnAmbilfoto');
                 const guideText = document.querySelector('.guide-text');
 
                 if (isInPosition) {
                     consecutiveGoodPositions++;
                     statusIndicator.classList.add('ready');
-                    btnAmbilfoto.disabled = false;
-                    guideText.textContent = 'Posisi wajah sudah tepat, silakan ambil foto';
+                    if (guideText) {
+                        guideText.textContent = 'Posisi wajah sudah tepat, silakan ambil foto';
+                    }
                     isFaceDetected = true;
 
                     // Jika posisi sudah tepat selama beberapa frame berturut-turut, ambil foto otomatis
@@ -383,8 +417,6 @@
                 } else {
                     consecutiveGoodPositions = 0;
                     statusIndicator.classList.remove('ready');
-                    btnAmbilfoto.disabled = true;
-
                     // Tentukan pesan panduan berdasarkan posisi
                     let guideMessage = 'Posisikan wajah Anda di dalam kotak panduan';
                     if (box.width < 200) {
@@ -396,26 +428,28 @@
                     } else if (Math.abs(faceCenterY - centerY) > 50) {
                         guideMessage = faceCenterY < centerY ? 'Geser ke bawah' : 'Geser ke atas';
                     }
-
-                    guideText.textContent = guideMessage;
+                    if (guideText) {
+                        guideText.textContent = guideMessage;
+                    }
                     isFaceDetected = false;
                 }
             } else {
                 consecutiveGoodPositions = 0;
                 const statusIndicator = document.querySelector('.status-indicator');
-                const btnAmbilfoto = document.getElementById('btnAmbilfoto');
                 const guideText = document.querySelector('.guide-text');
-
                 statusIndicator.classList.remove('ready');
-                btnAmbilfoto.disabled = true;
-                guideText.textContent = 'Wajah tidak terdeteksi';
+                if (guideText) {
+                    guideText.textContent = 'Wajah tidak terdeteksi';
+                }
                 isFaceDetected = false;
             }
         } catch (error) {
             console.error('Error detecting face:', error);
             // Tampilkan pesan error yang lebih informatif
             const guideText = document.querySelector('.guide-text');
-            guideText.textContent = 'Terjadi kesalahan dalam deteksi wajah';
+            if (guideText) {
+                guideText.textContent = 'Terjadi kesalahan dalam deteksi wajah';
+            }
         }
     }
 
@@ -445,9 +479,10 @@
                 // Jalankan deteksi wajah setiap 50ms
                 setInterval(detectFace, 50);
 
-                // Event listener untuk tombol ambil foto
-                $("#btnAmbilfoto").click(function() {
-                    capturePhoto();
+                // Event listener untuk tombol mulai rekam wajah
+                $("#btnMulaiRekam").click(function() {
+                    $("#btnMulaiRekam").prop("disabled", true);
+                    startMultiCapture();
                 });
             } else {
                 swal.fire({
@@ -470,4 +505,12 @@
 
     // Jalankan inisialisasi saat modal dibuka
     initializeFaceRecognition();
+
+    // 1. Pastikan tombol mulai rekam tidak disabled di awal
+    $(document).ready(function() {
+        $("#btnMulaiRekam").prop("disabled", false);
+    });
+
+    // 2. Ubah jumlah gambar yang disimpan dari 20 menjadi 5
+    const maxMultiCapture = 5;
 </script>
