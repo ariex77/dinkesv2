@@ -16,6 +16,145 @@
             position: relative;
             z-index: 1;
         }
+
+        /* Animasi untuk alert modern */
+        @keyframes slideInAlert {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+        }
+
+        /* Hover effect untuk alert */
+        .modern-alert:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(33, 150, 243, 0.25) !important;
+            transition: all 0.3s ease;
+        }
+
+        /* Responsive design untuk alert */
+        @media (max-width: 576px) {
+            .modern-alert {
+                padding: 16px !important;
+                margin: 10px 0 !important;
+            }
+
+            .modern-alert h5 {
+                font-size: 14px !important;
+            }
+
+            .modern-alert p {
+                font-size: 13px !important;
+            }
+        }
+
+        /* Modern Alert Styles */
+        .modern-alert {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: none;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 8px 32px rgba(33, 150, 243, 0.15);
+            position: relative;
+            overflow: hidden;
+            animation: slideInAlert 0.5s ease-out;
+        }
+
+        .alert-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #2196f3 0%, #1976d2 100%);
+        }
+
+        .alert-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-icon {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .alert-icon i {
+            color: #fff;
+            font-size: 18px;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .alert-text {
+            flex: 1;
+        }
+
+        .alert-text h5 {
+            margin: 0 0 8px 0;
+            color: #0d47a1;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-title {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .alert-text p {
+            margin: 0;
+            color: #0d47a1;
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0.9;
+        }
+
+        .alert-decoration {
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(33, 150, 243, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
     </style>
     <div id="header-section">
         <div class="appHeader bg-primary text-light">
@@ -46,6 +185,11 @@
                     <textarea placeholder="Keterangan" class="feedback-input keterangan" name="keterangan" style="height: 100px"></textarea>
                     <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Buat Izin Cuti</button>
                 </form>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col" id="sisa_cuti_alert">
+
             </div>
         </div>
     </div>
@@ -86,6 +230,7 @@
                 $('.jml_hari').val(jmlhari);
             }
         });
+        let sisa_cuti = 0;
 
         function hitungHari(startDate, endDate) {
 
@@ -160,10 +305,10 @@
                     }
                 });
                 return false;
-            } else if (hitungHari(dari, sampai) > 3) {
+            } else if (hitungHari(dari, sampai) > parseInt(sisa_cuti)) {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Periode Izin Tidak Boleh Lebih Dari 3 Hari !',
+                    text: 'Periode Izin Tidak Boleh Lebih Dari ' + sisa_cuti + ' Hari !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {
@@ -192,5 +337,42 @@
                 </div>
                 Sedang Mengirim..`);
         }
+
+        $("#kode_cuti").change(function() {
+            let kode_cuti = $(this).val();
+            $.ajax({
+                type: 'GET',
+                url: "{{ route('izincuti.getsisaharicuti') }}",
+                data: {
+                    kode_cuti: kode_cuti,
+                    tanggal: $('.dari').val(),
+                },
+                success: function(response) {
+                    console.log(response);
+                    if (response.status) {
+                        sisa_cuti = response.sisa_cuti;
+                        $('#sisa_cuti_alert').html(`
+                            <div class="modern-alert">
+                                <div class="alert-border"></div>
+                                <div class="alert-content">
+                                    <div class="alert-icon">
+                                        <ion-icon name="information-circle-outline"></ion-icon>
+                                    </div>
+                                    <div class="alert-text">
+                                        <h5>
+                                            <span class="alert-title">ℹ️ Informasi</span>
+                                        </h5>
+                                        <p>${response.message}</p>
+                                    </div>
+                                </div>
+                                <div class="alert-decoration"></div>
+                            </div>
+                        `);
+                    } else {
+                        $('#sisa_cuti_alert').html('');
+                    }
+                }
+            });
+        });
     </script>
 @endpush

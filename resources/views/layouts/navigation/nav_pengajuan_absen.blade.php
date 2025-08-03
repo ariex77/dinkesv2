@@ -31,5 +31,15 @@
                 </a>
             </li>
         @endcan
+        @can('izindinas.index')
+            <li class="nav-item" role="presentation">
+                <a href="{{ route('izindinas.index') }}" class="nav-link {{ request()->is(['izindinas']) ? 'active' : '' }}">
+                    <i class="tf-icons ti ti-file-description ti-md me-1"></i> Izin Dinas
+                    @if (!empty($notifikasi_izin_dinas))
+                        <span class="badge bg-danger rounded-pill ms-2">{{ $notifikasi_izin_dinas }}</span>
+                    @endif
+                </a>
+            </li>
+        @endcan
     </ul>
 @endif

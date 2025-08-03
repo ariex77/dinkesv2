@@ -8,6 +8,7 @@ use App\Models\Detailharilibur;
 use App\Models\Detailsetjamkerjabydept;
 use App\Models\Facerecognition;
 use App\Models\Harilibur;
+use App\Models\Izindinas;
 use App\Models\Jamkerja;
 use App\Models\Karyawan;
 use App\Models\Pengaturanumum;
@@ -105,7 +106,7 @@ class PresensiController extends Controller
         $user = User::where('id', auth()->user()->id)->first();
         $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
         $karyawan = Karyawan::where('nik', $userkaryawan->nik)->first();
-
+        $general_setting = Pengaturanumum::where('id', 1)->first();
         //Cek Lokasi Kantor
         $lokasi_kantor = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
 
@@ -121,7 +122,7 @@ class PresensiController extends Controller
         $ceklintashari_presensi = $cekpresensi_sebelumnya != null  ? $cekpresensi_sebelumnya->lintashari : 0;
 
         if ($ceklintashari_presensi == 1) {
-            if ($jamsekarang < "08:00") {
+            if ($jamsekarang < $general_setting->batas_presensi_lintashari) {
                 $hariini = $tgl_sebelumnya;
             }
         }
@@ -193,6 +194,8 @@ class PresensiController extends Controller
         $user = User::where('id', auth()->user()->id)->first();
         $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
         $karyawan = Karyawan::where('nik', $userkaryawan->nik)->first();
+
+
         $status_lock_location = $karyawan->lock_location;
 
         $status = $request->status;
@@ -257,17 +260,30 @@ class PresensiController extends Controller
 
 
         $batas_jam_absen = $generalsetting->batas_jam_absen * 60;
+        $batas_jam_absen_pulang = $generalsetting->batas_jam_absen_pulang * 60;
 
         $jam_masuk = $tanggal_presensi . " " . date('H:i', strtotime($jam_kerja->jam_masuk));
         //Jam Mulai Absen adalah 60 Menit Sebelum Jam Masuk
         $jam_mulai_masuk = $tanggal_presensi . " " . date('H:i', strtotime('-' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
 
-        //Jamulai Absen Pulang adalah 1 Jam dari Jam Masuk
-        $jam_mulai_pulang =  date('Y-m-d H:i', strtotime('+' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
-        //return $jam_mulai_pulang;
+        //Jamulai Absen Pulang adalah Berapa Jam Sebelum Jam Pulang
+
         $jam_pulang = $tanggal_pulang . " " . $jam_kerja->jam_pulang;
+        $jam_mulai_pulang =  date('Y-m-d H:i', strtotime('-' . $batas_jam_absen_pulang . ' minutes', strtotime($jam_pulang)));
+        //return $jam_mulai_pulang;
 
+        // Cek Izin Dinas
+        $izin_dinas = Izindinas::where('nik', $karyawan->nik)
+            ->where('status', 1)
+            ->where('dari', '<=', $tanggal_presensi)
+            ->where('sampai', '>=', $tanggal_presensi)
+            ->first();
 
+        // dd($izin_dinas);
+
+        if ($izin_dinas) {
+            $status_lock_location = 0;
+        }
         //dd($jam_presensi . " " . $jam_mulai_pulang);
         //Cek Radius
         //dd($jam_presensi . " " . $jam_mulai_masuk);

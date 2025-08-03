@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Izinabsen;
 use App\Models\Izincuti;
+use App\Models\Izindinas;
 use App\Models\Izinsakit;
 use App\Models\Lembur;
 use App\Models\Pengaturanumum;
@@ -32,6 +33,7 @@ class Globalprovider extends ServiceProvider
             $notifikasi_izinsakit = Izinsakit::where('status', 0)->count();
             $notifikasi_izincuti = Izincuti::where('status', 0)->count();
             $notifikasi_lembur = Lembur::where('status', 0)->count();
+            $notifikasi_izin_dinas = Izindinas::where('status', 0)->count();
             $data_izinabsen = Izinabsen::select('presensi_izinabsen.nik', 'nama_karyawan', DB::raw('"i" as status'), 'presensi_izinabsen.created_at')
                 ->where('status', 0)
                 ->join('karyawan', 'presensi_izinabsen.nik', '=', 'karyawan.nik');
@@ -41,17 +43,21 @@ class Globalprovider extends ServiceProvider
             $data_izincuti = Izincuti::select('presensi_izincuti.nik', 'nama_karyawan', DB::raw('"c" as status'), 'presensi_izincuti.created_at')
                 ->where('status', 0)
                 ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik');
-            $data_izin = $data_izinabsen->unionAll($data_izinsakit)->unionAll($data_izincuti)->get();
+            $data_izin_dinas = Izindinas::select('presensi_izindinas.nik', 'nama_karyawan', DB::raw('"d" as status'), 'presensi_izindinas.created_at')
+                ->where('status', 0)
+                ->join('karyawan', 'presensi_izindinas.nik', '=', 'karyawan.nik');
+            $data_izin = $data_izinabsen->unionAll($data_izinsakit)->unionAll($data_izincuti)->unionAll($data_izin_dinas)->get();
 
 
 
-            $notifikasi_ajuan_absen = $notifikasi_izinabsen + $notifikasi_izincuti + $notifikasi_izinsakit;
+            $notifikasi_ajuan_absen = $notifikasi_izinabsen + $notifikasi_izincuti + $notifikasi_izinsakit + $notifikasi_izin_dinas;
             $general_setting = Pengaturanumum::where('id', 1)->first();
             $shareddata = [
                 'notifikasi_izinabsen' => $notifikasi_izinabsen,
                 'notifikasi_izinsakit' => $notifikasi_izinsakit,
                 'notifikasi_izincuti' => $notifikasi_izincuti,
                 'notifikasi_lembur' => $notifikasi_lembur,
+                'notifikasi_izin_dinas' => $notifikasi_izin_dinas,
                 'notifikasi_ajuan_absen' => $notifikasi_ajuan_absen,
                 'data_izin' => $data_izin,
                 'general_setting' => $general_setting

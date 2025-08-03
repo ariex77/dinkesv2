@@ -49,12 +49,16 @@ class GeneralsettingController extends Controller
                 'batasi_absen' => $request->has('batasi_absen') ? true : false,
                 'multi_lokasi' => $request->has('multi_lokasi') ? true : false,
                 'batas_jam_absen' => $request->batas_jam_absen,
+                'batas_jam_absen_pulang' => $request->batas_jam_absen_pulang,
                 'cloud_id' => $request->cloud_id,
                 'api_key' => $request->api_key,
                 'domain_email' => $request->domain_email,
                 'domain_wa_gateway' => $request->domain_wa_gateway,
                 'wa_api_key' => $request->wa_api_key,
                 'notifikasi_wa' => $request->has('notifikasi_wa') ? true : false,
+                'batasi_hari_izin' => $request->has('batasi_hari_izin') ? true : false,
+                'jml_hari_izin_max' => $request->jml_hari_izin_max,
+                'batas_presensi_lintashari' => $request->batas_presensi_lintashari,
             ];
 
             if ($request->hasFile('logo')) {

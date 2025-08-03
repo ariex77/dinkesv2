@@ -137,6 +137,9 @@
                                     } elseif ($d->status == 'c') {
                                         $keterangan = 'Izin Cuti';
                                         $bgcolor = 'success';
+                                    } elseif ($d->status == 'd') {
+                                        $keterangan = 'Izin Dinas';
+                                        $bgcolor = 'primary';
                                     }
                                 @endphp
                                 <li class="list-group-item list-group-item-action dropdown-notifications-item">

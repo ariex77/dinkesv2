@@ -24,21 +24,21 @@
                     <ion-icon name="chevron-back-outline"></ion-icon>
                 </a>
             </div>
-            <div class="pageTitle">Izin Absen</div>
+            <div class="pageTitle">Izin Dinas</div>
             <div class="right"></div>
         </div>
     </div>
     <div id="content-section">
         <div class="row" style="margin-top: 80px">
             <div class="col pl-3 pr-3">
-                <form action="{{ route('izinabsen.store') }}" method="POST" id="formIzin" autocomplete="off">
+                <form action="{{ route('izindinas.store') }}" method="POST" id="formIzin" autocomplete="off">
                     @csrf
 
                     <input type="text" class="feedback-input dari" name="dari" placeholder="Dari" id="datePicker" />
                     <input type="text" class="feedback-input sampai" name="sampai" placeholder="Sampai" id="datePicker2" />
                     <input type="text" class="feedback-input jml_hari" name="jml_hari" placeholder="Jumlah Hari" disabled />
                     <textarea placeholder="Keterangan" class="feedback-input keterangan" name="keterangan" style="height: 100px"></textarea>
-                    <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Buat Izin Absen</button>
+                    <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Buat Izin Dinas</button>
                 </form>
             </div>
         </div>
@@ -80,9 +80,6 @@
                 $('.jml_hari').val(jmlhari);
             }
         });
-
-        const batasi_hari_izin = "{{ $general_setting->batasi_hari_izin }}";
-        const jml_hari_izin_max = "{{ $general_setting->jml_hari_izin_max }}";
 
         function hitungHari(startDate, endDate) {
 
@@ -145,10 +142,10 @@
                     }
                 });
                 return false;
-            } else if (hitungHari(dari, sampai) > jml_hari_izin_max && batasi_hari_izin == 1) {
+            } else if (hitungHari(dari, sampai) > 3) {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Periode Izin Tidak Boleh Lebih Dari ' + jml_hari_izin_max + ' Hari !',
+                    text: 'Periode Izin Tidak Boleh Lebih Dari 3 Hari !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {

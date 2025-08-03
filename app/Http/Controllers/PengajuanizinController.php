@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Izinabsen;
 use App\Models\Izincuti;
+use App\Models\Izindinas;
 use App\Models\Izinsakit;
 use App\Models\User;
 use App\Models\Userkaryawan;
@@ -26,7 +27,10 @@ class PengajuanizinController extends Controller
         $izincuti = Izincuti::where('nik', $userkaryawan->nik)
             ->select('kode_izin_cuti as kode', 'tanggal', 'keterangan', 'dari', 'sampai', DB::raw('\'c\' as ket'), 'status as status_izin');
 
-        $pengajuan_izin = $izinabsen->union($izinsakit)->union($izincuti)->orderBy('tanggal', 'desc')->get();
+        $izin_dinas = Izindinas::where('nik', $userkaryawan->nik)
+            ->select('kode_izin_dinas as kode', 'tanggal', 'keterangan', 'dari', 'sampai', DB::raw('\'d\' as ket'), 'status as status_izin');
+
+        $pengajuan_izin = $izinabsen->union($izinsakit)->union($izincuti)->union($izin_dinas)->orderBy('tanggal', 'desc')->get();
         $data['pengajuan_izin'] = $pengajuan_izin;
         return view('pengajuanizin.index', $data);
     }

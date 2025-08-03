@@ -75,6 +75,8 @@
                                 $route = 'izinsakit.delete';
                             } elseif ($d->ket == 'c') {
                                 $route = 'izincuti.delete';
+                            } elseif ($d->ket == 'd') {
+                                $route = 'izindinas.delete';
                             }
                         @endphp
                         <form method="POST" name="deleteform" class="deleteform me-1 mb-1" action="{{ route($route, Crypt::encrypt($d->kode)) }}">
@@ -94,6 +96,8 @@
                                                     $ket = 'Izin Sakit';
                                                 } elseif ($d->ket == 'c') {
                                                     $ket = 'Izin Cuti';
+                                                } elseif ($d->ket == 'd') {
+                                                    $ket = 'Izin Dinas';
                                                 }
                                             @endphp
                                             {{ $ket }}
@@ -133,12 +137,16 @@
                 </a>
 
                 <a class="dropdown-item bg-primary" href="{{ route('izinsakit.create') }}">
-                    <ion-icon name="document-outline" role="img" class="md hydrated" aria-label="videocam outline"></ion-icon>
-                    <p>Sakit</p>
+                    <ion-icon name="bag-add-outline"></ion-icon>
+                    <p>Izin Sakit</p>
                 </a>
                 <a class="dropdown-item bg-primary" href="{{ route('izincuti.create') }}">
                     <ion-icon name="document-outline" role="img" class="md hydrated" aria-label="videocam outline"></ion-icon>
-                    <p>Cuti</p>
+                    <p>Izin Cuti</p>
+                </a>
+                <a class="dropdown-item bg-primary" href="{{ route('izindinas.create') }}">
+                    <ion-icon name="airplane-outline"></ion-icon>
+                    <p>Izin Dinas</p>
                 </a>
             </div>
         </div>

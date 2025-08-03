@@ -25,11 +25,12 @@ class FacerecognitionController extends Controller
         $nama_folder = $karyawan->nik . "-" . getNamaDepan($karyawan->nama_karyawan);
         $folderPath = "public/uploads/facerecognition/" . $request->nik . "-" . getNamaDepan(strtolower($karyawan->nama_karyawan)) . "/";
 
+        // dd(storage_path($folderPath));
         // Membuat folder jika belum ada dan set permission
         if (!Storage::exists($folderPath)) {
-            Storage::makeDirectory($folderPath);
+            Storage::makeDirectory($folderPath, 0775, true);
             Storage::setVisibility($folderPath, 'public');
-            chmod(storage_path('app/' . $folderPath), 0775);
+            // chmod(storage_path($folderPath), 0775);
         }
 
         try {

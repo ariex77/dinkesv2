@@ -72,7 +72,13 @@
             font-size: 1.08rem;
             color: #58907D;
             font-weight: 500;
-            margin-bottom: 22px;
+        }
+
+        .idcard-position-modern_jabatan {
+            font-size: 1rem;
+            color: #58907D;
+            font-weight: 500;
+            margin-bottom: 5px;
         }
 
         .idcard-info-modern {
@@ -168,17 +174,19 @@
 
             <div class="idcard-body-modern">
                 <div class="idcard-name-modern">{{ textUpperCase($karyawan->nama_karyawan) }}</div>
-                <div class="idcard-position-modern">Software Engineer</div>
+                <div class="idcard-position-modern">{{ $karyawan->nama_dept }}</div>
+
                 <div class="idcard-info-modern"><i class="fa-solid fa-id-badge"></i> ID: {{ $karyawan->nik }}</div>
                 <div class="idcard-info-modern"><i class="fa-solid fa-calendar-plus"></i> Join Date:
                     {{ date('d-m-Y', strtotime($karyawan->tanggal_masuk)) }}</div>
                 <div class="idcard-info-modern"><i class="fa-solid fa-phone"></i> {{ $karyawan->no_hp }}</div>
+                <div class="idcard-info-modern"><i class="fa-solid fa-user"></i> {{ $karyawan->nama_jabatan }}</div>
                 <div class="barcode-modern">
                     {!! DNS1D::getBarcodeHTML($karyawan->nik, 'C128', 2, 54) !!}
                 </div>
             </div>
             <div class="idcard-footer-modern">
-                www.company.com
+                {{ $generalsetting->nama_perusahaan }}
             </div>
         </div>
         <div style="text-align:center; margin: 24px 0 0 0; z-index:2; position:relative;">

@@ -307,8 +307,7 @@
         .info-section {
             background: transparent;
             border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
+            padding: 10px 10px;
             backdrop-filter: blur(6px);
             color: #222;
             font-size: 15px;
@@ -370,19 +369,19 @@
         }
 
         .jadwalkerja-col {
-            padding: 0 6px;
+            padding: 0 0px;
         }
 
         .jadwalkerja-icon {
             font-size: 28px;
             color: #FFD600;
-            margin-bottom: 2px;
+            margin-bottom: -10px;
         }
 
         .jadwalkerja-label {
             font-size: 13px;
             color: #fff;
-            margin-bottom: 2px;
+            margin-bottom: -8px;
         }
 
         .jadwalkerja-value {

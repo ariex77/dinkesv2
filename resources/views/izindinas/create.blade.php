@@ -1,4 +1,4 @@
-<form action="{{ route('izinabsen.store') }}" method="POST" id="formIzin">
+<form action="{{ route('izindinas.store') }}" method="POST" id="formIzinDinas">
     @csrf
     <x-input-with-icon icon="ti ti-barcode" label="Auto" name="kode_izin" disabled="true" />
     <div class="form-group">
@@ -25,10 +25,7 @@
 </form>
 <script>
     $(function() {
-        const form = $('#formIzin');
-        const batasi_hari_izin = "{{ $general_setting->batasi_hari_izin }}";
-        //alert(batasi_hari_izin);
-        const jml_hari_izin_max = "{{ $general_setting->jml_hari_izin_max }}";
+        const form = $('#formIzinDinas');
         $(".flatpickr-date").flatpickr();
         const select2Nik = $('.select2Nik');
         if (select2Nik.length) {
@@ -91,7 +88,7 @@
             } else if (dari == '' || sampai == '') {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Periode Izin Harus Diisi !',
+                    text: 'Periode Izin Dinas Harus Diisi !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {
@@ -102,7 +99,7 @@
             } else if (sampai < dari) {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Periode Izin Harus Sesuai !',
+                    text: 'Periode Izin Dinas Harus Sesuai !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {
@@ -110,10 +107,10 @@
                     }
                 });
                 return false;
-            } else if (hitungHari(dari, sampai) > parseInt(jml_hari_izin_max) && batasi_hari_izin == 1) {
+            } else if (hitungHari(dari, sampai) > 3) {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Periode Izin Tidak Boleh Lebih Dari ' + jml_hari_izin_max + ' Hari !',
+                    text: 'Periode Izin Dinas Tidak Boleh Lebih Dari 3 Hari !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {

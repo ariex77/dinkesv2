@@ -13,6 +13,7 @@ use App\Http\Controllers\GeneralsettingController;
 use App\Http\Controllers\HariliburController;
 use App\Http\Controllers\IzinabsenController;
 use App\Http\Controllers\IzincutiController;
+use App\Http\Controllers\IzindinasController;
 use App\Http\Controllers\IzinsakitController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JamkerjabydeptController;
@@ -350,6 +351,21 @@ Route::middleware('auth')->group(function () {
         Route::get('/izincuti/{kode_izin_cuti}/approve', 'approve')->name('izincuti.approve')->can('izincuti.approve');
         Route::delete('/izincuti/{kode_izin_cuti}/cancelapprove', 'cancelapprove')->name('izincuti.cancelapprove')->can('izincuti.approve');
         Route::post('/izincuti/{kode_izin_cuti}/storeapprove', 'storeapprove')->name('izincuti.storeapprove')->can('izincuti.approve');
+        Route::get('/izincuti/getsisaharicuti', 'getsisaharicuti')->name('izincuti.getsisaharicuti');
+    });
+
+    Route::controller(IzindinasController::class)->group(function () {
+        Route::get('/izindinas', 'index')->name('izindinas.index')->can('izindinas.index');
+        Route::get('/izindinas/create', 'create')->name('izindinas.create')->can('izindinas.create');
+        Route::post('/izindinas', 'store')->name('izindinas.store')->can('izindinas.create');
+        Route::get('/izindinas/{kode_izin_cuti}/edit', 'edit')->name('izindinas.edit')->can('izindinas.edit');
+        Route::put('/izindinas/{kode_izin_cuti}', 'update')->name('izindinas.update')->can('izindinas.edit');
+        Route::get('/izindinas/{kode_izin_cuti}/show', 'show')->name('izindinas.show')->can('izindinas.index');
+        Route::delete('/izindinas/{kode_izin_cuti}/delete', 'destroy')->name('izindinas.delete')->can('izindinas.delete');
+
+        Route::get('/izindinas/{kode_izin_cuti}/approve', 'approve')->name('izindinas.approve')->can('izindinas.approve');
+        Route::delete('/izindinas/{kode_izin_cuti}/cancelapprove', 'cancelapprove')->name('izindinas.cancelapprove')->can('izindinas.approve');
+        Route::post('/izindinas/{kode_izin_cuti}/storeapprove', 'storeapprove')->name('izindinas.storeapprove')->can('izindinas.approve');
     });
 
     Route::controller(LemburController::class)->group(function () {
