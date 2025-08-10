@@ -64,7 +64,8 @@ class DashboardController extends Controller
                 DB::raw("SUM(IF(status='c',1,0)) as cuti")
             )
                 ->groupBy('presensi.nik')
-                ->limit(30)
+                ->whereRaw('MONTH(presensi.tanggal) = MONTH(?)', [$hari_ini])
+                ->whereRaw('YEAR(presensi.tanggal) = YEAR(?)', [$hari_ini])
                 ->where('presensi.nik', $userkaryawan->nik)
                 ->first();
 

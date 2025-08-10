@@ -220,7 +220,7 @@ class PresensiController extends Controller
         $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
 
         //Jika Presensi Kemarin Status Lintas Hari nya 1 Makan Tanggal Presensi Sekarang adalah Tanggal Kemarin
-        $tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
+        //$tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
 
         //Get Lokasi User
         $koordinat_user = explode(",", $lokasi);
@@ -243,16 +243,12 @@ class PresensiController extends Controller
 
         $radius = round($jarak["meters"]);
 
-        $tanggal_pulang = $lintas_hari == 1 ? $tanggal_besok : $tanggal_sekarang;
+
 
         $in_out = $status == 1 ? "in" : "out";
         $image = $request->image;
         $folderPath = "public/uploads/absensi/";
-        $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
-        $image_parts = explode(";base64", $image);
-        $image_base64 = base64_decode($image_parts[1]);
-        $fileName = $formatName . ".png";
-        $file = $folderPath . $fileName;
+
 
         $jam_kerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
 
@@ -262,13 +258,59 @@ class PresensiController extends Controller
         $batas_jam_absen = $generalsetting->batas_jam_absen * 60;
         $batas_jam_absen_pulang = $generalsetting->batas_jam_absen_pulang * 60;
 
-        $jam_masuk = $tanggal_presensi . " " . date('H:i', strtotime($jam_kerja->jam_masuk));
-        //Jam Mulai Absen adalah 60 Menit Sebelum Jam Masuk
-        $jam_mulai_masuk = $tanggal_presensi . " " . date('H:i', strtotime('-' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
 
         //Jamulai Absen Pulang adalah Berapa Jam Sebelum Jam Pulang
 
-        $jam_pulang = $tanggal_pulang . " " . $jam_kerja->jam_pulang;
+        //Jiak Kemarin Melakukan Presensi
+        if ($presensi_kemarin != null) {
+            //Jika Presensi Kemarin Lintas Hari
+            if ($presensi_kemarin->lintashari == 1) {
+                //Jika Jam Sekarang Lebih Besar dari batas_presensi_lintashari
+                if ($jam_sekarang > $generalsetting->batas_presensi_lintashari) {
+                    $tanggal_pulang = $tanggal_besok;
+                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
+                    $tanggal_presensi = $tanggal_sekarang;
+                } else {
+                    $tanggal_pulang = $tanggal_sekarang;
+                    $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
+                    $tanggal_presensi = $tanggal_kemarin;
+                }
+            } else {
+                if ($jam_kerja->lintashari == 1) {
+                    $tanggal_pulang = $tanggal_besok;
+                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
+                    $tanggal_presensi = $tanggal_sekarang;
+                } else {
+                    $tanggal_pulang = $tanggal_sekarang;
+                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
+                    $tanggal_presensi = $tanggal_sekarang;
+                }
+            }
+        } else {
+            if ($jam_kerja->lintashari == 1) {
+                $tanggal_pulang = $tanggal_besok;
+                $jam_kerja_pulang = $jam_kerja->jam_pulang;
+                $tanggal_presensi = $tanggal_sekarang;
+            } else {
+                $tanggal_pulang = $tanggal_sekarang;
+                $jam_kerja_pulang = $jam_kerja->jam_pulang;
+                $tanggal_presensi = $tanggal_sekarang;
+            }
+        }
+        $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
+        $image_parts = explode(";base64", $image);
+        $image_base64 = base64_decode($image_parts[1]);
+        $fileName = $formatName . ".png";
+        $file = $folderPath . $fileName;
+
+        $jam_masuk = $tanggal_presensi . " " . date('H:i', strtotime($jam_kerja->jam_masuk));
+        //Jam Mulai Absen adalah 60 Menit Sebelum Jam Masuk
+        $jam_mulai_masuk = $tanggal_presensi . " " . date('H:i', strtotime('-' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
+        $jam_akhir_masuk = $tanggal_presensi . " " . date('H:i', strtotime('+' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
+        $jam_pulang = $tanggal_pulang . " " . $jam_kerja_pulang;
+        // dd($presensi_kemarin);
+
+        // dd($jam_pulang);
         $jam_mulai_pulang =  date('Y-m-d H:i', strtotime('-' . $batas_jam_absen_pulang . ' minutes', strtotime($jam_pulang)));
         //return $jam_mulai_pulang;
 
@@ -290,6 +332,8 @@ class PresensiController extends Controller
         $presensi_hariini = Presensi::where('nik', $karyawan->nik)
             ->where('tanggal', $tanggal_presensi)
             ->first();
+
+        //dd($presensi_hariini);
         if ($status_lock_location == 1 && $radius > $cabang->radius_cabang) {
             return response()->json(['status' => false, 'message' => 'Anda Berada Di Luar Radius Kantor, Jarak Anda ' . formatAngka($radius) . ' Meters Dari Kantor', 'notifikasi' => 'notifikasi_radius'], 400);
         } else {
@@ -298,7 +342,7 @@ class PresensiController extends Controller
                     return response()->json(['status' => false, 'message' => 'Anda Sudah Absen Masuk Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
                 } else if ($jam_presensi < $jam_mulai_masuk && $generalsetting->batasi_absen == 1) {
                     return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Masuk, Waktu Absen Dimulai Pukul ' . formatIndo3($jam_mulai_masuk), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
-                } else if ($jam_presensi > $jam_mulai_pulang && $generalsetting->batasi_absen == 1) {
+                } else if ($jam_presensi > $jam_akhir_masuk && $generalsetting->batasi_absen == 1) {
                     return response()->json(['status' => false, 'message' => 'Maaf Waktu Absen Masuk Sudah Habis ', 'notifikasi' => 'notifikasi_akhirabsen'], 400);
                 } else {
                     try {
