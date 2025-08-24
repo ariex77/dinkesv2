@@ -11,4 +11,7 @@ class Facerecognition extends Model
 
     protected $table = 'karyawan_wajah';
     protected $guarded = ['id'];
+
+    // Relasi dengan Karyawan
+
 }

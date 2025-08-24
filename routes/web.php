@@ -34,6 +34,7 @@ use App\Http\Controllers\SlipgajiController;
 use App\Http\Controllers\TunjanganController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WagatewayController;
+use App\Http\Controllers\FacerecognitionpresensiController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Role;
 
@@ -52,6 +53,16 @@ Route::middleware('guest')->group(function () {
     Route::get('/', function () {
         return view('auth.loginuser');
     })->name('loginuser');
+});
+
+// Face Recognition Presensi Routes (Public - No Login Required)
+Route::controller(FacerecognitionpresensiController::class)->group(function () {
+    Route::get('/facerecognition-presensi', 'index')->name('facerecognition-presensi.index');
+    Route::get('/facerecognition-presensi/scan/{nik}', 'scan')->name('facerecognition-presensi.scan');
+    Route::get('/facerecognition-presensi/scanall', 'scanAny')->name('facerecognition-presensi.scan_any');
+    Route::post('/facerecognition-presensi/store', 'store')->name('facerecognition-presensi.store');
+    Route::get('/facerecognition-presensi/generate/{nik}', 'getKaryawan')->name('facerecognition-presensi.generate');
+    Route::get('/facerecognition/getallwajah', 'getAllWajah')->name('facerecognition.getallwajah');
 });
 
 // Route::get('/dashboard', function () {

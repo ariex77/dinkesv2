@@ -98,14 +98,25 @@ class PresensiController extends Controller
         $data['denda_list'] = Denda::all()->toArray();
         return view('presensi.index', $data);
     }
-    public function create($kode_jam_kerja = null)
+    public function create(Request $request)
     {
+        $kode_jam_kerja = $request->kode_jam_kerja ?? null;
 
         //Get Data Karyawan By User
         //Get Data Karyawan By User
         $user = User::where('id', auth()->user()->id)->first();
         $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
         $karyawan = Karyawan::where('nik', $userkaryawan->nik)->first();
+
+        if ($karyawan->lock_jam_kerja == 0 && $kode_jam_kerja == null) {
+            $presensi = Presensi::where('nik', $karyawan->nik)->where('tanggal', date('Y-m-d'))->first();
+            if ($presensi != null) {
+                return redirect('/presensi/create?kode_jam_kerja=' . $presensi->kode_jam_kerja);
+            }
+            $data['jamkerja'] = Jamkerja::orderBy('jam_masuk')->get();
+            return view('presensi.pilih_jam_kerja', $data);
+        }
+
         $general_setting = Pengaturanumum::where('id', 1)->first();
         //Cek Lokasi Kantor
         $lokasi_kantor = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
@@ -184,6 +195,8 @@ class PresensiController extends Controller
         $data['presensi'] = $presensi;
         $data['karyawan'] = $karyawan;
         $data['wajah'] = Facerecognition::where('nik', $karyawan->nik)->count();
+
+
 
         return view('presensi.create', $data);
     }

@@ -34,7 +34,7 @@ class ProfileController extends Controller
         try {
             $data_foto = [];
             if ($request->hasfile('foto')) {
-                $foto_name =  $request->nik . "." . $request->file('foto')->getClientOriginalExtension();
+                $foto_name =  $karyawan->nik . "." . $request->file('foto')->getClientOriginalExtension();
                 $destination_foto_path = "/public/karyawan";
                 $foto = $foto_name;
                 $data_foto = [

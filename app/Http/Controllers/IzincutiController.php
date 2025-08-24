@@ -152,7 +152,7 @@ class IzincutiController extends Controller
             Izincuti::create($dataizincuti);
             DB::commit();
             if ($role == 'karyawan') {
-                return Redirect::route('izincuti.index')->with(messageSuccess('Data Berhasil Disimpan'));
+                return Redirect::route('pengajuanizin.index')->with(messageSuccess('Data Berhasil Disimpan'));
             } else {
                 return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
             }

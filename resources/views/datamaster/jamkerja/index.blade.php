@@ -65,7 +65,7 @@
                                                     <i class="ti ti-square-x text-danger"></i>
                                                 @endif
                                             </td>
-                                            <td>{{ $d->jam_awal_istirahat != null ? date('H:i', strtotime($d->jam_akhir_istirahat)) : '-' }}</td>
+                                            <td>{{ $d->jam_awal_istirahat != null ? date('H:i', strtotime($d->jam_awal_istirahat)) : '-' }}</td>
                                             <td>{{ $d->jam_akhir_istirahat != null ? date('H:i', strtotime($d->jam_akhir_istirahat)) : '-' }}</td>
                                             <td>
                                                 @if ($d->lintashari == 1)

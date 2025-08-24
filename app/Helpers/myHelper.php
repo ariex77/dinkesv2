@@ -2,6 +2,7 @@
 
 use App\Models\Detailharilibur;
 use App\Models\Lembur;
+use App\Models\Pengaturanumum;
 use App\Models\Tutuplaporan;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redirect;
@@ -419,12 +420,17 @@ function hitungjamterlambat($jam_in, $jam_mulai)
 
 function hitungdenda($denda_list, $terlambat)
 {
-    $denda_terlambat = 0;
-    foreach ($denda_list as $denda) {
-        if ($terlambat >= $denda['dari'] && $terlambat <= $denda['sampai']) {
-            $denda_terlambat = $denda['denda'];
-            break;
+    $general_setting = Pengaturanumum::where('id', 1)->first();
+    if ($general_setting->denda == 1) {
+        $denda_terlambat = 0;
+        foreach ($denda_list as $denda) {
+            if ($terlambat >= $denda['dari'] && $terlambat <= $denda['sampai']) {
+                $denda_terlambat = $denda['denda'];
+                break;
+            }
         }
+    } else {
+        $denda_terlambat = 0;
     }
     return $denda_terlambat;
 }

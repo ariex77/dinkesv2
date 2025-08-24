@@ -94,6 +94,7 @@
                                 Forgotten your password or you login datails?
                                 <a href="#">Get help</a> signing in
                             </p>
+
                         </div>
                     </form>
 

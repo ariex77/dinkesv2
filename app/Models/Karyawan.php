@@ -32,4 +32,10 @@ class Karyawan extends Model
         }
         return $query->first();
     }
+
+    // Relasi dengan Facerecognition
+    public function facerecognition()
+    {
+        return $this->hasMany(Facerecognition::class, 'nik', 'nik');
+    }
 }
