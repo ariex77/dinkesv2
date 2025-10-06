@@ -29,7 +29,7 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row" style="margin-top: 80px">
+        <div class="row" style="margin-top: 30px">
             <div class="col pl-3 pr-3">
                 <form action="{{ route('izindinas.store') }}" method="POST" id="formIzin" autocomplete="off">
                     @csrf

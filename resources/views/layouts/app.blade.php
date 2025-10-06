@@ -27,6 +27,42 @@
     <script src="{{ asset('/assets/js/config.js') }}"></script>
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="E-Presensi GPS V2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="E-Presensi">
+    <meta name="description" content="Aplikasi Presensi GPS untuk Karyawan">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-config" content="/assets/img/icons/browserconfig.xml">
+    <meta name="msapplication-TileColor" content="#696cff">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="theme-color" content="#696cff">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/assets/img/icons/pwa/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/img/icons/pwa/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/img/icons/pwa/icon-512x512.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
 </head>
 
 <body>

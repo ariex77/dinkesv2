@@ -64,7 +64,7 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row" style="margin-top: 60px">
+        <div class="row" style="margin-top: 30px">
             <div class="col">
                 <div class="transactions">
                     @foreach ($pengajuan_izin as $d)

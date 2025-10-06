@@ -6,6 +6,25 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign in & Sign up Form</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="E-Presensi GPS V2">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="E-Presensi">
+    <meta name="description" content="Aplikasi Presensi GPS untuk Karyawan">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#696cff">
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/assets/img/icons/pwa/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/assets/img/icons/pwa/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="/assets/img/icons/pwa/icon-512x512.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <link rel="stylesheet" href="{{ asset('assets/login/css/style.css') }}" />
     <style>
         .alert {
@@ -129,6 +148,24 @@
 
     <!-- Javascript file -->
     <script src="{{ asset('assets/login/script/app.js') }}"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+
+    <!-- PWA Install Prompt - Only on Login Page -->
+    @include('components.pwa-install-prompt')
 </body>
 
 </html>

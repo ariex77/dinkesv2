@@ -26,6 +26,22 @@
                  <div>Dashboard</div>
              </a>
          </li>
+         @can('trackingpresensi.index')
+             <li class="menu-item {{ request()->is(['trackingpresensi', 'trackingpresensi/*']) ? 'active' : '' }}">
+                 <a href="{{ route('trackingpresensi.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-map-pin"></i>
+                     <div>Tracking Presensi</div>
+                 </a>
+             </li>
+         @endcan
+         @can('aktivitaskaryawan.index')
+             <li class="menu-item {{ request()->is(['aktivitaskaryawan', 'aktivitaskaryawan/*']) ? 'active' : '' }}">
+                 <a href="{{ route('aktivitaskaryawan.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-activity"></i>
+                     <div>Aktivitas Karyawan</div>
+                 </a>
+             </li>
+         @endcan
          @if (auth()->user()->hasAnyPermission(['karyawan.index', 'departemen.index', 'cabang.index', 'cuti.index', 'jamkerja.index', 'jabatan.index']))
              <li
                  class="menu-item {{ request()->is(['karyawan', 'karyawan/*', 'departemen', 'cabang', 'cuti', 'jamkerja', 'jabatan']) ? 'open' : '' }}">
@@ -158,6 +174,7 @@
                  </a>
              </li>
          @endif
+
          @if (auth()->user()->hasAnyPermission(['izinabsen.index', 'izinsakit.index', 'izincuti.index', 'izindinas.index']))
              <li class="menu-item {{ request()->is(['izinabsen', 'izinabsen/*', 'izinsakit', 'izincuti', 'izindinas']) ? 'active' : '' }}">
                  <a href="{{ route('izinabsen.index') }}" class="menu-link">
@@ -257,6 +274,13 @@
                              <div>Group Permission</div>
                          </a>
                      </li>
+                     @can('bersihkanfoto.index')
+                         <li class="menu-item {{ request()->is(['bersihkanfoto', 'bersihkanfoto/*']) ? 'active' : '' }}">
+                             <a href="{{ route('bersihkanfoto.index') }}" class="menu-link">
+                                 <div>Bersihkan Foto</div>
+                             </a>
+                         </li>
+                     @endcan
                  </ul>
              </li>
          @endif

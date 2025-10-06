@@ -265,11 +265,100 @@
                         </div>
                     </div>
 
+                    <!-- PWA Icon Generator Section -->
+
 
                     <button class="btn btn-primary w-100" id="btnSimpan">
                         <i class="ti ti-refresh me-1"></i> Update
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4 col-sm-12 col-xs-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label for="pwa_icon" style="font-weight: 600" class="form-label">
+                        Upload Icon Master (1080x1080px)
+                    </label>
+                    <input type="file" class="form-control" name="pwa_icon" id="pwa_icon" accept="image/*">
+                    <small class="text-muted">
+                        Upload gambar dengan ukuran 1080x1080px atau lebih besar.
+                        Sistem akan otomatis generate berbagai ukuran untuk PWA.
+                    </small>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-success w-100" id="btnGenerateIcons">
+                            <i class="ti ti-device-mobile me-1"></i> Generate PWA Icons
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-warning w-100" id="btnPreviewIcons">
+                            <i class="ti ti-eye me-1"></i> Preview Icons
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progressContainer" style="display: none;">
+                    <div class="progress mb-2">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">
+                        </div>
+                    </div>
+                    <small class="text-muted" id="progressText">Menggenerate icons...</small>
+                </div>
+
+                <!-- Generated Icons Preview -->
+                <div id="iconsPreview" class="mt-3" style="display: none;">
+                    <h6>Generated Icons:</h6>
+                    <div class="row" id="iconsGrid">
+                        <!-- Icons will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Current PWA Icons -->
+                <div class="mt-3">
+                    <h6>Current PWA Icons:</h6>
+                    <div class="row" id="currentIconsGrid">
+                        @php
+                            $iconDir = public_path('assets/img/icons/pwa');
+                            $currentIcons = [];
+                            if (file_exists($iconDir)) {
+                                $files = glob($iconDir . '/icon-*.png');
+                                foreach ($files as $file) {
+                                    $filename = basename($file);
+                                    $size = str_replace(['icon-', '.png'], '', $filename);
+                                    $currentIcons[] = [
+                                        'size' => $size,
+                                        'path' => 'assets/img/icons/pwa/' . $filename,
+                                    ];
+                                }
+                            }
+                        @endphp
+
+                        @if (count($currentIcons) > 0)
+                            @foreach ($currentIcons as $icon)
+                                <div class="col-2 mb-2">
+                                    <div class="text-center">
+                                        <img src="{{ asset($icon['path']) }}" alt="Icon {{ $icon['size'] }}" class="img-thumbnail"
+                                            style="width: 50px; height: 50px;">
+                                        <small class="d-block">{{ $icon['size'] }}</small>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="ti ti-info-circle me-1"></i>
+                                    Belum ada icon PWA yang di-generate. Upload icon master untuk memulai.
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -286,6 +375,167 @@
             dateFormat: 'H:i',
             time_24hr: true,
         });
+
+        // PWA Icon Generator
+        $('#btnGenerateIcons').click(function() {
+            const fileInput = document.getElementById('pwa_icon');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Peringatan',
+                    text: 'Silakan pilih file icon terlebih dahulu!'
+                });
+                return;
+            }
+
+            // Validate file size (max 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Ukuran file terlalu besar! Maksimal 10MB.'
+                });
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'File harus berupa gambar!'
+                });
+                return;
+            }
+
+            generateIcons(file);
+        });
+
+        $('#btnPreviewIcons').click(function() {
+            previewCurrentIcons();
+        });
+
+        function generateIcons(file) {
+            const formData = new FormData();
+            formData.append('icon', file);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+            // Show progress
+            $('#progressContainer').show();
+            $('#btnGenerateIcons').prop('disabled', true);
+            updateProgress(0, 'Memulai proses...');
+
+            $.ajax({
+                url: '{{ route('pwa.generate-icons') }}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function(evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            updateProgress(percentComplete, 'Uploading file...');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                success: function(response) {
+                    updateProgress(100, 'Selesai!');
+
+                    setTimeout(() => {
+                        $('#progressContainer').hide();
+                        $('#btnGenerateIcons').prop('disabled', false);
+
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: `Berhasil generate ${response.count} icon PWA!`
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message
+                            });
+                        }
+                    }, 1000);
+                },
+                error: function(xhr) {
+                    $('#progressContainer').hide();
+                    $('#btnGenerateIcons').prop('disabled', false);
+
+                    let errorMessage = 'Terjadi kesalahan saat generate icons!';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage
+                    });
+                }
+            });
+        }
+
+        function updateProgress(percent, text) {
+            $('.progress-bar').css('width', percent + '%');
+            $('#progressText').text(text);
+        }
+
+        function previewCurrentIcons() {
+            $.ajax({
+                url: '{{ route('pwa.preview-icons') }}',
+                type: 'GET',
+                success: function(response) {
+                    if (response.length > 0) {
+                        let html = '';
+                        response.forEach(function(icon) {
+                            html += `
+                                <div class="col-2 mb-2">
+                                    <div class="text-center">
+                                        <img src="${icon.url}"
+                                             alt="Icon ${icon.size}"
+                                             class="img-thumbnail"
+                                             style="width: 50px; height: 50px;">
+                                        <small class="d-block">${icon.size}</small>
+                                    </div>
+                                </div>
+                            `;
+                        });
+
+                        $('#iconsGrid').html(html);
+                        $('#iconsPreview').show();
+
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Preview Icons',
+                            text: `Ditemukan ${response.length} icon PWA yang sudah di-generate.`
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Info',
+                            text: 'Belum ada icon PWA yang di-generate.'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Gagal memuat preview icons!'
+                    });
+                }
+            });
+        }
     });
 </script>
 @endpush

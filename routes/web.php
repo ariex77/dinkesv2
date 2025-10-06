@@ -35,6 +35,10 @@ use App\Http\Controllers\TunjanganController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WagatewayController;
 use App\Http\Controllers\FacerecognitionpresensiController;
+use App\Http\Controllers\IconGeneratorController;
+use App\Http\Controllers\BersihkanfotoController;
+use App\Http\Controllers\TrackingPresensiController;
+use App\Http\Controllers\AktivitasKaryawanController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Role;
 
@@ -409,6 +413,13 @@ Route::middleware('auth')->group(function () {
         Route::put('/generalsetting/{id}', 'update')->name('generalsetting.update')->can('generalsetting.edit');
     });
 
+    // PWA Icon Generator Routes
+    Route::controller(IconGeneratorController::class)->group(function () {
+        Route::post('/generate-pwa-icons', 'generate')->name('pwa.generate-icons');
+        Route::get('/preview-pwa-icons', 'preview')->name('pwa.preview-icons');
+        Route::delete('/clear-pwa-icons', 'clear')->name('pwa.clear-icons');
+    });
+
     Route::controller(DendaController::class)->group(function () {
         Route::get('/denda', 'index')->name('denda.index')->can('generalsetting.index');
         Route::get('/denda/create', 'create')->name('denda.create')->can('generalsetting.index');
@@ -435,6 +446,30 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:super admin')->controller(WagatewayController::class)->group(function () {
         Route::get('/wagateway', 'index')->name('wagateway.index');
+    });
+
+    // Bersihkan Foto Routes
+    Route::middleware('role:super admin')->controller(BersihkanfotoController::class)->group(function () {
+        Route::get('/bersihkanfoto', 'index')->name('bersihkanfoto.index')->can('bersihkanfoto.index');
+        Route::post('/bersihkanfoto', 'destroy')->name('bersihkanfoto.destroy')->can('bersihkanfoto.delete');
+    });
+
+    // Tracking Presensi Routes
+    Route::middleware('role:super admin')->controller(TrackingPresensiController::class)->group(function () {
+        Route::get('/trackingpresensi', 'index')->name('trackingpresensi.index')->can('trackingpresensi.index');
+        Route::get('/trackingpresensi/getData', 'getData')->name('trackingpresensi.getData')->can('trackingpresensi.index');
+    });
+
+    // Aktivitas Karyawan Routes
+    Route::controller(AktivitasKaryawanController::class)->group(function () {
+        Route::get('/aktivitaskaryawan', 'index')->name('aktivitaskaryawan.index')->can('aktivitaskaryawan.index');
+        Route::get('/aktivitaskaryawan/create', 'create')->name('aktivitaskaryawan.create')->can('aktivitaskaryawan.create');
+        Route::post('/aktivitaskaryawan', 'store')->name('aktivitaskaryawan.store')->can('aktivitaskaryawan.create');
+        Route::get('/aktivitaskaryawan/{aktivitaskaryawan}', 'show')->name('aktivitaskaryawan.show')->can('aktivitaskaryawan.index');
+        Route::get('/aktivitaskaryawan/{aktivitaskaryawan}/edit', 'edit')->name('aktivitaskaryawan.edit')->can('aktivitaskaryawan.edit');
+        Route::put('/aktivitaskaryawan/{aktivitaskaryawan}', 'update')->name('aktivitaskaryawan.update')->can('aktivitaskaryawan.edit');
+        Route::delete('/aktivitaskaryawan/{aktivitaskaryawan}', 'destroy')->name('aktivitaskaryawan.destroy')->can('aktivitaskaryawan.delete');
+        Route::get('/aktivitaskaryawan/export/pdf', 'exportPdf')->name('aktivitaskaryawan.export.pdf')->can('aktivitaskaryawan.index');
     });
 });
 

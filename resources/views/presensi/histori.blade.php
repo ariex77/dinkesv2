@@ -64,7 +64,7 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row mb-4" style="margin-top: 60px">
+        <div class="row mb-4" style="margin-top: 30px">
             <div class="col">
                 <form action="{{ route('presensi.histori') }}" method="GET">
                     <input type="text" class="feedback-input dari" name="dari" placeholder="Dari" id="datePicker" value="{{ Request('dari') }}" />
