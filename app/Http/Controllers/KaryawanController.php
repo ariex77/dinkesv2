@@ -13,6 +13,7 @@ use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
 use App\Models\Statuskawin;
 use App\Models\User;
+use Carbon\Carbon;
 use App\Models\Userkaryawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -350,14 +351,17 @@ class KaryawanController extends Controller
 
     public function storejamkerjabydate(Request $request)
     {
-        $cek = Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $request->tanggal)->first();
+        // Convert tanggal to proper format (YYYY-MM-DD) to avoid timezone issues
+        $tanggal = Carbon::parse($request->tanggal)->format('Y-m-d');
+
+        $cek = Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $tanggal)->first();
         if (!empty($cek)) {
             return response()->json(['success' => false, 'message' => 'Karyawan Sudah Memiliki Jadwal pada Tanggal Ini']);
         }
         try {
             Setjamkerjabydate::create([
                 'nik' => $request->nik,
-                'tanggal' => $request->tanggal,
+                'tanggal' => $tanggal,
                 'kode_jam_kerja' => $request->kode_jam_kerja
             ]);
 
@@ -385,11 +389,12 @@ class KaryawanController extends Controller
     }
 
     public function deletejamkerjabydate(Request $request)
-
     {
-        // dd($request);
+        // Convert tanggal to proper format (YYYY-MM-DD) to avoid timezone issues
+        $tanggal = Carbon::parse($request->tanggal)->format('Y-m-d');
+
         try {
-            Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $request->tanggal)->delete();
+            Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $tanggal)->delete();
             return response()->json(['success' => true, 'message' => 'Data Berhasil Dihapus']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()]);

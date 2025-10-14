@@ -48,11 +48,15 @@
             <thead>
                 <tr>
                     <th rowspan="3">No</th>
-                    
+                    <th rowspan="3">Nik</th>
                     <th rowspan="3">Nama Karyawan</th>
-                    
+                    <th rowspan="3">Jabatan</th>
+                    <th rowspan="3">Dept</th>
+                    <th rowspan="3">Cabang</th>
                     <th colspan="{{ $jmlhari }}">Tanggal</th>
-                    
+                    <th rowspan="3">Denda</th>
+                    <th rowspan="3">Pot. Jam</th>
+                    <th rowspan="3">Lembur</th>
                     <th colspan="8">Rekap</th>
                 </tr>
                 <tr>
@@ -71,7 +75,8 @@
                     <th rowspan="2">Alfa</th>
                     <th rowspan="2">Libur</th>
                     <th rowspan="2">Terlambat</th>
-                    
+                    <th rowspan="2">Tidak Scan Masuk</th>
+                    <th rowspan="2">Tidak Scan Pulang</th>
                 </tr>
                 <tr>
                     @php
@@ -92,9 +97,11 @@
                     @endphp
                     <tr>
                         <td style="width:1%">{{ $loop->iteration }}</td>
-                        
+                        <td style="width:2%">'{{ $d['nik'] }}</td>
                         <td style="width:5%">{{ $d['nama_karyawan'] }}</td>
-                        
+                        <td style="width:3%">{{ $d['nama_jabatan'] }}</td>
+                        <td style="width:2%">{{ $d['kode_dept'] }}</td>
+                        <td style="width:2%">{{ $d['kode_cabang'] }}</td>
                         @php
                             $total_denda = 0;
                             $total_potongan_jam = 0;
@@ -352,13 +359,17 @@
                                 $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                             @endphp
                         @endwhile
+                        <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
+                        <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
+                        <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
                         <td style="text-align:center">{{ $jml_hadir }}</td>
                         <td style="text-align:center">{{ $jml_izin }}</td>
                         <td style="text-align:center">{{ $jml_sakit }}</td>
                         <td style="text-align:center">{{ $jml_alfa }}</td>
                         <td style="text-align:center">{{ $jml_libur }}</td>
                         <td style="text-align:center">{{ $jml_terlambat }}</td>
-                        
+                        <td style="text-align:center">{{ $jml_tidakscanmasuk }}</td>
+                        <td style="text-align:center">{{ $jml_tidakscanpulang }}</td>
                     </tr>
                 @endforeach
             </tbody>

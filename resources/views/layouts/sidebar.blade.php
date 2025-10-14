@@ -42,6 +42,23 @@
                  </a>
              </li>
          @endcan
+         @can('kunjungan.index')
+             <li class="menu-item {{ request()->is(['kunjungan', 'kunjungan/*']) ? 'active' : '' }}">
+                 <a href="{{ route('kunjungan.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-map-pin"></i>
+                     <div>Kunjungan</div>
+                 </a>
+             </li>
+         @endcan
+
+         @can('kunjungan.index')
+             <li class="menu-item {{ request()->is(['tracking-kunjungan', 'tracking-kunjungan/*']) ? 'active' : '' }}">
+                 <a href="{{ route('tracking-kunjungan.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-map-2"></i>
+                     <div>Tracking Kunjungan</div>
+                 </a>
+             </li>
+         @endcan
          @if (auth()->user()->hasAnyPermission(['karyawan.index', 'departemen.index', 'cabang.index', 'cuti.index', 'jamkerja.index', 'jabatan.index']))
              <li
                  class="menu-item {{ request()->is(['karyawan', 'karyawan/*', 'departemen', 'cabang', 'cuti', 'jamkerja', 'jabatan']) ? 'open' : '' }}">

@@ -338,19 +338,36 @@
             </div>
         </div>
         <div class="row mt-2">
-            <div class="col-3">
-                <a href="{{ route('aktivitaskaryawan.index') }}">
-                    <div class="card">
-                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/activity.png') }}" alt="" style="width: 50px" class="mb-0">
-                            <br>
-                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                Aktivitas
-                            </span>
+            @can('aktivitaskaryawan.index')
+                <div class="col-3">
+                    <a href="{{ route('aktivitaskaryawan.index') }}">
+                        <div class="card">
+                            <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                                <img src="{{ asset('assets/template/img/3d/activity.png') }}" alt="" style="width: 50px" class="mb-0">
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                    Aktivitas
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </a>
-            </div>
+                    </a>
+                </div>
+            @endcan
+            @can('kunjungan.index')
+                <div class="col-3">
+                    <a href="{{ route('kunjungan.index') }}">
+                        <div class="card">
+                            <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                                <img src="{{ asset('assets/template/img/3d/maps.png') }}" alt="" style="width: 50px" class="mb-0">
+                                <br>
+                                <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                    Kunjungan
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            @endcan
         </div>
     </div>
     <div id="histori-section">

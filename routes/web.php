@@ -18,6 +18,8 @@ use App\Http\Controllers\IzinsakitController;
 use App\Http\Controllers\JabatanController;
 use App\Http\Controllers\JamkerjabydeptController;
 use App\Http\Controllers\JamkerjaController;
+use App\Http\Controllers\KunjunganController;
+use App\Http\Controllers\TrackingKunjunganController;
 use App\Http\Controllers\JenistunjanganController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\LaporanController;
@@ -470,6 +472,23 @@ Route::middleware('auth')->group(function () {
         Route::put('/aktivitaskaryawan/{aktivitaskaryawan}', 'update')->name('aktivitaskaryawan.update')->can('aktivitaskaryawan.edit');
         Route::delete('/aktivitaskaryawan/{aktivitaskaryawan}', 'destroy')->name('aktivitaskaryawan.destroy')->can('aktivitaskaryawan.delete');
         Route::get('/aktivitaskaryawan/export/pdf', 'exportPdf')->name('aktivitaskaryawan.export.pdf')->can('aktivitaskaryawan.index');
+    });
+
+    // Kunjungan Routes
+    Route::controller(KunjunganController::class)->group(function () {
+        Route::get('/kunjungan', 'index')->name('kunjungan.index')->can('kunjungan.index');
+        Route::get('/kunjungan/create', 'create')->name('kunjungan.create')->can('kunjungan.create');
+        Route::post('/kunjungan', 'store')->name('kunjungan.store')->can('kunjungan.create');
+        Route::get('/kunjungan/{kunjungan}', 'show')->name('kunjungan.show')->can('kunjungan.index');
+        Route::get('/kunjungan/{kunjungan}/edit', 'edit')->name('kunjungan.edit')->can('kunjungan.edit');
+        Route::put('/kunjungan/{kunjungan}', 'update')->name('kunjungan.update')->can('kunjungan.edit');
+        Route::delete('/kunjungan/{kunjungan}', 'destroy')->name('kunjungan.destroy')->can('kunjungan.delete');
+        Route::get('/kunjungan/export/pdf', 'exportPdf')->name('kunjungan.export.pdf')->can('kunjungan.index');
+    });
+
+    // Tracking Kunjungan Routes
+    Route::controller(TrackingKunjunganController::class)->group(function () {
+        Route::get('/tracking-kunjungan', 'index')->name('tracking-kunjungan.index')->can('kunjungan.index');
     });
 });
 

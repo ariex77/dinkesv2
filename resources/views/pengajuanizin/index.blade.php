@@ -126,7 +126,7 @@
                 </div>
             </div>
         </div>
-        <div class="fab-button animate bottom-right dropdown" style="margin-bottom:70px">
+        <div class="fab-button animate bottom-left dropdown" style="margin-bottom:70px">
             <a href="#" class="fab bg-primary" data-toggle="dropdown">
                 <ion-icon name="add-outline" role="img" class="md hydrated" aria-label="add outline"></ion-icon>
             </a>
