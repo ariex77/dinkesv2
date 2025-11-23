@@ -177,7 +177,7 @@ class HariliburController extends Controller
         $data['harilibur'] = $harilibur;
 
         $query = Karyawan::query();
-        $query->select('karyawan.nik', 'karyawan.nama_karyawan', 'harilibur.nik as ceklibur', 'nama_dept');
+        $query->select('karyawan.nik', 'karyawan.nik_show', 'karyawan.nama_karyawan', 'harilibur.nik as ceklibur', 'nama_dept');
         $query->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         if (!empty($request->kode_dept)) {
             $query->where('karyawan.kode_dept', $request->kode_dept);
@@ -229,6 +229,7 @@ class HariliburController extends Controller
         $kode_libur = Crypt::decrypt($kode_libur);
         $data['detailharilibur'] = Detailharilibur::join('karyawan', 'hari_libur_detail.nik', '=', 'karyawan.nik')
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->select('hari_libur_detail.*', 'karyawan.nik', 'karyawan.nik_show', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'departemen.nama_dept')
             ->where('kode_libur', $kode_libur)->get();
         return view('harilibur.getkaryawanlibur', $data);
     }
@@ -252,7 +253,7 @@ class HariliburController extends Controller
             ->join('cabang', 'hari_libur.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
         $query = Karyawan::query();
-        $query->select('karyawan.nik', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'nama_dept', 'harilibur.nik as ceklibur');
+        $query->select('karyawan.nik', 'karyawan.nik_show', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'nama_dept', 'harilibur.nik as ceklibur');
 
 
         if (!empty($request->kode_dept)) {
@@ -299,7 +300,7 @@ class HariliburController extends Controller
             ->join('cabang', 'hari_libur.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
         $query = Karyawan::query();
-        $query->select('karyawan.nik', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'nama_dept', 'harilibur.nik as ceklibur');
+        $query->select('karyawan.nik', 'karyawan.nik_show', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'nama_dept', 'harilibur.nik as ceklibur');
 
 
         if (!empty($request->kode_dept)) {

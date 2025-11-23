@@ -60,7 +60,7 @@
                                     @foreach ($bpjskesehatan as $d)
                                         <tr>
                                             <td>{{ $d->kode_bpjs_kesehatan }}</td>
-                                            <td>{{ $d->nik }}</td>
+                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>
                                             <td>{{ $d->kode_dept }}</td>
                                             <td>{{ $d->kode_cabang }}</td>

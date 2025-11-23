@@ -16,7 +16,7 @@ class BpjskesehatanController extends Controller
     {
         $query = Bpjskesehatan::query();
         $query->join('karyawan', 'karyawan_bpjskesehatan.nik', '=', 'karyawan.nik');
-        $query->select('karyawan_bpjskesehatan.*', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'karyawan.kode_cabang');
+        $query->select('karyawan_bpjskesehatan.*', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'karyawan.kode_cabang', 'karyawan.nik_show');
         if (!empty($request->nama_karyawan)) {
             $query->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
         }

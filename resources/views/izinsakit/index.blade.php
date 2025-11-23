@@ -106,7 +106,7 @@
                                             <tr>
                                                 <td>{{ $d->kode_izin_sakit }}</td>
                                                 <td>{{ DateToIndo($d->tanggal) }}</td>
-                                                <td>{{ $d->nik }}</td>
+                                                <td>{{ $d->nik_show ?? $d->nik }}</td>
                                                 <td>{{ $d->nama_karyawan }}</td>
                                                 <td>{{ $d->nama_cabang }}</td>
                                                 <td>

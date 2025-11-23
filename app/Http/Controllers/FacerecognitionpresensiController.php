@@ -211,10 +211,20 @@ class FacerecognitionpresensiController extends Controller
                     }
                     Storage::put($file, $image_base64);
 
-                    // Kirim Notifikasi Ke WA
+                    // Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                     if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
-                        $this->sendwa($karyawan->no_hp, $message);
+                        try {
+                            $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
+                            $this->sendwa($karyawan->no_hp, $message);
+                        } catch (\Exception $waException) {
+                            // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                            Log::error('Gagal mengirim notifikasi WA untuk absen masuk (face recognition)', [
+                                'nik' => $karyawan->nik,
+                                'nama' => $karyawan->nama_karyawan,
+                                'error' => $waException->getMessage(),
+                                'trace' => $waException->getTraceAsString()
+                            ]);
+                        }
                     }
                     return response()->json(['status' => true, 'message' => 'Berhasil Absen Masuk', 'notifikasi' => 'notifikasi_absenmasuk'], 200);
                 } catch (\Exception $e) {
@@ -250,10 +260,20 @@ class FacerecognitionpresensiController extends Controller
                     }
                     Storage::put($file, $image_base64);
 
-                    // Kirim Notifikasi Ke WA
+                    // Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                     if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
-                        $this->sendwa($karyawan->no_hp, $message);
+                        try {
+                            $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
+                            $this->sendwa($karyawan->no_hp, $message);
+                        } catch (\Exception $waException) {
+                            // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                            Log::error('Gagal mengirim notifikasi WA untuk absen pulang (face recognition)', [
+                                'nik' => $karyawan->nik,
+                                'nama' => $karyawan->nama_karyawan,
+                                'error' => $waException->getMessage(),
+                                'trace' => $waException->getTraceAsString()
+                            ]);
+                        }
                     }
                     return response()->json(['status' => true, 'message' => 'Berhasil Absen Pulang', 'notifikasi' => 'notifikasi_absenpulang'], 200);
                 } catch (\Exception $e) {

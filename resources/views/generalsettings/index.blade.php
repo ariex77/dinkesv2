@@ -156,31 +156,38 @@
 </style>
 <div class="row">
     <div class="col-lg-4 col-sm-12 col-xs-12">
-        <div class="card">
-            <div class="card-body">
-                <form action="{{ route('generalsetting.update', Crypt::encrypt($setting->id)) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
+        <form action="{{ route('generalsetting.update', Crypt::encrypt($setting->id)) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Informasi Perusahaan</h6>
+                </div>
+                <div class="card-body">
                     <x-input-with-icon-label label="Nama Perusahaan" name="nama_perusahaan" icon="ti ti-home" :value="$setting->nama_perusahaan ?? ''" />
                     <x-textarea-label label="Alamat Perusahaan" name="alamat" icon="ti ti-map-pin" :value="$setting->alamat ?? ''" />
                     <x-input-with-icon-label label="Telepon" name="telepon" icon="ti ti-phone" :value="$setting->telepon ?? ''" />
-                    <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan" icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
-                    <label for="" style="font-weight: 600" class="form-label">Denda</label>
-                    <div class="checkbox-wrapper-55">
-                        <label class="rocker rocker-small">
-                            <input type="checkbox" name="denda" @checked($setting->denda ?? false)>
-                            <span class="switch-left">Yes</span>
-                            <span class="switch-right">No</span>
-                        </label>
+                    <div class="form-group mb-3">
+                        <label for="logo" style="font-weight: 600" class="form-label">Logo Perusahaan</label>
+                        <input type="file" class="form-control" name="logo" id="logo">
+                        <div class="mt-2 text-center">
+                            @if ($setting->logo && Storage::exists('public/logo/' . $setting->logo))
+                                <img src="{{ asset('storage/logo/' . $setting->logo) }}" alt="Logo Perusahaan" style="max-width: 200px;">
+                            @else
+                                <img src="https://placehold.co/200x200?text=Logo+Perusahaan&font=roboto" alt="Logo Default" style="max-width: 200px;">
+                            @endif
+                        </div>
                     </div>
-                    <label for="" style="font-weight: 600" class="form-label">Face Recognition</label>
-                    <div class="checkbox-wrapper-55">
-                        <label class="rocker rocker-small">
-                            <input type="checkbox" name="face_recognition" @checked($setting->face_recognition ?? false)>
-                            <span class="switch-left">Yes</span>
-                            <span class="switch-right">No</span>
-                        </label>
-                    </div>
+                </div>
+            </div>
+
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Pengaturan Laporan</h6>
+                </div>
+                <div class="card-body">
                     <div class="row">
                         <div class="col">
                             <x-input-with-icon-label label="Periode Laporan Dari" icon="ti ti-calendar" name="periode_laporan_dari"
@@ -191,8 +198,7 @@
                                 :value="$setting->periode_laporan_sampai ?? ''" />
                         </div>
                     </div>
-                    <label for="" style="font-weight: 600" class="form-label">Periode Laporan Lintas
-                        Bulan</label>
+                    <label for="" style="font-weight: 600" class="form-label">Periode Laporan Lintas Bulan</label>
                     <div class="checkbox-wrapper-55">
                         <label class="rocker rocker-small">
                             <input type="checkbox" name="periode_laporan_next_bulan" @checked($setting->periode_laporan_next_bulan ?? false)>
@@ -200,34 +206,58 @@
                             <span class="switch-right">No</span>
                         </label>
                     </div>
+                </div>
+            </div>
 
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Pengaturan Email</h6>
+                </div>
+                <div class="card-body">
+                    <x-input-with-icon-label label="Domain Email (contoh: adamadifa.site)" name="domain_email" icon="ti ti-mail" :value="$setting->domain_email ?? ''" />
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Pengaturan Presensi</h6>
+                </div>
+                <div class="card-body">
+                    <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan" icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
+                    <label for="" style="font-weight: 600" class="form-label">Denda</label>
+                    <div class="checkbox-wrapper-55 mb-2">
+                        <label class="rocker rocker-small">
+                            <input type="checkbox" name="denda" @checked($setting->denda ?? false)>
+                            <span class="switch-left">Yes</span>
+                            <span class="switch-right">No</span>
+                        </label>
+                    </div>
+                    <label for="" style="font-weight: 600" class="form-label">Face Recognition</label>
+                    <div class="checkbox-wrapper-55 mb-2">
+                        <label class="rocker rocker-small">
+                            <input type="checkbox" name="face_recognition" @checked($setting->face_recognition ?? false)>
+                            <span class="switch-left">Yes</span>
+                            <span class="switch-right">No</span>
+                        </label>
+                    </div>
                     <label for="" style="font-weight: 600" class="form-label">Multi Lokasi</label>
-                    <div class="checkbox-wrapper-55">
+                    <div class="checkbox-wrapper-55 mb-2">
                         <label class="rocker rocker-small">
                             <input type="checkbox" name="multi_lokasi" @checked($setting->multi_lokasi ?? false)>
                             <span class="switch-left">Yes</span>
                             <span class="switch-right">No</span>
                         </label>
                     </div>
-
-                    <label for="" style="font-weight: 600" class="form-label">Notifikasi WA</label>
-                    <div class="checkbox-wrapper-55">
-                        <label class="rocker rocker-small">
-                            <input type="checkbox" name="notifikasi_wa" @checked($setting->notifikasi_wa ?? false)>
-                            <span class="switch-left">Yes</span>
-                            <span class="switch-right">No</span>
-                        </label>
-                    </div>
                     <label for="" style="font-weight: 600" class="form-label">Batasi Jam Presensi</label>
-                    <div class="checkbox-wrapper-55">
+                    <div class="checkbox-wrapper-55 mb-2">
                         <label class="rocker rocker-small">
                             <input type="checkbox" name="batasi_absen" @checked($setting->batasi_absen ?? false)>
                             <span class="switch-left">Yes</span>
                             <span class="switch-right">No</span>
                         </label>
                     </div>
-                    <x-input-with-icon-label label="Batas Jam Presensi Masuk (Dalam Jam) Sebelum Jam Masuk" name="batas_jam_absen" icon="ti ti-clock"
-                        :value="$setting->batas_jam_absen ?? ''" />
+                    <x-input-with-icon-label label="Batas Jam Presensi Masuk (Dalam Jam) Sebelum Jam Masuk" name="batas_jam_absen"
+                        icon="ti ti-clock" :value="$setting->batas_jam_absen ?? ''" />
                     <small class="text-muted">Wajib Diisi Jika Batasi Jam Presensi Diaktifkan</small>
                     <x-input-with-icon-label label="Batas Jam Presensi Pulang (Dalam Jam) Sebelum Jam Pulang" name="batas_jam_absen_pulang"
                         icon="ti ti-clock" :value="$setting->batas_jam_absen_pulang ?? ''" />
@@ -235,7 +265,7 @@
                         <small class="text-muted">Wajib Diisi Jika Batasi Jam Presensi Diaktifkan</small>
                     </div>
                     <label for="" style="font-weight: 600" class="form-label">Batasi Hari Izin</label>
-                    <div class="checkbox-wrapper-55">
+                    <div class="checkbox-wrapper-55 mb-2">
                         <label class="rocker rocker-small">
                             <input type="checkbox" name="batasi_hari_izin" @checked($setting->batasi_hari_izin ?? false)>
                             <span class="switch-left">Yes</span>
@@ -245,35 +275,67 @@
                     <x-input-with-icon-label label="Batas Hari Izin (Dalam Hari)" name="jml_hari_izin_max" icon="ti ti-clock" :value="$setting->jml_hari_izin_max ?? ''" />
                     <x-input-with-icon-label label="Batas Presensi Lintas Hari" name="batas_presensi_lintashari" icon="ti ti-clock"
                         :value="$setting->batas_presensi_lintashari ?? ''" />
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Pengaturan Integrasi Mesin Fingerprint</h6>
+                </div>
+                <div class="card-body">
                     <x-input-with-icon-label label="Cloud Id" name="cloud_id" icon="ti ti-cloud" :value="$setting->cloud_id ?? ''" />
                     <x-input-with-icon-label label="API Key" name="api_key" icon="ti ti-key" :value="$setting->api_key ?? ''" />
-                    <x-input-with-icon-label label="Domain Email (contoh: adamadifa.site)" name="domain_email" icon="ti ti-mail"
-                        :value="$setting->domain_email ?? ''" />
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Whatsapp Gateway</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="provider_wa" style="font-weight: 600" class="form-label">Provider WA</label>
+                        <select class="form-select" name="provider_wa" id="provider_wa">
+                            <option value="ig" @selected(($setting->provider_wa ?? 'ig') == 'ig')>Internal Gateway</option>
+                            <option value="fe" @selected(($setting->provider_wa ?? 'ig') == 'fe')>Fonnte</option>
+                        </select>
+                    </div>
+                    <label for="" style="font-weight: 600" class="form-label">Notifikasi WA</label>
+                    <div class="checkbox-wrapper-55 mb-2">
+                        <label class="rocker rocker-small">
+                            <input type="checkbox" name="notifikasi_wa" @checked($setting->notifikasi_wa ?? false)>
+                            <span class="switch-left">Yes</span>
+                            <span class="switch-right">No</span>
+                        </label>
+                    </div>
+                    <label for="" style="font-weight: 600" class="form-label">Tujuan Notifikasi WA</label>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="tujuan_notifikasi_wa" id="tujuan_grup" value="1"
+                            @checked(($setting->tujuan_notifikasi_wa ?? 0) == 1)>
+                        <label class="form-check-label" for="tujuan_grup">
+                            Kirim ke Grup
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="tujuan_notifikasi_wa" id="tujuan_karyawan" value="0"
+                            @checked(($setting->tujuan_notifikasi_wa ?? 0) == 0)>
+                        <label class="form-check-label" for="tujuan_karyawan">
+                            Kirim ke Karyawan
+                        </label>
+                    </div>
+                    <div id="group_wa_input" style="display: none;">
+                        <x-input-with-icon-label label="ID Group WA" name="id_group_wa" icon="ti ti-users" :value="$setting->id_group_wa ?? ''" />
+                    </div>
                     <x-input-with-icon-label label="Domain WA Gateway (contoh: https://wa.adamadifa.site)" name="domain_wa_gateway"
                         icon="ti ti-message" :value="$setting->domain_wa_gateway ?? ''" />
                     <x-input-with-icon-label label="WA API Key" name="wa_api_key" icon="ti ti-brand-whatsapp" :value="$setting->wa_api_key ?? ''" />
-                    <div class="form-group mb-3">
-                        <label for="logo" style="font-weight: 600" class="form-label">Logo Perusahaan</label>
-                        <input type="file" class="form-control" name="logo" id="logo">
-                        <div class="mt-2 text-center">
-                            @if ($setting->logo && Storage::exists('public/logo/' . $setting->logo))
-                                <img src="{{ asset('storage/logo/' . $setting->logo) }}" alt="Logo Perusahaan" style="max-width: 200px;">
-                            @else
-                                <img src="https://placehold.co/200x200?text=Logo+Perusahaan&font=roboto" alt="Logo Default"
-                                    style="max-width: 200px;">
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- PWA Icon Generator Section -->
-
-
-                    <button class="btn btn-primary w-100" id="btnSimpan">
-                        <i class="ti ti-refresh me-1"></i> Update
-                    </button>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <button class="btn btn-primary w-100" id="btnSimpan">
+                <i class="ti ti-refresh me-1"></i> Update
+            </button>
+        </form>
     </div>
     <div class="col-lg-4 col-sm-12 col-xs-12">
         <div class="card">
@@ -374,6 +436,24 @@
             noCalendar: true,
             dateFormat: 'H:i',
             time_24hr: true,
+        });
+
+        // Toggle Group WA Input
+        function toggleGroupInput() {
+            const tujuanGrup = $('#tujuan_grup').is(':checked');
+            if (tujuanGrup) {
+                $('#group_wa_input').show();
+            } else {
+                $('#group_wa_input').hide();
+            }
+        }
+
+        // Initialize on page load
+        toggleGroupInput();
+
+        // Toggle on radio button change
+        $('input[name="tujuan_notifikasi_wa"]').change(function() {
+            toggleGroupInput();
         });
 
         // PWA Icon Generator

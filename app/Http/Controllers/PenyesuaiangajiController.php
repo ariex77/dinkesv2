@@ -98,6 +98,7 @@ class PenyesuaiangajiController extends Controller
         $data['penyesuaiangaji'] = Penyesuaiangaji::where('kode_penyesuaian_gaji', $kode_penyesuaian_gaji)->first();
         $data['detailpenyesuaian'] = Detailpenyesuaiangaji::where('kode_penyesuaian_gaji', $kode_penyesuaian_gaji)
             ->join('karyawan', 'karyawan_penyesuaian_gaji_detail.nik', '=', 'karyawan.nik')
+            ->select('karyawan_penyesuaian_gaji_detail.*', 'karyawan.nama_karyawan', 'karyawan.nik_show')
             ->get();
         return view('payroll.penyesuaiangaji.setkaryawan', $data);
     }

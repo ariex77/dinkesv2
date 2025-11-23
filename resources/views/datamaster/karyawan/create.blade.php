@@ -1,6 +1,6 @@
 <form action="{{ route('karyawan.store') }}" id="formcreateKaryawan" method="POST" enctype="multipart/form-data">
     @csrf
-    <x-input-with-icon-label icon="ti ti-barcode" label="NIK" name="nik" />
+    <x-input-with-icon-label icon="ti ti-barcode" label="NIK" name="nik_show" />
     <x-input-with-icon-label icon="ti ti-credit-card" label="No. KTP" name="no_ktp" />
     <x-input-with-icon-label icon="ti ti-user" label="Nama Karyawan" name="nama_karyawan" />
     <div class="row">
@@ -55,7 +55,6 @@
     <div class="form-group mb-3">
         <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Status Karyawan</label>
         <select name="status_karyawan" id="pendidikan_terakhir" class="form-select">
-            <option value="">Status Karyawan</option>
             <option value="K">PPPK</option>
             <option value="T">PNS</option>
             <option value="O">Non ASN</option>
@@ -77,6 +76,7 @@
     $(function() {
 
         $(".flatpickr-date").flatpickr();
+        // mask opsional untuk nik_show jika diperlukan; nonaktifkan jika format bebas
         $('#nik').mask('00000000000000000000');
     });
 </script>

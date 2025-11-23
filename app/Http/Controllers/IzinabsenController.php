@@ -51,6 +51,16 @@ class IzinabsenController extends Controller
         if (!empty($request->status) || $request->status === '0') {
             $qizin->where('presensi_izinabsen.status', $request->status);
         }
+        $qizin->select(
+            'presensi_izinabsen.*',
+            'karyawan.nama_karyawan',
+            'karyawan.nik_show',
+            'jabatan.nama_jabatan',
+            'karyawan.kode_dept',
+            'karyawan.kode_cabang',
+            'departemen.nama_dept',
+            'cabang.nama_cabang'
+        );
         $qizin->orderBy('presensi_izinabsen.status');
         $qizin->orderBy('presensi_izinabsen.tanggal', 'desc');
         $izinabsen = $qizin->paginate(15);

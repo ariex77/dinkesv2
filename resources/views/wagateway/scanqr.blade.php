@@ -4,368 +4,1236 @@
     <span>WhatsApp Gateway Dashboard</span>
 @endsection
 @section('content')
-    <div class="container-fluid py-5 px-2">
-        <div class="row justify-content-center mb-4">
-            <div class="col-12 col-lg-10">
-                <h1 class="fw-bold text-center text-success mb-2" style="font-size:2.3rem;">
-                    <i class="bi bi-whatsapp me-2"></i>WhatsApp Gateway Dashboard
-                </h1>
-                <p class="text-center text-secondary mb-4" style="font-size:1.1rem;">Monitor, Scan QR, dan Kirim Pesan
-                    WhatsApp dengan mudah dan cepat.</p>
-                <hr class="mb-0" />
-            </div>
-        </div>
-        <!-- Baris 1: 3 kolom utama sejajar -->
-        <div class="row g-4 mb-2">
+    <div class="row">
+        <div class="col-12">
 
-            <!-- QR Code -->
-            <div class="col-12 col-md-4 d-flex">
-                <div class="card rounded-4 shadow-lg border-0 w-100 flex-fill bg-white h-100">
-                    <div class="card-header rounded-top-4 bg-gradient bg-success text-white fw-semibold text-center py-3">
-                        <i class="bi bi-qr-code-scan me-2"></i>Scan QR WhatsApp
-                    </div>
-                    <div class="card-body p-4 d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <div id="qr-status" class="mb-2 small text-muted text-center"></div>
-                            <div id="qr-container" class="d-flex justify-content-center align-items-center mb-3"
-                                style="min-height:150px;"></div>
+
+            <!-- Form Add Device -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Tambah Device Baru</h5>
                         </div>
-                        <button id="btn-refresh-qr"
-                            class="btn btn-success w-100 mt-auto rounded-pill fw-semibold shadow-sm">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Refresh QR
-                        </button>
+                        <div class="card-body">
+                            <form id="addDeviceForm">
+                                @csrf
+                                <div class="form-group mb-3">
+                                    <label for="sender" class="form-label">Nomor WhatsApp</label>
+                                    <input type="text" class="form-control" id="sender" name="sender" placeholder="6282298859671" required>
+                                    <small class="form-text text-muted">Masukkan nomor WhatsApp dengan format internasional (contoh:
+                                        6282298859671)</small>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btnAddDevice">
+                                    <i class="ti ti-plus"></i> Tambah Device
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <!-- Monitoring Queue -->
-            <div class="col-12 col-md-5 d-flex">
-                <div class="card rounded-4 shadow-lg border-0 w-100 flex-fill bg-white h-100">
-                    <div class="card-header rounded-top-4 bg-gradient bg-primary text-white fw-semibold text-center py-3">
-                        <i class="bi bi-list-task me-2"></i>Monitoring Queue
-                    </div>
-                    <div class="card-body p-4 d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <div id="queue-status" class="mb-2 small text-muted"></div>
-                            <div class="table-responsive mb-2">
-                                <table
-                                    class="table table-hover table-bordered table-sm align-middle mb-0 rounded-3 overflow-hidden">
-                                    <thead class="table-primary bg-gradient text-center align-middle">
-                                        <tr>
-                                            <th class="fw-semibold">#</th>
-                                            <th class="fw-semibold">JID Tujuan</th>
-                                            <th class="fw-semibold">Pesan</th>
-                                            <th class="fw-semibold">Enqueue</th>
-                                            <th class="fw-semibold">Countdown</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="queue-table" class="bg-white"></tbody>
-                                </table>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Informasi Konfigurasi</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-12">
+                                    <p><strong>Domain WA Gateway:</strong></p>
+                                    <code>{{ $generalsetting->domain_wa_gateway ?? 'Belum dikonfigurasi' }}</code>
+                                </div>
+                                <div class="col-12 mt-2">
+                                    <p><strong>API Key:</strong></p>
+                                    <code>{{ $generalsetting->wa_api_key ? '***' . substr($generalsetting->wa_api_key, -4) : 'Belum dikonfigurasi' }}</code>
+                                </div>
                             </div>
-                            <div id="inflight-message" class="text-warning small"></div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Test Kirim Pesan -->
-            <div class="col-12 col-md-3 d-flex">
-                <div class="card rounded-4 shadow-lg border-0 w-100 flex-fill bg-white h-100">
-                    <div class="card-header rounded-top-4 bg-gradient bg-warning text-dark fw-semibold text-center py-3">
-                        <i class="bi bi-send-check me-2"></i>Test Kirim Pesan
-                    </div>
-                    <div class="card-body p-4 d-flex flex-column justify-content-between h-100">
-                        <form id="send-form" class="flex-fill">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small mb-1" for="to">Nomor Tujuan</label>
-                                <input type="text" id="to" class="form-control rounded-3 border-1"
-                                    placeholder="6281xxxxxxx" required>
-                                <div class="form-text ms-1">Tanpa +, contoh: 6281xxxxxxx</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold small mb-1" for="text">Pesan</label>
-                                <textarea id="text" class="form-control rounded-3 border-1" rows="3" placeholder="Tulis pesan Anda..."
-                                    required></textarea>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mt-2">
-                                <button type="submit"
-                                    class="btn btn-warning text-white flex-fill rounded-pill fw-semibold shadow-sm">
-                                    <i class="bi bi-send me-1"></i>Kirim Pesan
+
+            <!-- Tabel Device -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Daftar Device</h5>
+                            <div class="card-tools">
+                                <a href="{{ route('wagateway.messages') }}" class="btn btn-sm btn-info me-2">
+                                    <i class="ti ti-message"></i> Riwayat Pesan
+                                </a>
+
+                                <button class="btn btn-sm btn-primary" id="refreshDeviceInfo">
+                                    <i class="ti ti-refresh"></i> Refresh Info
                                 </button>
                             </div>
-                            <span id="send-result" class="small mt-2 d-block"></span>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Baris 2: Log Pengiriman WhatsApp Full Width -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card rounded-4 shadow-lg border-0 w-100 flex-fill bg-white">
-                    <div class="card-header rounded-top-4 bg-gradient bg-info text-dark fw-semibold text-center py-3">
-                        <i class="bi bi-chat-dots me-2"></i>Log Pengiriman Pesan WhatsApp
-                    </div>
-                    <div class="card-body p-4">
-                        <!-- Filter Form -->
-                        <form id="filter-form" class="row g-2 align-items-end mb-3">
-                            <div class="col-auto">
-                                <label for="filter-start" class="form-label mb-1 small">Tanggal Mulai</label>
-                                <input type="date" id="filter-start" class="form-control form-control-sm">
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped" id="devicesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Nomor WhatsApp</th>
+                                            <th>Status</th>
+                                            <th>Status Koneksi</th>
+                                            <th>Tanggal Dibuat</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($devices as $index => $device)
+                                            <tr data-device-number="{{ $device->number }}">
+                                                <td>{{ $index + 1 }}</td>
+                                                <td>{{ $device->number }}</td>
+                                                <td>
+                                                    <span class="badge {{ $device->status == 1 ? 'bg-success' : 'bg-danger' }}">
+                                                        {{ $device->status == 1 ? 'Aktif' : 'Tidak Aktif' }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary" id="connection-status-{{ $device->id }}">
+                                                        <i class="ti ti-loader-2"></i> Checking...
+                                                    </span>
+                                                </td>
+                                                <td>{{ $device->created_at->format('d/m/Y H:i') }}</td>
+                                                <td>
+                                                    <button
+                                                        class="btn btn-sm {{ $device->status == 1 ? 'btn-warning' : 'btn-success' }} toggle-status me-1"
+                                                        data-id="{{ $device->id }}" data-status="{{ $device->status }}">
+                                                        <i class="ti {{ $device->status == 1 ? 'ti-toggle-left' : 'ti-toggle-right' }}"></i>
+                                                        {{ $device->status == 1 ? 'Nonaktifkan' : 'Aktifkan' }}
+                                                    </button>
+                                                    <button class="btn btn-sm btn-info generate-qr me-1" data-device="{{ $device->number }}"
+                                                        data-id="{{ $device->id }}">
+                                                        <i class="ti ti-qrcode"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-warning test-send-message me-1" data-device="{{ $device->number }}"
+                                                        data-id="{{ $device->id }}">
+                                                        <i class="ti ti-send"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-success fetch-groups-device me-1" data-device="{{ $device->number }}"
+                                                        data-id="{{ $device->id }}" title="Fetch Groups">
+                                                        <i class="ti ti-users"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger disconnect-device me-1" data-device="{{ $device->number }}"
+                                                        data-id="{{ $device->id }}">
+                                                        <i class="ti ti-logout"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger delete-device" data-device="{{ $device->number }}"
+                                                        data-id="{{ $device->id }}" title="Hapus Device">
+                                                        <i class="ti ti-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center">Belum ada device yang terdaftar</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="col-auto">
-                                <label for="filter-end" class="form-label mb-1 small">Tanggal Akhir</label>
-                                <input type="date" id="filter-end" class="form-control form-control-sm">
-                            </div>
-                            <div class="col-auto">
-                                <button type="submit" class="btn btn-sm btn-primary px-3">Filter</button>
-                            </div>
-                            <div class="col-auto">
-                                <button type="button" id="filter-reset" class="btn btn-sm btn-secondary px-3">Reset</button>
-                            </div>
-                        </form>
-                        <div class="table-responsive">
-                            <table class="table table-striped table-bordered table-hover table-sm align-middle mb-0"
-                                id="wamessages-table">
-                                <thead class="table-info text-center align-middle">
-                                    <tr>
-                                        <th class="fw-semibold">ID</th>
-                                        <th class="fw-semibold">Sender</th>
-                                        <th class="fw-semibold">Receiver</th>
-                                        <th class="fw-semibold">Pesan</th>
-                                        <th class="fw-semibold">Status</th>
-                                        <th class="fw-semibold">Error</th>
-                                        <th class="fw-semibold">Waktu</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="wamessages-tbody"></tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Modal QR Code -->
+    <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qrCodeModalLabel">Generate QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="qrCodeContent">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Sedang memproses QR Code...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                    <button type="button" class="btn btn-primary" id="downloadQR" style="display: none;">
+                        <i class="ti ti-download"></i> Download QR Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Test Kirim Pesan -->
+    <div class="modal fade" id="testSendMessageModal" tabindex="-1" aria-labelledby="testSendMessageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="testSendMessageModalLabel">Test Kirim Pesan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="testSendMessageForm">
+                        <div class="mb-3">
+                            <label for="senderNumber" class="form-label">Nomor Pengirim</label>
+                            <input type="text" class="form-control" id="senderNumber" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="targetNumber" class="form-label">Nomor Tujuan <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="targetNumber" placeholder="62888xxxx" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="messageText" class="form-label">Pesan <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="messageText" rows="3" placeholder="Masukkan pesan yang ingin dikirim..." required></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" id="btnTestSendMessage">
+                        <i class="ti ti-send"></i> Kirim Pesan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Disconnect Device -->
+    <div class="modal fade" id="disconnectDeviceModal" tabindex="-1" aria-labelledby="disconnectDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="disconnectDeviceModalLabel">Konfirmasi Disconnect Device</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="ti ti-alert-triangle"></i>
+                        <strong>Peringatan!</strong> Apakah Anda yakin ingin memutuskan koneksi device ini?
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Device:</label>
+                        <input type="text" class="form-control" id="disconnectDeviceNumber" readonly>
+                    </div>
+                    <p class="text-muted">
+                        Device akan terputus dari WhatsApp dan tidak dapat mengirim pesan lagi.
+                        Untuk menggunakan kembali, Anda perlu melakukan scan QR code ulang.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDisconnect">
+                        <i class="ti ti-logout"></i> Ya, Disconnect Device
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Device -->
+    <div class="modal fade" id="deleteDeviceModal" tabindex="-1" aria-labelledby="deleteDeviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteDeviceModalLabel">Konfirmasi Hapus Device</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="ti ti-alert-triangle"></i>
+                        <strong>Peringatan!</strong> Apakah Anda yakin ingin menghapus device ini?
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Device:</label>
+                        <input type="text" class="form-control" id="deleteDeviceNumber" readonly>
+                        <input type="hidden" id="deleteDeviceId">
+                    </div>
+                    <p class="text-muted">
+                        Device akan dihapus secara permanen dari sistem dan tidak dapat dikembalikan.
+                        Tindakan ini akan memutuskan koneksi device dan menghapus semua data terkait.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+                        <i class="ti ti-trash"></i> Ya, Hapus Device
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Groups -->
+    <div class="modal fade" id="groupsModal" tabindex="-1" aria-labelledby="groupsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="groupsModalLabel">Daftar Groups WhatsApp</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="groupsContent">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Memuat groups...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
-<style>
-    .wa-pulse-anim {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 120px;
-    }
-
-    .wa-pulse {
-        width: 70px;
-        height: 70px;
-        background: #25d366;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 0 0 0 #25d36680;
-        animation: wa-pulse-ring 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
-        position: relative;
-    }
-
-    .wa-pulse i {
-        color: #fff;
-        font-size: 2.2rem;
-    }
-
-    @keyframes wa-pulse-ring {
-        0% {
-            box-shadow: 0 0 0 0 #25d36680;
-        }
-
-        70% {
-            box-shadow: 0 0 0 18px #25d36600;
-        }
-
-        100% {
-            box-shadow: 0 0 0 0 #25d36600;
-        }
-    }
-
-    .wa-pulse-text {
-        margin-top: 10px;
-        font-size: 1rem;
-        color: #25d366;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-align: center;
-        animation: wa-pulse-text-fade 1.5s infinite;
-    }
-
-    @keyframes wa-pulse-text-fade {
-
-        0%,
-        100% {
-            opacity: 1;
-        }
-
-        50% {
-            opacity: 0.7;
-        }
-    }
-</style>
-
 @push('myscript')
+    <style>
+        .ti-loader-2 {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .badge {
+            font-size: 0.75rem;
+        }
+    </style>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ganti sesuai domain API Gateway Anda
-            const API_BASE = "{{ $generalsetting->domain_wa_gateway }}";
-            // localStorage.setItem('wa_api_base', API_BASE);
-            const API_KEY = "{{ $generalsetting->wa_api_key }}";
+        $(document).ready(function() {
+            // Load device info for all devices
+            loadAllDeviceInfo();
 
-            // === QR Code ===
-            async function loadQR() {
-                try {
-                    const res = await fetch(`${API_BASE}/qr/status`);
-                    const data = await res.json();
-                    document.getElementById('qr-status').textContent = `Status: ${data.status}`;
-                    const qrContainer = document.getElementById('qr-container');
-                    if (data.status && data.status.toLowerCase() === 'connected') {
-                        qrContainer.innerHTML = `
-            <div class=\"wa-pulse-anim\">
-              <div class=\"wa-pulse\">
-                <i class=\"ti ti-brand-whatsapp"></i>
-              </div>
-              <div class=\"wa-pulse-text\">WhatsApp Terhubung</div>
-            </div>`;
-                    } else {
-                        qrContainer.innerHTML = data.qr_svg ? data.qr_svg :
-                            '<span class="text-gray-400">Tidak ada QR tersedia.</span>';
-                    }
-                } catch (e) {
-                    document.getElementById('qr-status').textContent = 'Gagal mengambil QR: ' + (e.message ||
-                    e);
-                }
-            }
-            loadQR();
-            setInterval(loadQR, 3000);
-            document.getElementById('btn-refresh-qr').onclick = loadQR;
+            // Auto-refresh device info every 30 seconds
+            setInterval(function() {
+                loadAllDeviceInfo();
+            }, 30000);
 
-            // === Monitoring Queue ===
-            async function loadQueue() {
-                try {
-                    const res = await fetch(`${API_BASE}/queue/status`);
-                    const data = await res.json();
-                    document.getElementById('queue-status').textContent =
-                        `Queue: ${data.queue_length} pesan, Estimasi delay: ${data.est_delay_sec}s`;
-                    const tbody = document.getElementById('queue-table');
-                    tbody.innerHTML = '';
-                    (data.queue_details || []).forEach((msg, i) => {
-                        const countdown = Math.max(0, (i + 1) * (data.interval_ms || 1000) / 1000);
-                        tbody.innerHTML += `<tr>
-            <td class="px-2 py-1">${i + 1}</td>
-            <td class="px-2 py-1">${msg.jid}</td>
-            <td class="px-2 py-1">${msg.text || ''}</td>
-            <td class="px-2 py-1">${msg.enqueued_at ? new Date(msg.enqueued_at).toLocaleTimeString() : ''}</td>
-            <td class="px-2 py-1"><span>${countdown}</span> detik</td>
-          </tr>`;
-                    });
-                    // In-flight message
-                    if (data.in_flight) {
-                        document.getElementById('inflight-message').innerHTML =
-                            `<b>In-flight:</b> ${data.in_flight.jid} - ${data.in_flight.text} (Sejak: ${data.in_flight.started_at ? new Date(data.in_flight.started_at).toLocaleTimeString() : ''})`;
-                    } else {
-                        document.getElementById('inflight-message').textContent = '';
-                    }
-                } catch (e) {
-                    document.getElementById('queue-status').textContent = 'Gagal mengambil data queue: ' + (e
-                        .message || e);
-                }
-            }
-            loadQueue();
-            setInterval(loadQueue, 3000);
+            // Handle refresh device info button
+            $('#refreshDeviceInfo').on('click', function() {
+                const btn = $(this);
+                const originalHtml = btn.html();
 
-            // === Form Kirim Pesan ===
-            document.getElementById('send-form').onsubmit = async (e) => {
+                btn.html('<i class="ti ti-loader-2"></i> Refreshing...').prop('disabled', true);
+
+                // Reset all status badges to loading
+                $('[id^="connection-status-"]').removeClass('bg-success bg-danger').addClass('bg-secondary')
+                    .html('<i class="ti ti-loader-2"></i> Checking...');
+
+                // Load all device info
+                loadAllDeviceInfo();
+
+                // Re-enable button after 2 seconds
+                setTimeout(function() {
+                    btn.html(originalHtml).prop('disabled', false);
+                }, 2000);
+            });
+
+            // Handle form submission untuk add device
+            $('#addDeviceForm').on('submit', function(e) {
                 e.preventDefault();
-                const to = document.getElementById('to').value.trim();
-                const text = document.getElementById('text').value.trim();
-                try {
-                    const res = await fetch(`${API_BASE}/send-message`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-api-key': API_KEY
-                        },
-                        body: JSON.stringify({
-                            to,
-                            text
-                        })
-                    });
-                    const data = await res.json();
-                    document.getElementById('send-result').textContent = data.success ?
-                        `✅ Pesan dikirim (queued: ${data.queued})` : `❌ ${data.error || 'Gagal mengirim'}`;
-                    if (data.success) {
-                        document.getElementById('send-form').reset();
-                    }
-                } catch (e) {
-                    document.getElementById('send-result').textContent = '❌ Gagal mengirim: ' + (e
-                        .message || e);
-                }
-            };
 
-            // === Log Pengiriman Pesan WhatsApp ===
-            async function loadWAMessages(start = '', end = '') {
-                try {
-                    let url = `${API_BASE}/api/messages`;
-                    const params = [];
-                    if (start) params.push(`start=${start}`);
-                    if (end) params.push(`end=${end}`);
-                    if (params.length) url += '?' + params.join('&');
-                    const res = await fetch(url);
-                    const data = await res.json();
-                    const tbody = document.getElementById('wamessages-tbody');
-                    tbody.innerHTML = '';
-                    data.forEach(msg => {
-                        tbody.innerHTML += `<tr>
-            <td class="px-2 py-1">${msg.id}</td>
-            <td class="px-2 py-1">${msg.sender || '-'}</td>
-            <td class="px-2 py-1">${msg.receiver || '-'}</td>
-            <td class="px-2 py-1">${msg.message || ''}</td>
-            <td class="px-2 py-1">${msg.status ? '<span class=\'text-green-600\'>Berhasil</span>' : '<span class=\'text-red-600\'>Gagal</span>'}</td>
-            <td class="px-2 py-1">${msg.error_message || ''}</td>
-            <td class="px-2 py-1">${msg.sent_at ? new Date(msg.sent_at).toLocaleString() : '-'}</td>
-          </tr>`;
-                    });
-                } catch (e) {
-                    document.getElementById('wamessages-tbody').innerHTML =
-                        `<tr><td colspan="7">Gagal mengambil data pesan: ${e.message || e}</td></tr>`;
+                const btnAddDevice = $('#btnAddDevice');
+                const originalText = btnAddDevice.html();
+                const form = $(this);
+
+                // Disable button dan show loading
+                btnAddDevice.prop('disabled', true).html('<i class="ti ti-loader-2"></i> Menambahkan...');
+
+                // Loading sudah ditampilkan di button
+
+                $.ajax({
+                    url: '{{ route('wagateway.add-device') }}',
+                    type: 'POST',
+                    data: form.serialize(),
+                    timeout: 30000, // 30 detik timeout
+                    success: function(response) {
+                        if (response.success) {
+                            // Reset form
+                            form[0].reset();
+                            // Reload page to show new device
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan saat menambahkan device';
+
+                        if (xhr.status === 422) {
+                            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                                const errors = xhr.responseJSON.errors;
+                                errorMessage = Object.values(errors).flat().join('\n');
+                            }
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        alert('Error: ' + errorMessage);
+                    },
+                    complete: function() {
+                        // Re-enable button
+                        btnAddDevice.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+
+            // Handle toggle status device
+            $('.toggle-status').on('click', function() {
+                const deviceId = $(this).data('id');
+                const currentStatus = $(this).data('status');
+                const button = $(this);
+                const originalText = button.html();
+
+                // Disable button dan show loading
+                button.prop('disabled', true).html('<i class="ti ti-loader-2"></i> Memproses...');
+
+                $.ajax({
+                    url: '{{ route('wagateway.toggle-device-status', ':id') }}'.replace(':id', deviceId),
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    timeout: 15000, // 15 detik timeout
+                    success: function(response) {
+                        if (response.success) {
+                            // Update UI without refresh
+                            updateDeviceStatusInUI(deviceId, response.device.status);
+                        } else {
+                            // Show error notification
+                            alert('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan saat mengubah status device';
+
+                        if (xhr.status === 500) {
+                            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        alert('Error: ' + errorMessage);
+                    },
+                    complete: function() {
+                        // Re-enable button
+                        button.prop('disabled', false).html(originalText);
+                    }
+                });
+            });
+
+            // Handle generate QR code
+            $('.generate-qr').on('click', function() {
+                const deviceNumber = $(this).data('device');
+                const deviceId = $(this).data('id');
+                const button = $(this);
+                const originalText = button.html();
+
+                // Disable button dan show loading
+                button.prop('disabled', true).html('<i class="ti ti-loader-2"></i>');
+
+                // Show modal
+                $('#qrCodeModal').modal('show');
+
+                // Reset modal content
+                $('#qrCodeContent').html(`
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Sedang memproses QR Code...</p>
+                `);
+                $('#downloadQR').hide();
+
+                // Generate QR code
+                generateQRCode(deviceNumber, deviceId, button, originalText);
+            });
+
+            // Function to generate QR code
+            function generateQRCode(deviceNumber, deviceId, button, originalText) {
+                $.ajax({
+                    url: '{{ route('wagateway.generate-qr') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        device: deviceNumber
+                    },
+                    timeout: 60000, // 60 detik timeout
+                    success: function(response) {
+                        if (response.success) {
+                            if (response.data.qrcode) {
+                                // QR code generated successfully
+                                $('#qrCodeContent').html(`
+                                    <div class="alert alert-success">
+                                        <i class="ti ti-check-circle"></i> ${response.data.message || 'QR Code berhasil dibuat'}
+                                    </div>
+                                    <img src="${response.data.qrcode}" class="img-fluid" style="max-width: 300px;" alt="QR Code">
+                                    <p class="mt-2 text-muted">Scan QR Code ini dengan WhatsApp untuk menghubungkan device</p>
+                                    <div class="mt-3">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Checking...</span>
+                                        </div>
+                                        <small class="text-muted ms-2">Menunggu koneksi...</small>
+                                    </div>
+                                `);
+                                $('#downloadQR').show().off('click').on('click', function() {
+                                    downloadQRCode(response.data.qrcode, deviceNumber);
+                                });
+
+                                // Start checking device status
+                                checkDeviceStatus(deviceNumber, deviceId);
+                            } else if (response.data.status === 'processing') {
+                                // Still processing, check again after 2 seconds
+                                setTimeout(() => {
+                                    generateQRCode(deviceNumber, deviceId, button, originalText);
+                                }, 2000);
+                            } else if (response.data.status === 'connected' || response.data.msg === 'Device already connected!' ||
+                                response.message === 'Device sudah terhubung') {
+                                // Device already connected
+                                let deviceInfoHtml = '';
+
+                                if (response.data.device_info && response.data.device_info.info && response.data.device_info.info
+                                    .length > 0) {
+                                    const deviceInfo = response.data.device_info.info[0];
+                                    deviceInfoHtml = `
+                                        <div class="alert alert-success">
+                                            <i class="ti ti-check-circle"></i> Device sudah terhubung!
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <strong>Nomor:</strong><br>
+                                                <span class="text-primary">${deviceInfo.body || deviceNumber}</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Status:</strong><br>
+                                                <span class="badge ${deviceInfo.status === 'Connected' ? 'bg-success' : 'bg-warning'}">${deviceInfo.status || 'Connected'}</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else {
+                                    deviceInfoHtml = `
+                                        <div class="alert alert-info">
+                                            <i class="ti ti-info-circle"></i> Device sudah terhubung!
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <strong>Nomor:</strong><br>
+                                                <span class="text-primary">${deviceNumber}</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Status:</strong><br>
+                                                <span class="badge bg-success">Connected</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+
+                                $('#qrCodeContent').html(deviceInfoHtml);
+                                $('#downloadQR').hide();
+                            } else {
+                                $('#qrCodeContent').html(`
+                                    <div class="alert alert-warning">
+                                        <i class="ti ti-alert-triangle"></i> ${response.data.msg || response.message || 'Terjadi kesalahan'}
+                                    </div>
+                                `);
+                            }
+                        } else {
+                            $('#qrCodeContent').html(`
+                                <div class="alert alert-danger">
+                                    <i class="ti ti-x-circle"></i> ${response.message || 'Gagal generate QR Code'}
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan saat generate QR Code';
+
+                        if (xhr.status === 500) {
+                            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
+                        } else if (xhr.status === 0) {
+                            errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        $('#qrCodeContent').html(`
+                            <div class="alert alert-danger">
+                                <i class="ti ti-x-circle"></i> ${errorMessage}
+                            </div>
+                        `);
+                    },
+                    complete: function() {
+                        // Re-enable button
+                        button.prop('disabled', false).html(originalText);
+                    }
+                });
+            }
+
+            // Function to check device status
+            function checkDeviceStatus(deviceNumber, deviceId) {
+                $.ajax({
+                    url: '{{ route('wagateway.check-device-status') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        device: deviceNumber
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        if (response.success && response.data.device_info && response.data.device_info.info && response.data
+                            .device_info.info.length > 0) {
+                            const deviceInfo = response.data.device_info.info[0];
+
+                            // Check if device is actually connected
+                            if (deviceInfo.status === 'Connected') {
+                                // Show device info instead of QR code
+                                $('#qrCodeContent').html(`
+                                    <div class="alert alert-success">
+                                        <i class="ti ti-check-circle"></i> Device berhasil terhubung!
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>Nomor:</strong><br>
+                                            <span class="text-primary">${deviceInfo.body || deviceNumber}</span>
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Status:</strong><br>
+                                            <span class="badge ${deviceInfo.status === 'Connected' ? 'bg-success' : 'bg-warning'}">${deviceInfo.status || 'Connected'}</span>
+                                        </div>
+                                    </div>
+                                `);
+                                $('#downloadQR').hide();
+
+                                // Update device status in table
+                                updateDeviceStatusInTable(deviceId, deviceInfo.status);
+
+                                // Stop checking status
+                                return;
+                            }
+                        }
+
+                        // Device not connected yet, check again after 3 seconds
+                        setTimeout(() => {
+                            checkDeviceStatus(deviceNumber, deviceId);
+                        }, 3000);
+                    },
+                    error: function(xhr) {
+                        // Continue checking even if there's an error
+                        setTimeout(() => {
+                            checkDeviceStatus(deviceNumber, deviceId);
+                        }, 5000);
+                    }
+                });
+            }
+
+            // Function to update device status in table
+            function updateDeviceStatusInTable(deviceId, status) {
+                const row = $(`button[data-id="${deviceId}"]`).closest('tr');
+                const statusBadge = row.find('.badge');
+
+                if (status === 'Connected') {
+                    statusBadge.removeClass('bg-danger').addClass('bg-success').text('Aktif');
+                } else if (status === 'Disconnect') {
+                    statusBadge.removeClass('bg-success').addClass('bg-danger').text('Tidak Aktif');
                 }
             }
 
-            // Form filter tanggal
-            const filterForm = document.getElementById('filter-form');
-            const filterStart = document.getElementById('filter-start');
-            const filterEnd = document.getElementById('filter-end');
-            let filterInterval = null;
+            // Function to update device status in UI without refresh
+            function updateDeviceStatusInUI(deviceId, newStatus) {
+                const row = $(`button[data-id="${deviceId}"]`).closest('tr');
+                const statusBadge = row.find('.badge');
+                const toggleButton = row.find('.toggle-status');
 
-            filterForm.onsubmit = function(e) {
-                e.preventDefault();
-                const start = filterStart.value;
-                const end = filterEnd.value;
-                loadWAMessages(start, end);
-                // Hentikan auto-refresh saat filter aktif
-                if (filterInterval) clearInterval(filterInterval);
-            };
-            document.getElementById('filter-reset').onclick = function() {
-                filterStart.value = '';
-                filterEnd.value = '';
-                loadWAMessages();
-                // Aktifkan kembali auto-refresh
-                if (filterInterval) clearInterval(filterInterval);
-                filterInterval = setInterval(() => loadWAMessages(), 5000);
-            };
+                // Update status badge
+                if (newStatus == 1) {
+                    statusBadge.removeClass('bg-danger').addClass('bg-success').text('Aktif');
+                } else {
+                    statusBadge.removeClass('bg-success').addClass('bg-danger').text('Tidak Aktif');
+                }
 
-            // Load pertama kali dan auto-refresh tiap 5 detik (jika tidak sedang filter)
-            loadWAMessages();
-            filterInterval = setInterval(() => loadWAMessages(), 5000);
+                // Update toggle button
+                if (newStatus == 1) {
+                    toggleButton.removeClass('btn-success').addClass('btn-warning')
+                        .data('status', 1)
+                        .html('<i class="ti ti-toggle-left"></i> Nonaktifkan');
+                } else {
+                    toggleButton.removeClass('btn-warning').addClass('btn-success')
+                        .data('status', 0)
+                        .html('<i class="ti ti-toggle-right"></i> Aktifkan');
+                }
+
+                // Update all other devices to inactive if current device is active
+                if (newStatus == 1) {
+                    $('.toggle-status').not(toggleButton).each(function() {
+                        const otherButton = $(this);
+                        const otherRow = otherButton.closest('tr');
+                        const otherBadge = otherRow.find('.badge');
+
+                        otherBadge.removeClass('bg-success').addClass('bg-danger').text('Tidak Aktif');
+                        otherButton.removeClass('btn-warning').addClass('btn-success')
+                            .data('status', 0)
+                            .html('<i class="ti ti-toggle-right"></i> Aktifkan');
+                    });
+                }
+            }
+
+            // Handle test send message button click
+            $(document).on('click', '.test-send-message', function() {
+                const deviceNumber = $(this).data('device');
+
+                // Set sender number
+                $('#senderNumber').val(deviceNumber);
+
+                // Clear form
+                $('#targetNumber').val('');
+                $('#messageText').val('');
+
+                // Show modal
+                $('#testSendMessageModal').modal('show');
+            });
+
+            // Handle test send message form submission
+            $('#btnTestSendMessage').on('click', function() {
+                const btn = $(this);
+                const originalHtml = btn.html();
+
+                // Validate form
+                const targetNumber = $('#targetNumber').val().trim();
+                const messageText = $('#messageText').val().trim();
+
+                if (!targetNumber || !messageText) {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Nomor tujuan dan pesan harus diisi',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    return;
+                }
+
+                // Show loading
+                btn.html('<i class="ti ti-loader-2"></i> Mengirim...').prop('disabled', true);
+
+                // Send message
+                $.ajax({
+                    url: '{{ route('wagateway.test-send-message') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        sender: $('#senderNumber').val(),
+                        number: targetNumber,
+                        message: messageText
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        // Debug info
+                        console.log('Success response:', response);
+
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                timer: 5000,
+                                timerProgressBar: true
+                            });
+
+                            // Close modal
+                            $('#testSendMessageModal').modal('hide');
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: response.message || 'Terjadi kesalahan saat mengirim pesan',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        let errorMessage = 'Terjadi kesalahan saat mengirim pesan';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            const errorMessages = Object.values(errors).flat();
+                            errorMessage = errorMessages.join(', ');
+                        }
+
+                        // Debug info
+                        console.log('Error response:', xhr.responseJSON);
+                        console.log('Status:', xhr.status);
+                        console.log('Response text:', xhr.responseText);
+
+                        Swal.fire({
+                            title: 'Error!',
+                            text: errorMessage,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            });
+
+            // Handle disconnect device button click
+            $(document).on('click', '.disconnect-device', function() {
+                const deviceNumber = $(this).data('device');
+
+                // Set device number
+                $('#disconnectDeviceNumber').val(deviceNumber);
+
+                // Show modal
+                $('#disconnectDeviceModal').modal('show');
+            });
+
+            // Handle confirm disconnect button click
+            $('#btnConfirmDisconnect').on('click', function() {
+                const btn = $(this);
+                const originalHtml = btn.html();
+                const deviceNumber = $('#disconnectDeviceNumber').val();
+
+                // Show loading
+                btn.html('<i class="ti ti-loader-2"></i> Memutuskan...').prop('disabled', true);
+
+                // Disconnect device
+                $.ajax({
+                    url: '{{ route('wagateway.disconnect-device') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        sender: deviceNumber
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        // Debug info
+                        console.log('Disconnect response:', response);
+
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                timer: 5000,
+                                timerProgressBar: true
+                            });
+
+                            // Close modal
+                            $('#disconnectDeviceModal').modal('hide');
+
+                            // Refresh device info
+                            loadAllDeviceInfo();
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: response.message || 'Terjadi kesalahan saat memutuskan device',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        let errorMessage = 'Terjadi kesalahan saat memutuskan device';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            const errorMessages = Object.values(errors).flat();
+                            errorMessage = errorMessages.join(', ');
+                        }
+
+                        // Debug info
+                        console.log('Disconnect error response:', xhr.responseJSON);
+                        console.log('Status:', xhr.status);
+                        console.log('Response text:', xhr.responseText);
+
+                        Swal.fire({
+                            title: 'Error!',
+                            text: errorMessage,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            });
+
+            // Handle delete device button click
+            $(document).on('click', '.delete-device', function() {
+                const deviceNumber = $(this).data('device');
+                const deviceId = $(this).data('id');
+
+                // Set device number and ID
+                $('#deleteDeviceNumber').val(deviceNumber);
+                $('#deleteDeviceId').val(deviceId);
+
+                // Show modal
+                $('#deleteDeviceModal').modal('show');
+            });
+
+            // Handle confirm delete button click
+            $('#btnConfirmDelete').on('click', function() {
+                const btn = $(this);
+                const originalHtml = btn.html();
+                const deviceId = $('#deleteDeviceId').val();
+
+                // Show loading
+                btn.html('<i class="ti ti-loader-2"></i> Menghapus...').prop('disabled', true);
+
+                // Delete device
+                $.ajax({
+                    url: '{{ route('wagateway.delete-device', ':id') }}'.replace(':id', deviceId),
+                    type: 'DELETE',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        // Debug info
+                        console.log('Delete response:', response);
+
+                        if (response.success) {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK',
+                                timer: 3000,
+                                timerProgressBar: true
+                            }).then(() => {
+                                // Close modal
+                                $('#deleteDeviceModal').modal('hide');
+
+                                // Reload page to refresh device list
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Gagal!',
+                                text: response.message || 'Terjadi kesalahan saat menghapus device',
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        let errorMessage = 'Terjadi kesalahan saat menghapus device';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            const errorMessages = Object.values(errors).flat();
+                            errorMessage = errorMessages.join(', ');
+                        } else if (xhr.status === 404) {
+                            errorMessage = 'Device tidak ditemukan';
+                        }
+
+                        // Debug info
+                        console.log('Delete error response:', xhr.responseJSON);
+                        console.log('Status:', xhr.status);
+                        console.log('Response text:', xhr.responseText);
+
+                        Swal.fire({
+                            title: 'Error!',
+                            text: errorMessage,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                });
+            });
+
+            // Handle fetch groups per device button click
+            $(document).on('click', '.fetch-groups-device', function() {
+                const deviceNumber = $(this).data('device');
+                const btn = $(this);
+                const originalHtml = btn.html();
+
+                // Show loading
+                btn.html('<i class="ti ti-loader-2"></i>').prop('disabled', true);
+
+                // Show modal
+                $('#groupsModal').modal('show');
+
+                // Fetch groups for specific device
+                $.ajax({
+                    url: '{{ route('wagateway.fetch-groups') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        number: deviceNumber
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        // Debug info
+                        console.log('Fetch groups response:', response);
+
+                        if (response.success && response.data) {
+                            displayGroups(response.data);
+                        } else {
+                            $('#groupsContent').html(`
+                                <div class="alert alert-danger">
+                                    <i class="ti ti-x-circle"></i> ${response.message || 'Gagal mengambil groups'}
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        let errorMessage = 'Terjadi kesalahan saat mengambil groups';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                            const errors = xhr.responseJSON.errors;
+                            const errorMessages = Object.values(errors).flat();
+                            errorMessage = errorMessages.join(', ');
+                        }
+
+                        // Debug info
+                        console.log('Fetch groups error response:', xhr.responseJSON);
+                        console.log('Status:', xhr.status);
+                        console.log('Response text:', xhr.responseText);
+
+                        $('#groupsContent').html(`
+                            <div class="alert alert-danger">
+                                <i class="ti ti-x-circle"></i> ${errorMessage}
+                            </div>
+                        `);
+                    }
+                });
+            });
+
+            // Function to load device info for all devices
+            function loadAllDeviceInfo() {
+                $('tr[data-device-number]').each(function() {
+                    const deviceNumber = $(this).data('device-number');
+                    const deviceId = $(this).find('.toggle-status').data('id');
+                    loadDeviceInfo(deviceNumber, deviceId);
+                });
+            }
+
+            // Function to load device info for a specific device
+            function loadDeviceInfo(deviceNumber, deviceId) {
+                $.ajax({
+                    url: '{{ route('wagateway.check-device-status') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        device: deviceNumber
+                    },
+                    timeout: 10000,
+                    success: function(response) {
+                        if (response.success && response.data.device_info && response.data.device_info.info && response.data
+                            .device_info.info.length > 0) {
+                            const deviceInfo = response.data.device_info.info[0];
+
+                            // Update connection status
+                            const statusBadge = $(`#connection-status-${deviceId}`);
+                            if (deviceInfo.status === 'Connected') {
+                                statusBadge.removeClass('bg-secondary bg-danger').addClass('bg-success')
+                                    .html('<i class="ti ti-check-circle"></i> Connected');
+                            } else {
+                                statusBadge.removeClass('bg-secondary bg-success').addClass('bg-danger')
+                                    .html('<i class="ti ti-x-circle"></i> Disconnected');
+                            }
+
+                        } else {
+                            // Device not found or error
+                            $(`#connection-status-${deviceId}`).removeClass('bg-secondary bg-success').addClass('bg-danger')
+                                .html('<i class="ti ti-x-circle"></i> Not Found');
+                        }
+                    },
+                    error: function(xhr) {
+                        // Error occurred
+                        $(`#connection-status-${deviceId}`).removeClass('bg-secondary bg-success').addClass('bg-danger')
+                            .html('<i class="ti ti-x-circle"></i> Error');
+                    }
+                });
+            }
+
+            // Handle fetch groups button click
+            $('#fetchGroupsBtn').on('click', function() {
+                const btn = $(this);
+                const originalHtml = btn.html();
+
+                // Show loading
+                btn.html('<i class="ti ti-loader-2"></i> Loading...').prop('disabled', true);
+
+                // Show modal
+                $('#groupsModal').modal('show');
+
+                // Get first available device number
+                const firstDeviceNumber = $('tr[data-device-number]').first().data('device-number');
+
+                if (!firstDeviceNumber) {
+                    btn.html(originalHtml).prop('disabled', false);
+                    $('#groupsContent').html(`
+                        <div class="alert alert-warning">
+                            <i class="ti ti-alert-triangle"></i> Tidak ada device yang tersedia untuk mengambil groups
+                        </div>
+                    `);
+                    return;
+                }
+
+                // Fetch groups
+                $.ajax({
+                    url: '{{ route('wagateway.fetch-groups') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        number: firstDeviceNumber
+                    },
+                    timeout: 30000,
+                    success: function(response) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        // Debug info
+                        console.log('Fetch groups response:', response);
+
+                        if (response.success && response.data) {
+                            displayGroups(response.data);
+                        } else {
+                            $('#groupsContent').html(`
+                                <div class="alert alert-danger">
+                                    <i class="ti ti-x-circle"></i> ${response.message || 'Gagal mengambil groups'}
+                                </div>
+                            `);
+                        }
+                    },
+                    error: function(xhr) {
+                        btn.html(originalHtml).prop('disabled', false);
+
+                        let errorMessage = 'Terjadi kesalahan saat mengambil groups';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        // Debug info
+                        console.log('Fetch groups error response:', xhr.responseJSON);
+                        console.log('Status:', xhr.status);
+                        console.log('Response text:', xhr.responseText);
+
+                        $('#groupsContent').html(`
+                            <div class="alert alert-danger">
+                                <i class="ti ti-x-circle"></i> ${errorMessage}
+                            </div>
+                        `);
+                    }
+                });
+            });
+
+            // Function to display groups
+            function displayGroups(data) {
+                let html = '';
+
+                if (data.groups && data.groups.length > 0) {
+                    html += `
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <strong>Total Groups:</strong> ${data.total_groups || data.groups.length}
+                            </div>
+                            <div class="col-6">
+                                <strong>Device:</strong> ${data.device_name || data.device_number || 'Unknown'}
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Group ID</th>
+                                        <th>Group Name</th>
+                                        <th>Tag ID</th>
+                                        <th>Tag Name</th>
+                                        <th>Participants</th>
+                                        <th>Contacts</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    data.groups.forEach((group, index) => {
+                        const contactsHtml = group.contacts && group.contacts.length > 0 ?
+                            group.contacts.map(contact =>
+                                `<span class="badge bg-secondary me-1 mb-1">${contact.name || contact.number}</span>`
+                            ).join('') :
+                            '<span class="text-muted">No contacts</span>';
+
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td><code>${group.group_id}</code></td>
+                                <td><strong>${group.group_name}</strong></td>
+                                <td><span class="badge bg-info">${group.tag_id}</span></td>
+                                <td>${group.tag_name}</td>
+                                <td><span class="badge bg-success">${group.participants_count}</span></td>
+                                <td>${contactsHtml}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="alert alert-info">
+                            <i class="ti ti-info-circle"></i> Tidak ada groups ditemukan
+                        </div>
+                    `;
+                }
+
+                $('#groupsContent').html(html);
+            }
+
+            // Function to download QR code
+            function downloadQRCode(qrCodeData, deviceNumber) {
+                const link = document.createElement('a');
+                link.href = qrCodeData;
+                link.download = `qr-code-${deviceNumber}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         });
     </script>
-    </body>
-
-    </html>
+@endpush

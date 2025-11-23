@@ -10,6 +10,7 @@ use App\Http\Controllers\DepartemenController;
 use App\Http\Controllers\FacerecognitionController;
 use App\Http\Controllers\GajipokokController;
 use App\Http\Controllers\GeneralsettingController;
+use App\Http\Controllers\GrupController;
 use App\Http\Controllers\HariliburController;
 use App\Http\Controllers\IzinabsenController;
 use App\Http\Controllers\IzincutiController;
@@ -41,6 +42,8 @@ use App\Http\Controllers\IconGeneratorController;
 use App\Http\Controllers\BersihkanfotoController;
 use App\Http\Controllers\TrackingPresensiController;
 use App\Http\Controllers\AktivitasKaryawanController;
+use App\Http\Controllers\UpdateController;
+use App\Http\Controllers\Admin\UpdateManagementController;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Role;
 
@@ -90,6 +93,7 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard.index');
+        Route::post('/dashboard/kirim-ucapan-birthday', 'kirimUcapanBirthday')->name('dashboard.kirim.ucapan.birthday');
     });
     Route::middleware('role:super admin')->controller(RoleController::class)->group(function () {
         Route::get('/roles', 'index')->name('roles.index');
@@ -151,6 +155,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/karyawan/{nik}/show', 'show')->name('karyawan.show')->can('karyawan.show');
         Route::get('/karyawan/{nik}/setjamkerja', 'setjamkerja')->name('karyawan.setjamkerja')->can('karyawan.setjamkerja');
         Route::post('/karyawan/{nik}/storejamkerjabyday', 'storejamkerjabyday')->name('karyawan.storejamkerjabyday')->can('karyawan.setjamkerja');
+        Route::get('/karyawan/{nik}/setcabang', 'setcabang')->name('karyawan.setcabang')->can('karyawan.setcabang');
+        Route::post('/karyawan/{nik}/storecabang', 'storecabang')->name('karyawan.storecabang')->can('karyawan.setcabang');
         Route::post('/karyawan/storejamkerjabydate', 'storejamkerjabydate')->name('karyawan.storejamkerjabydate')->can('karyawan.setjamkerja');
 
         Route::post('/karyawan/getjamkerjabydate', 'getjamkerjabydate')->name('karyawan.getjamkerjabydate')->can('karyawan.setjamkerja');
@@ -172,6 +178,35 @@ Route::middleware('auth')->group(function () {
         Route::get('/departemen/{nik}', 'edit')->name('departemen.edit')->can('departemen.edit');
         Route::put('/departemen/{nik}', 'update')->name('departemen.update')->can('departemen.edit');
         Route::delete('/departemen/{nik}/delete', 'destroy')->name('departemen.delete')->can('departemen.delete');
+    });
+
+    Route::controller(GrupController::class)->group(function () {
+        Route::get('/grup', 'index')->name('grup.index')->can('grup.index');
+        Route::get('/grup/create', 'create')->name('grup.create')->can('grup.create');
+        Route::post('/grup', 'store')->name('grup.store')->can('grup.create');
+
+        // Route pencarian karyawan di grup (letakkan sebelum route parameter)
+        Route::get('/grup/search-karyawan', 'searchKaryawan')->name('grup.searchKaryawan');
+        // Form karyawan baru di grup (hindari tertangkap oleh {kode_grup})
+        Route::get('/grup/{kode_grup}/create-karyawan-form', 'createKaryawanForm')->name('grup.createKaryawanForm')->can('grup.detail');
+        // Get anggota grup untuk AJAX update
+        Route::get('/grup/{kode_grup}/get-anggota', 'getAnggotaGrup')->name('grup.getAnggotaGrup');
+        // Set jam kerja grup
+        Route::get('/grup/{kode_grup}/set-jam-kerja', 'setJamKerja')->name('grup.setJamKerja')->can('grup.setJamKerja');
+        Route::match(['PUT', 'POST'], '/grup/{kode_grup}/update-jam-kerja', 'updateJamKerja')->name('grup.updateJamKerja')->can('grup.setJamKerja');
+        Route::delete('/grup/delete-jam-kerja-bydate', 'deleteJamKerjaBydate')->name('grup.deleteJamKerjaBydate')->can('grup.setJamKerja');
+        Route::post('/grup/{kode_grup}/get-jam-kerja-bydate', 'getJamKerjaBydate')->name('grup.getJamKerjaBydate')->can('grup.setJamKerja');
+        // Detail grup (letakkan sebelum {kode_grup})
+        Route::get('/grup/{kode_grup}/detail', 'detail')->name('grup.detail')->can('grup.detail');
+        // Tambah karyawan ke grup (hindari tertangkap oleh {kode_grup})
+        Route::post('/grup/add-karyawan', 'addKaryawan')->name('grup.addKaryawan')->can('grup.detail');
+        // Hapus karyawan dari grup (hindari tertangkap oleh {kode_grup})
+        Route::delete('/grup/remove-karyawan', 'removeKaryawan')->name('grup.removeKaryawan')->can('grup.detail');
+
+        // Route manipulasi data grup (setelah route spesifik di atas)
+        Route::get('/grup/{kode_grup}', 'edit')->name('grup.edit')->can('grup.edit');
+        Route::delete('/grup/{kode_grup}/delete', 'delete')->name('grup.delete')->can('grup.delete');
+        Route::put('/grup/{kode_grup}', 'update')->name('grup.update')->can('grup.edit');
     });
 
     Route::controller(JabatanController::class)->group(function () {
@@ -448,6 +483,15 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('role:super admin')->controller(WagatewayController::class)->group(function () {
         Route::get('/wagateway', 'index')->name('wagateway.index');
+        Route::get('/wagateway/messages', 'messages')->name('wagateway.messages');
+        Route::post('/wagateway/add-device', 'addDevice')->name('wagateway.add-device');
+        Route::post('/wagateway/toggle-device-status/{id}', 'toggleDeviceStatus')->name('wagateway.toggle-device-status');
+        Route::post('/wagateway/generate-qr', 'generateQR')->name('wagateway.generate-qr');
+        Route::post('/wagateway/check-device-status', 'checkDeviceStatus')->name('wagateway.check-device-status');
+        Route::post('/wagateway/test-send-message', 'testSendMessage')->name('wagateway.test-send-message');
+        Route::post('/wagateway/disconnect-device', 'disconnectDevice')->name('wagateway.disconnect-device');
+        Route::post('/wagateway/fetch-groups', 'fetchGroups')->name('wagateway.fetch-groups');
+        Route::delete('/wagateway/delete-device/{id}', 'deleteDevice')->name('wagateway.delete-device');
     });
 
     // Bersihkan Foto Routes
@@ -489,6 +533,29 @@ Route::middleware('auth')->group(function () {
     // Tracking Kunjungan Routes
     Route::controller(TrackingKunjunganController::class)->group(function () {
         Route::get('/tracking-kunjungan', 'index')->name('tracking-kunjungan.index')->can('kunjungan.index');
+    });
+
+    // Update Routes (Hanya untuk Super Admin)
+    Route::middleware('role:super admin')->controller(UpdateController::class)->group(function () {
+        Route::get('/update', 'index')->name('update.index');
+        Route::post('/update/check', 'checkUpdate')->name('update.check');
+        Route::post('/update/{version}/download', 'downloadUpdate')->name('update.download');
+        Route::post('/update/{version}/install', 'installUpdate')->name('update.install');
+        Route::post('/update/{version}/update-now', 'updateNow')->name('update.update-now');
+        Route::get('/update/history', 'history')->name('update.history');
+        Route::get('/update/log/{id}', 'showLog')->name('update.log');
+    });
+
+    // Admin Update Management (CRUD Update)
+    Route::middleware('role:super admin')->prefix('admin/update')->name('admin.update.')->controller(UpdateManagementController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{id}', 'show')->name('show');
+        Route::get('/{id}/edit', 'edit')->name('edit');
+        Route::put('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::post('/{id}/toggle-active', 'toggleActive')->name('toggle-active');
     });
 });
 

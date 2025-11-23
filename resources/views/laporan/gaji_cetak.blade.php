@@ -21,8 +21,7 @@
             <tr>
                 <td>
                     @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
-                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan"
-                            style="max-width: 100px;">
+                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan" style="max-width: 100px;">
                     @else
                         <img src="https://placehold.co/100x100?text=Logo" alt="Logo Default" style="max-width: 100px;">
                     @endif
@@ -105,7 +104,7 @@
                     @endphp
                     <tr>
                         <td>{{ $loop->iteration }}</td>
-                        <td>'{{ $d['nik'] }}</td>
+                        <td>'{{ $d['nik_show'] ?? $d['nik'] }}</td>
                         <td>{{ $d['nama_karyawan'] }}</td>
                         <td>{{ $d['nama_jabatan'] }}</td>
                         <td>{{ $d['kode_dept'] }}</td>
@@ -182,7 +181,10 @@
                                                 $potongan_jam_terlambat = 0;
                                                 $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
                                             } else {
-                                                $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                                $potongan_jam_terlambat =
+                                                    $terlambat['desimal_terlambat'] > $d[$tanggal_presensi]['total_jam']
+                                                        ? $d[$tanggal_presensi]['total_jam']
+                                                        : $terlambat['desimal_terlambat'];
                                                 $denda = 0;
                                             }
                                         } else {
@@ -199,10 +201,18 @@
                                             $d[$tanggal_presensi]['jam_akhir_istirahat'],
                                             $d[$tanggal_presensi]['lintashari'],
                                         );
-
+                                        $pulangcepat =
+                                            $pulangcepat > $d[$tanggal_presensi]['total_jam'] ? $d[$tanggal_presensi]['total_jam'] : $pulangcepat;
                                         $color_pulang_cepat = $pulangcepat != null ? 'red' : '';
 
-                                        $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                                        $potongan_tidak_absen_masuk_atau_pulang =
+                                            empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
+                                                ? $d[$tanggal_presensi]['total_jam']
+                                                : 0;
+                                        $potongan_jam =
+                                            $potongan_tidak_absen_masuk_atau_pulang == 0
+                                                ? $pulangcepat + $potongan_jam_terlambat
+                                                : $potongan_tidak_absen_masuk_atau_pulang;
 
                                         // $ket =
                                         //     $ket_nama_jam_kerja .
@@ -267,11 +277,7 @@
 
                         @php
                             $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-                            $total_potongan =
-                                ROUND($jumlah_potongan_jam) +
-                                $total_denda +
-                                $d['bpjs_kesehatan'] +
-                                $d['bpjs_tenagakerja'];
+                            $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
 
                             $total_all_potongan += $total_potongan;
                             $upah_lembur = ROUND($upah_perjam) * ROUND($total_jam_lembur, 2);
@@ -284,13 +290,7 @@
                             $total_bruto += $bruto;
                             $total_all_denda += $total_denda;
                             $total_jumlah_potongan_jam += $jumlah_potongan_jam;
-                            $gaji_bersih =
-                                $d['gaji_pokok'] +
-                                $total_tunjangan -
-                                $total_potongan +
-                                $d['penambah'] -
-                                $d['pengurang'] +
-                                $upah_lembur;
+                            $gaji_bersih = $d['gaji_pokok'] + $total_tunjangan - $total_potongan + $d['penambah'] - $d['pengurang'] + $upah_lembur;
                             $total_gaji_bersih += $gaji_bersih;
                         @endphp
                         <td style="text-align: right">{{ formatAngka($total_denda) }}</td>

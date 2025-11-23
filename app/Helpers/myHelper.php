@@ -330,15 +330,21 @@ function hitungpulangcepat($tanggal_presensi, $jam_out, $jam_pulang, $istirahat,
     if (empty($jam_out)) {
         return 0;
     }
+
+
     if ($istirahat == 1) {
         if ($jam_out <= $jam_akhir_istirahat && $jam_out >= $jam_awal_istirahat) {
             $j_pulang = $jam_akhir_istirahat;
+            $pengurang =  0;
         } else {
             $j_pulang = $jam_out;
+            $pengurang = 1;
         }
     } else {
         $j_pulang = $jam_out;
+        $pengurang = 0;
     }
+
 
     if ($j_pulang < $jam_pulang) {
         $j1 = strtotime($j_pulang);
@@ -352,7 +358,7 @@ function hitungpulangcepat($tanggal_presensi, $jam_out, $jam_pulang, $istirahat,
         $mpulangcepat = $menit_pulangcepat <= 9 ? '0' . $menit_pulangcepat : $menit_pulangcepat;
 
         $keterangan_pulangcepat = $jpulangcepat . ':' . $mpulangcepat;
-        $desimal_pulangcepat = $jam_pulangcepat +   ROUND(($menit_pulangcepat / 60), 2);
+        $desimal_pulangcepat = $jam_pulangcepat +   ROUND(($menit_pulangcepat / 60), 2) - $pengurang;
 
         return $desimal_pulangcepat;
     } else {

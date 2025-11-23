@@ -5,7 +5,8 @@
         <select name="nik" id="nik" class="form-select select2NikEdit" disabled>
             <option value="">Pilih Karyawan</option>
             @foreach ($karyawan as $d)
-                <option {{ $gajipokok->nik == $d->nik ? 'selected' : '' }} value="{{ $d->nik }}">{{ $d->nik }} - {{ $d->nama_karyawan }}
+                <option {{ $gajipokok->nik == $d->nik ? 'selected' : '' }} value="{{ $d->nik }}">{{ $d->nik_show ?? $d->nik }} -
+                    {{ $d->nama_karyawan }}
                 </option>
             @endforeach
         </select>

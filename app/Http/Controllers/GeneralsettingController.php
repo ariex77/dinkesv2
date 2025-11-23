@@ -28,6 +28,9 @@ class GeneralsettingController extends Controller
             'periode_laporan_dari' => 'required',
             'periode_laporan_sampai' => 'required',
             'domain_email' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/',
+            'provider_wa' => 'required|in:ig,fe',
+            'tujuan_notifikasi_wa' => 'required|in:0,1',
+            'id_group_wa' => 'nullable|string|max:255',
 
         ]);
 
@@ -55,6 +58,9 @@ class GeneralsettingController extends Controller
                 'domain_email' => $request->domain_email,
                 'domain_wa_gateway' => $request->domain_wa_gateway,
                 'wa_api_key' => $request->wa_api_key,
+                'provider_wa' => $request->provider_wa,
+                'tujuan_notifikasi_wa' => $request->tujuan_notifikasi_wa,
+                'id_group_wa' => $request->id_group_wa,
                 'notifikasi_wa' => $request->has('notifikasi_wa') ? true : false,
                 'batasi_hari_izin' => $request->has('batasi_hari_izin') ? true : false,
                 'jml_hari_izin_max' => $request->jml_hari_izin_max,

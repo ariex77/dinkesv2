@@ -73,7 +73,8 @@ class KaryawanController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nik' => 'required',
+            // nik akan digenerate otomatis; user mengisi nik_show
+            'nik_show' => 'required',
             'no_ktp' => 'required',
             'nama_karyawan' => 'required',
             'tempat_lahir' => 'required',
@@ -91,9 +92,24 @@ class KaryawanController extends Controller
         ]);
 
         try {
+            // Generate NIK format YYMM + 5 digit urut per bulan
+            $tahun = date('y');
+            $bulan = date('m');
+            $prefix = $tahun . $bulan; // e.g., 2510
+
+            $last = Karyawan::where('nik', 'like', $prefix . '%')
+                ->orderBy('nik', 'desc')
+                ->first();
+
+            $lastNumber = 0;
+            if ($last) {
+                $lastNumber = (int)substr($last->nik, 4, 5);
+            }
+            $nextNumber = $lastNumber + 1;
+            $nikAuto = $prefix . str_pad((string)$nextNumber, 5, '0', STR_PAD_LEFT);
             $data_foto = [];
             if ($request->hasfile('foto')) {
-                $foto_name =  $request->nik . "." . $request->file('foto')->getClientOriginalExtension();
+                $foto_name =  $nikAuto . "." . $request->file('foto')->getClientOriginalExtension();
                 $destination_foto_path = "/public/karyawan";
                 $foto = $foto_name;
                 $data_foto = [
@@ -101,7 +117,8 @@ class KaryawanController extends Controller
                 ];
             }
             $data_karyawan = [
-                'nik' => $request->nik,
+                'nik' => $nikAuto,
+                'nik_show' => $request->nik_show,
                 'no_ktp' => $request->no_ktp,
                 'nama_karyawan' => $request->nama_karyawan,
                 'tempat_lahir' => $request->tempat_lahir,
@@ -150,7 +167,8 @@ class KaryawanController extends Controller
     {
         $nik = Crypt::decrypt($nik);
         $request->validate([
-            'nik' => 'required',
+            // nik tetap primary key dan tidak diedit; nik_show yang bisa diubah
+            'nik_show' => 'required',
             'no_ktp' => 'required',
             'nama_karyawan' => 'required',
             'tempat_lahir' => 'required',
@@ -171,7 +189,7 @@ class KaryawanController extends Controller
             $karyawan = Karyawan::where('nik', $nik)->first();
             $data_foto = [];
             if ($request->hasfile('foto')) {
-                $foto_name =  $request->nik . "." . $request->file('foto')->getClientOriginalExtension();
+                $foto_name =  $nik . "." . $request->file('foto')->getClientOriginalExtension();
                 $destination_foto_path = "/public/karyawan";
                 $foto = $foto_name;
                 $data_foto = [
@@ -180,7 +198,8 @@ class KaryawanController extends Controller
             }
 
             $data_karyawan = [
-                'nik' => $request->nik,
+                // 'nik' tidak diubah di update
+                'nik_show' => $request->nik_show,
                 'no_ktp' => $request->no_ktp,
                 'nama_karyawan' => $request->nama_karyawan,
                 'tempat_lahir' => $request->tempat_lahir,
@@ -320,6 +339,41 @@ class KaryawanController extends Controller
         $data['jamkerjabyday'] = Setjamkerjabyday::where('nik', $nik)->pluck('kode_jam_kerja', 'hari')->toArray();
         // dd($data['jamkerjabyday']);
         return view('datamaster.karyawan.setjamkerja', $data);
+    }
+
+    public function setcabang($nik)
+    {
+        $nik = Crypt::decrypt($nik);
+        $data['karyawan'] = Karyawan::where('nik', $nik)
+            ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->first();
+        // Exclude cabang utama dari pilihan
+        $data['cabang'] = Cabang::where('kode_cabang', '!=', $data['karyawan']->kode_cabang)->orderBy('kode_cabang')->get();
+        $data['kode_cabang_array'] = $data['karyawan']->kode_cabang_array ?? [];
+        return view('datamaster.karyawan.setcabang', $data);
+    }
+
+    public function storecabang(Request $request, $nik)
+    {
+        $nik = Crypt::decrypt($nik);
+        try {
+            // Ambil cabang utama karyawan
+            $karyawan = Karyawan::where('nik', $nik)->first();
+            $kode_cabang_utama = $karyawan->kode_cabang;
+
+            // Gabungkan cabang utama dengan cabang yang dipilih
+            $kode_cabang_array = $request->kode_cabang_array ?? [];
+            $kode_cabang_array[] = $kode_cabang_utama; // Tambahkan cabang utama
+            $kode_cabang_array = array_unique($kode_cabang_array); // Hapus duplikasi
+
+            Karyawan::where('nik', $nik)->update([
+                'kode_cabang_array' => $kode_cabang_array
+            ]);
+            return Redirect::back()->with(messageSuccess('Data Cabang Berhasil Disimpan'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError($e->getMessage()));
+        }
     }
 
 

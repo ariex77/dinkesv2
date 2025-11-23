@@ -1,6 +1,6 @@
 @foreach ($detailharilibur as $d)
     <tr>
-        <td>{{ $d->nik }}</td>
+        <td>{{ $d->nik_show ?? $d->nik }}</td>
         <td>{{ formatName2($d->nama_karyawan) }}</td>
         <td>{{ $d->kode_dept }}</td>
         <td>

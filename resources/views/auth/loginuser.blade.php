@@ -121,9 +121,9 @@
 
                 <div class="carousel">
                     <div class="images-wrapper">
-                        <<img src="{{ asset('assets/login/images/image1.png') }}" class="image img-1 show" alt="" />
-                        <img src="{{ asset('assets/login/images/image2.png') }}" class="image img-2" alt="" />
-                        <img src="{{ asset('assets/login/images/image3.png') }}" class="image img-3" alt="" />
+                        <img src="{{ asset('assets/login/images/logoweb-1.png') }}" class="image img-1 show" alt="" />
+                        <img src="{{ asset('assets/login/images/logoweb-1.png') }}" class="image img-2" alt="" />
+                        <img src="{{ asset('assets/login/images/logoweb-1.png') }}" class="image img-3" alt="" />
                     </div>
 
                     <div class="text-slider">

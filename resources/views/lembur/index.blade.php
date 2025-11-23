@@ -110,7 +110,7 @@
                                     @foreach ($lembur as $d)
                                         <tr>
                                             <td>{{ DateToIndo($d->tanggal) }}</td>
-                                            <td>{{ $d->nik }}</td>
+                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>
                                             <td>{{ $d->nama_cabang }}</td>
                                             <td><span class="badge bg-success">{{ date('d-m-Y H:i', strtotime($d->lembur_mulai)) }}</span>

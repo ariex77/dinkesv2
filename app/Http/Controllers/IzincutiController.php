@@ -31,6 +31,7 @@ class IzincutiController extends Controller
         $qcuti->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         $qcuti->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
         $qcuti->join('cuti', 'presensi_izincuti.kode_cuti', '=', 'cuti.kode_cuti');
+        $qcuti->select('presensi_izincuti.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'presensi_izincuti.keterangan as nama_cuti');
         if (!empty($request->dari) && !empty($request->sampai)) {
             $qcuti->whereBetween('izincuti.dari', [$request->dari, $request->sampai]);
         }

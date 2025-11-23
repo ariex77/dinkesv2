@@ -107,7 +107,7 @@
                                             <tr>
                                                 <td>{{ $d->kode_izin_dinas }}</td>
                                                 <td>{{ $d->tanggal }}</td>
-                                                <td>{{ $d->nik }}</td>
+                                                <td>{{ $d->nik_show ?? $d->nik }}</td>
                                                 <td>{{ $d->nama_karyawan }}</td>
                                                 <td>{{ $d->nama_jabatan }}</td>
                                                 <td>{{ $d->kode_dept }}</td>

@@ -227,7 +227,14 @@
                             $d[$tanggal_presensi]['lintashari'],
                         );
 
-                        $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                        $potongan_tidak_absen_masuk_atau_pulang =
+                            empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
+                                ? $d[$tanggal_presensi]['total_jam']
+                                : 0;
+                        $potongan_jam =
+                            $potongan_tidak_absen_masuk_atau_pulang == 0
+                                ? $pulangcepat + $potongan_jam_terlambat
+                                : $potongan_tidak_absen_masuk_atau_pulang;
                     @endphp
                 @elseif($d[$tanggal_presensi]['status'] == 'i')
                     @php
@@ -250,8 +257,7 @@
         @php
             // Final calculations
             $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-            $total_potongan =
-                ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
+            $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
 
         @endphp
 
@@ -310,7 +316,10 @@
                                     $potongan_jam_terlambat = 0;
                                     $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
                                 } else {
-                                    $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                    $potongan_jam_terlambat =
+                                        $terlambat['desimal_terlambat'] > $d[$tanggal_presensi]['total_jam']
+                                            ? $d[$tanggal_presensi]['total_jam']
+                                            : $terlambat['desimal_terlambat'];
                                     $denda = 0;
                                 }
                             } else {
@@ -327,8 +336,15 @@
                                 $d[$tanggal_presensi]['jam_akhir_istirahat'],
                                 $d[$tanggal_presensi]['lintashari'],
                             );
-
-                            $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                            $pulangcepat = $pulangcepat > $d[$tanggal_presensi]['total_jam'] ? $d[$tanggal_presensi]['total_jam'] : $pulangcepat;
+                            $potongan_tidak_absen_masuk_atau_pulang =
+                                empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
+                                    ? $d[$tanggal_presensi]['total_jam']
+                                    : 0;
+                            $potongan_jam =
+                                $potongan_tidak_absen_masuk_atau_pulang == 0
+                                    ? $pulangcepat + $potongan_jam_terlambat
+                                    : $potongan_tidak_absen_masuk_atau_pulang;
                         @endphp
                     @elseif($d[$tanggal_presensi]['status'] == 'i')
                         @php
@@ -352,8 +368,7 @@
             @php
                 // Final calculations
                 $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-                $total_potongan =
-                    ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
+                $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
                 $gaji_bersih = $d['gaji_pokok'] + $total_tunjangan - $total_potongan + $d['penambah'] - $d['pengurang'];
             @endphp
 
@@ -370,7 +385,7 @@
                 <div class="employee-section">
                     <div class="row">
                         <span class="label">NIK:</span>
-                        <span class="value">{{ $d['nik'] }}</span>
+                        <span class="value">{{ $d['nik_show'] ?? $d['nik'] }}</span>
                     </div>
                     <div class="row">
                         <span class="label">Nama:</span>
@@ -402,8 +417,7 @@
                     @if ($d[$j->kode_jenis_tunjangan] > 0)
                         <div class="row">
                             <span>{{ $j->jenis_tunjangan }}</span>
-                            <span
-                                class="currency">{{ number_format($d[$j->kode_jenis_tunjangan], 0, ',', '.') }}</span>
+                            <span class="currency">{{ number_format($d[$j->kode_jenis_tunjangan], 0, ',', '.') }}</span>
                         </div>
                     @endif
                 @endforeach
@@ -485,12 +499,7 @@
                         <span class="currency">
                             @php
                                 $gaji_bersih =
-                                    $d['gaji_pokok'] +
-                                    $total_tunjangan -
-                                    $total_potongan +
-                                    $d['penambah'] -
-                                    $d['pengurang'] +
-                                    ROUND($upah_lembur);
+                                    $d['gaji_pokok'] + $total_tunjangan - $total_potongan + $d['penambah'] - $d['pengurang'] + ROUND($upah_lembur);
                             @endphp
                             {{ number_format($gaji_bersih, 0, ',', '.') }}
                         </span>

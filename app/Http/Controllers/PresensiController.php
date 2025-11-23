@@ -6,7 +6,10 @@ use App\Models\Cabang;
 use App\Models\Denda;
 use App\Models\Detailharilibur;
 use App\Models\Detailsetjamkerjabydept;
+use App\Models\Device;
 use App\Models\Facerecognition;
+use App\Models\GrupDetail;
+use App\Models\GrupJamkerjaBydate;
 use App\Models\Harilibur;
 use App\Models\Izindinas;
 use App\Models\Jamkerja;
@@ -18,9 +21,11 @@ use App\Models\Setjamkerjabyday;
 use App\Models\Setjamkerjabydept;
 use App\Models\User;
 use App\Models\Userkaryawan;
+use App\Jobs\SendWaMessage;
 use CURLFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 
@@ -57,6 +62,7 @@ class PresensiController extends Controller
         $query->select(
             'presensi.id',
             'karyawan.nik',
+            'karyawan.nik_show',
             'nama_karyawan',
             'kode_dept',
             'kode_cabang',
@@ -155,9 +161,23 @@ class PresensiController extends Controller
 
             //Jika Tidak Memiliki Jam Kerja By Date
             if ($jamkerja == null) {
-                //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
-                $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                    ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
+                //Cek Jam Kerja Grup
+                $cek_group = GrupDetail::where('nik', $karyawan->nik)->first();
+                if ($cek_group) {
+                    $jamkerja = GrupJamkerjaBydate::where('kode_grup', $cek_group->kode_grup)
+                        ->where('tanggal', $hariini)
+                        ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                        ->first();
+                } else {
+                    $jamkerja = null;
+                }
+
+                if ($jamkerja == null) {
+                    //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
+                    $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                        ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
+                }
+
 
                 // Jika Jam Kerja Harian Kosong
                 if ($jamkerja == null) {
@@ -172,7 +192,7 @@ class PresensiController extends Controller
             $jamkerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
         }
 
-
+        // dd($jamkerja);
         $ceklibur = Detailharilibur::join('hari_libur', 'hari_libur_detail.kode_libur', '=', 'hari_libur.kode_libur')
             ->where('nik', $karyawan->nik)
             ->where('tanggal', $hariini)
@@ -187,7 +207,10 @@ class PresensiController extends Controller
             return view('presensi.notif_jamkerja');
         }
 
-        $data['cabang'] = Cabang::all();
+        $kode_cabang_array = $karyawan->kode_cabang_array ?? [];
+        $data['cabang'] = Cabang::WhereIn('kode_cabang', $kode_cabang_array)
+            ->orWhere('kode_cabang', $karyawan->kode_cabang)
+            ->get();
 
         $data['hariini'] = $hariini;
         $data['jam_kerja'] = $jamkerja;
@@ -381,10 +404,27 @@ class PresensiController extends Controller
                         }
                         Storage::put($file, $image_base64);
 
-                        //Kirim Notifikasi Ke WA
-                        if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                            $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
-                            $this->sendwa($karyawan->no_hp, $message);
+                        //Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
+                        if ($generalsetting->notifikasi_wa == 1) {
+                            try {
+                                if ($generalsetting->tujuan_notifikasi_wa == 0) {
+                                    if ($karyawan->no_hp != "") {
+                                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Masuk pada " . $jam_presensi . "Hati Hati di Jalan";
+                                        $this->sendwa($karyawan->no_hp, $message);
+                                    }
+                                } else {
+                                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Masuk pada " . $jam_presensi . "Hati Hati di Jalan";
+                                    $this->sendwa($generalsetting->id_group_wa, $message);
+                                }
+                            } catch (\Exception $waException) {
+                                // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                                Log::error('Gagal mengirim notifikasi WA untuk absen masuk', [
+                                    'nik' => $karyawan->nik,
+                                    'nama' => $karyawan->nama_karyawan,
+                                    'error' => $waException->getMessage(),
+                                    'trace' => $waException->getTraceAsString()
+                                ]);
+                            }
                         }
                         return response()->json(['status' => true, 'message' => 'Berhasil Absen Masuk', 'notifikasi' => 'notifikasi_absenmasuk'], 200);
                     } catch (\Exception $e) {
@@ -419,10 +459,27 @@ class PresensiController extends Controller
                             ]);
                         }
                         Storage::put($file, $image_base64);
-                        //Kirim Notifikasi Ke WA
-                        if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                            $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
-                            $this->sendwa($karyawan->no_hp, $message);
+                        //Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
+                        if ($generalsetting->notifikasi_wa == 1) {
+                            try {
+                                if ($generalsetting->tujuan_notifikasi_wa == 0) {
+                                    if ($karyawan->no_hp != "") {
+                                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
+                                        $this->sendwa($karyawan->no_hp, $message);
+                                    }
+                                } else {
+                                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
+                                    $this->sendwa($generalsetting->id_group_wa, $message);
+                                }
+                            } catch (\Exception $waException) {
+                                // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                                Log::error('Gagal mengirim notifikasi WA untuk absen pulang', [
+                                    'nik' => $karyawan->nik,
+                                    'nama' => $karyawan->nama_karyawan,
+                                    'error' => $waException->getMessage(),
+                                    'trace' => $waException->getTraceAsString()
+                                ]);
+                            }
                         }
                         return response()->json(['status' => true, 'message' => 'Berhasil Absen Pulang', 'notifikasi' => 'notifikasi_absenpulang'], 200);
                     } catch (\Exception $e) {
@@ -436,69 +493,7 @@ class PresensiController extends Controller
 
     function sendwa($no_hp, $message)
     {
-        $generalsetting = Pengaturanumum::where('id', 1)->first();
-        // $url = $generalsetting->domain_wa_gateway . "/send-message"; // Ganti dengan URL gateway Anda
-        $apiKey = $generalsetting->wa_api_key; // Ganti dengan API key Anda
-
-        // $data = [
-        //     "to" => $no_hp, // Nomor tujuan (bisa 08xxx atau 62xxx)
-        //     "text" => $message
-        // ];
-
-        // $ch = curl_init($url);
-        // curl_setopt($ch, CURLOPT_POST, 1);
-        // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        //     "Content-Type: application/json",
-        //     "x-api-key: $apiKey"
-        // ]);
-
-        // $response = curl_exec($ch);
-        // $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        // curl_close($ch);
-
-
-
-        $curl = curl_init();
-
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => 'https://api.fonnte.com/send',
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => '',
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 0,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => array(
-                'target' => $no_hp,
-                'message' => $message,
-                // 'url' => 'https://md.fonnte.com/images/wa-logo.png',
-                'filename' => 'filename',
-                'schedule' => 0,
-                'typing' => true,
-                'delay' => '2',
-                'countryCode' => '62',
-                // 'file' => new CURLFile("localfile.jpg"),
-                // 'location' => '-7.983908, 112.621391',
-                'followup' => 0,
-            ),
-            CURLOPT_HTTPHEADER => array(
-                'Authorization: ' . $apiKey
-            ),
-        ));
-
-        $response = curl_exec($curl);
-        if (curl_errno($curl)) {
-            $error_msg = curl_error($curl);
-        }
-        curl_close($curl);
-
-        if (isset($error_msg)) {
-            echo $error_msg;
-        }
-        //echo $response;
+        dispatch(new SendWaMessage($no_hp, $message));
     }
     public function edit(Request $request)
     {

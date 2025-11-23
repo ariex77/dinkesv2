@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Detailsetjamkerjabydept;
+use App\Models\GrupDetail;
+use App\Models\GrupJamkerjaBydate;
 use App\Models\Jamkerja;
 use App\Models\Karyawan;
 use App\Models\LogAbsen;
@@ -11,6 +14,7 @@ use App\Models\Presensi;
 use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PresensiController extends Controller
 {
@@ -67,10 +71,31 @@ class PresensiController extends Controller
 
         //Jika Tidak Memiliki Jam Kerja By Date
         if ($jamkerja == null) {
-            //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
-            $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
 
+            $cek_group = GrupDetail::where('nik', $karyawan->nik)->first();
+            if ($cek_group) {
+                $jamkerja = GrupJamkerjaBydate::where('kode_grup', $cek_group->kode_grup)
+                    ->where('tanggal', $tanggal_presensi)
+                    ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->first();
+            } else {
+                $jamkerja = null;
+            }
+
+            if ($jamkerja == null) {
+                //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
+                $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
+            }
+
+            // Jika Jam Kerja Harian Kosong
+            if ($jamkerja == null) {
+                $jamkerja = Detailsetjamkerjabydept::join('presensi_jamkerja_bydept', 'presensi_jamkerja_bydept_detail.kode_jk_dept', '=', 'presensi_jamkerja_bydept.kode_jk_dept')
+                    ->join('presensi_jamkerja', 'presensi_jamkerja_bydept_detail.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->where('kode_dept', $karyawan->kode_dept)
+                    ->where('kode_cabang', $karyawan->kode_cabang)
+                    ->where('hari', $namahari)->first();
+            }
             // Jika Jam Kerja Harian Kosong
             if ($jamkerja == null) {
                 $jamkerja = Jamkerja::where('kode_jam_kerja', 'JK01')->first();
@@ -124,9 +149,20 @@ class PresensiController extends Controller
                             'status' => 'h'
                         ]);
                     }
+                    // Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                     if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
-                        $this->sendwa($karyawan->no_hp, $message);
+                        try {
+                            $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk pada " . $jam_presensi . " Semagat Bekerja";
+                            $this->sendwa($karyawan->no_hp, $message);
+                        } catch (\Exception $waException) {
+                            // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                            Log::error('Gagal mengirim notifikasi WA untuk absen masuk (API)', [
+                                'nik' => $karyawan->nik,
+                                'nama' => $karyawan->nama_karyawan,
+                                'error' => $waException->getMessage(),
+                                'trace' => $waException->getTraceAsString()
+                            ]);
+                        }
                     }
 
                     return response()->json(['status' => true, 'message' => 'Berhasil Absen Masuk', 'notifikasi' => 'notifikasi_absenmasuk'], 200);
@@ -152,9 +188,20 @@ class PresensiController extends Controller
                         'status' => 'h'
                     ]);
                 }
+                // Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                 if ($karyawan->no_hp != null || $karyawan->no_hp != "" && $generalsetting->notifikasi_wa == 1) {
-                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
-                    $this->sendwa($karyawan->no_hp, $message);
+                    try {
+                        $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang pada " . $jam_presensi . "Hati Hati di Jalan";
+                        $this->sendwa($karyawan->no_hp, $message);
+                    } catch (\Exception $waException) {
+                        // Log error pengiriman WA tapi tidak mempengaruhi response sukses
+                        Log::error('Gagal mengirim notifikasi WA untuk absen pulang (API)', [
+                            'nik' => $karyawan->nik,
+                            'nama' => $karyawan->nama_karyawan,
+                            'error' => $waException->getMessage(),
+                            'trace' => $waException->getTraceAsString()
+                        ]);
+                    }
                 }
                 return response()->json(['status' => true, 'message' => 'Berhasil Absen Pulang', 'notifikasi' => 'notifikasi_absenpulang'], 200);
             } catch (\Exception $e) {

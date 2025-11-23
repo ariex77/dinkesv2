@@ -596,6 +596,451 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal Ucapan Ulang Tahun -->
+    @if (isset($is_birthday) && $is_birthday)
+        <!-- Custom Overlay Backdrop -->
+        <div class="birthday-overlay" id="birthdayOverlay"></div>
+
+        <!-- Confetti Container -->
+        <div id="confetti-container"></div>
+
+        <div class="modal fade" id="birthdayModal" tabindex="-1" role="dialog" aria-labelledby="birthdayModalLabel" aria-hidden="true"
+            data-bs-backdrop="false" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content birthday-modal-content">
+                    <!-- Close Button -->
+                    <button type="button" class="birthday-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                        <ion-icon name="close-circle-outline"></ion-icon>
+                    </button>
+
+                    <div class="modal-body birthday-modal-body">
+                        <!-- Icons Section -->
+                        <div class="birthday-icons">
+                            <span style="font-size: 70px; filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3)); animation: bounce 2s infinite;">🎂</span>
+                            {{-- <ion-icon name="balloon-outline" class="birthday-icon birthday-icon-balloon"></ion-icon> --}}
+                        </div>
+
+                        <!-- Title Section -->
+                        <div class="birthday-title-section">
+
+                            <h2 class="birthday-title">Selamat Ulang Tahun!</h2>
+                            <h3 class="birthday-name">{{ $karyawan->nama_karyawan }}</h3>
+                            @if ($umur)
+                                <p class="birthday-age">Selamat ulang tahun yang ke-<strong>{{ $umur }}</strong> tahun! 🎊</p>
+                            @endif
+                        </div>
+
+                        <!-- Wishes Section -->
+                        <div class="birthday-wishes">
+                            <div class="birthday-wish-item">
+                                <ion-icon name="star" class="wish-icon"></ion-icon>
+                                <span>Panjang umur & sehat selalu</span>
+                            </div>
+                            <div class="birthday-wish-item">
+                                <ion-icon name="star" class="wish-icon"></ion-icon>
+                                <span>Bahagia selalu dalam pekerjaan</span>
+                            </div>
+                            <div class="birthday-wish-item">
+                                <ion-icon name="star" class="wish-icon"></ion-icon>
+                                <span>Sukses dalam karir</span>
+                            </div>
+                            <div class="birthday-wish-item">
+                                <ion-icon name="star" class="wish-icon"></ion-icon>
+                                <span>Diberkahi rezeki yang berlimpah</span>
+                            </div>
+                        </div>
+
+                        <!-- Button Section -->
+                        <button type="button" class="btn btn-light btn-lg birthday-button" data-bs-dismiss="modal">
+                            Terima Kasih! 🙏
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <style>
+        /* Confetti Styles */
+        #confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1060;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffd700;
+            position: absolute;
+            animation: confetti-fall linear forwards;
+        }
+
+        .confetti:nth-child(1n) {
+            background: #ffd700;
+        }
+
+        .confetti:nth-child(2n) {
+            background: #ff6b6b;
+        }
+
+        .confetti:nth-child(3n) {
+            background: #4ecdc4;
+        }
+
+        .confetti:nth-child(4n) {
+            background: #95e1d3;
+        }
+
+        .confetti:nth-child(5n) {
+            background: #ffe66d;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Birthday Modal Styles */
+        .birthday-modal-content {
+            border-radius: 20px !important;
+            border: none !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+            overflow: hidden;
+        }
+
+        .birthday-modal-body {
+            padding: 40px 30px !important;
+            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
+            border-radius: 20px !important;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Close Button */
+        .birthday-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .birthday-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .birthday-close-btn ion-icon {
+            font-size: 28px;
+            color: #fff;
+            filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        /* Icons Section */
+        .birthday-icons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 0 auto 25px auto;
+            width: 100%;
+            text-align: center;
+            padding: 0;
+            position: relative;
+        }
+
+        .birthday-icon {
+            font-size: 70px;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+            animation: bounce 2s infinite;
+            flex-shrink: 0;
+            display: block;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .birthday-icon-cake {
+            color: #fff;
+        }
+
+        .birthday-icon-balloon {
+            font-size: 70px;
+            color: #ff6b6b;
+            animation-delay: 0.2s;
+        }
+
+        /* Pastikan icons benar-benar centered */
+        @media (max-width: 575px) {
+            .birthday-icons {
+                justify-content: center;
+                align-items: center;
+                gap: 15px;
+                padding: 0;
+                margin: 0 auto 20px auto;
+                width: 100%;
+            }
+
+            .birthday-icon {
+                font-size: 60px;
+                margin: 0;
+            }
+        }
+
+        /* Title Section */
+        .birthday-title-section {
+            margin-bottom: 25px;
+        }
+
+        .birthday-title {
+            color: #fff;
+            font-weight: bold;
+            font-size: 28px;
+            margin-bottom: 12px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .birthday-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 22px;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .birthday-age {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Wishes Section */
+        .birthday-wishes {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .birthday-wish-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 16px;
+            margin: 8px 0;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            justify-content: flex-start;
+        }
+
+        .wish-icon {
+            font-size: 18px;
+            color: #ffd700;
+            flex-shrink: 0;
+        }
+
+        /* Button Section */
+        .birthday-button {
+            border-radius: 25px !important;
+            padding: 12px 40px !important;
+            font-weight: 600 !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* Bounce Animation */
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Modal Dialog */
+        #birthdayModal .modal-dialog {
+            max-width: 90%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            min-height: 100%;
+            padding: 15px;
+        }
+
+        /* Memastikan modal benar-benar centered di mobile */
+        @media (max-width: 575px) {
+            #birthdayModal .modal-dialog {
+                max-width: 90%;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: calc(100vh - 30px);
+                padding: 15px;
+                position: relative;
+            }
+
+            #birthdayModal.modal.show .modal-dialog {
+                transform: translateY(0);
+                margin: auto;
+            }
+
+            .birthday-modal-body {
+                padding: 30px 20px !important;
+            }
+        }
+
+        @media (min-width: 576px) {
+            #birthdayModal .modal-dialog {
+                max-width: 500px;
+                margin: 0 auto;
+                display: flex;
+                align-items: center;
+                min-height: calc(100vh - 60px);
+                padding: 30px;
+            }
+
+            .birthday-title {
+                font-size: 32px;
+            }
+
+            .birthday-name {
+                font-size: 24px;
+            }
+        }
+
+        /* Custom Overlay Backdrop untuk modal ulang tahun */
+        .birthday-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 100vh !important;
+            min-height: -webkit-fill-available !important;
+            z-index: 1040 !important;
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            cursor: pointer;
+        }
+
+        .birthday-overlay.show {
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* Pastikan modal muncul DI ATAS overlay */
+        #birthdayModal {
+            z-index: 1050 !important;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        #birthdayModal.show {
+            z-index: 1050 !important;
+            display: flex !important;
+        }
+
+        #birthdayModal .modal-dialog {
+            z-index: 1051 !important;
+            position: relative !important;
+            margin: auto !important;
+        }
+
+        #birthdayModal .modal-content {
+            z-index: 1052 !important;
+            position: relative !important;
+        }
+
+        /* Pastikan backdrop menutupi semua elemen termasuk status bar dan bottom nav */
+        body.modal-open {
+            overflow: hidden !important;
+            padding-right: 0 !important;
+        }
+
+        body.modal-open .appHeader,
+        body.modal-open .bottomMenu,
+        body.modal-open #appCapsule {
+            position: relative;
+            z-index: 1 !important;
+        }
+
+        /* Untuk mobile, pastikan overlay menutupi seluruh viewport termasuk safe area */
+        @media (max-width: 768px) {
+            .birthday-overlay {
+                height: 100vh !important;
+                height: -webkit-fill-available !important;
+                min-height: 100vh !important;
+                min-height: -webkit-fill-available !important;
+            }
+
+            /* Pastikan modal tetap di atas overlay */
+            #birthdayModal {
+                z-index: 1050 !important;
+                position: fixed !important;
+            }
+
+            #birthdayModal.show {
+                z-index: 1050 !important;
+            }
+
+            #birthdayModal .modal-dialog {
+                z-index: 1051 !important;
+                position: relative !important;
+            }
+
+            #birthdayModal .modal-content {
+                z-index: 1052 !important;
+                position: relative !important;
+            }
+        }
+    </style>
 @endsection
 @push('myscript')
     <script type="text/javascript">
@@ -620,5 +1065,222 @@
             e = e < 10 ? '0' + e : e;
             return e;
         }
+
+        // Tampilkan modal ulang tahun jika ada
+        @if (isset($is_birthday) && $is_birthday)
+            $(document).ready(function() {
+                // Fungsi untuk membuat confetti
+                function createConfetti() {
+                    var container = $('#confetti-container');
+                    if (container.length === 0) return;
+
+                    var colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#95e1d3', '#ffe66d'];
+                    var confettiCount = 100;
+
+                    for (var i = 0; i < confettiCount; i++) {
+                        var confetti = $('<div class="confetti"></div>');
+                        var left = Math.random() * 100;
+                        var delay = Math.random() * 3;
+                        var duration = 3 + Math.random() * 2;
+                        var size = 8 + Math.random() * 8;
+                        var color = colors[Math.floor(Math.random() * colors.length)];
+
+                        confetti.css({
+                            'left': left + '%',
+                            'background': color,
+                            'width': size + 'px',
+                            'height': size + 'px',
+                            'animation-delay': delay + 's',
+                            'animation-duration': duration + 's',
+                            'border-radius': Math.random() > 0.5 ? '50%' : '0%'
+                        });
+
+                        container.append(confetti);
+
+                        // Hapus confetti setelah animasi selesai
+                        setTimeout(function() {
+                            confetti.remove();
+                        }, (duration + delay) * 1000);
+                    }
+                }
+
+                // Fungsi untuk menampilkan custom overlay
+                function showBirthdayOverlay() {
+                    var overlay = $('#birthdayOverlay');
+                    if (overlay.length > 0) {
+                        // Gunakan window.innerHeight untuk mendapatkan tinggi layar yang tepat
+                        var screenHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+                        overlay.css({
+                            'position': 'fixed',
+                            'top': '0',
+                            'left': '0',
+                            'right': '0',
+                            'bottom': '0',
+                            'width': '100%',
+                            'height': screenHeight + 'px',
+                            'min-height': '100vh',
+                            'z-index': '1040'
+                        });
+                        overlay.addClass('show');
+                    }
+                }
+
+                // Fungsi untuk menyembunyikan custom overlay
+                function hideBirthdayOverlay() {
+                    $('#birthdayOverlay').removeClass('show');
+                    $('#confetti-container').empty();
+                }
+
+                // Fungsi untuk menutup modal - metode langsung dan sederhana
+                function closeBirthdayModal() {
+                    var modal = $('#birthdayModal');
+                    var modalElement = document.getElementById('birthdayModal');
+
+                    // Sembunyikan overlay terlebih dahulu
+                    hideBirthdayOverlay();
+
+                    // Metode langsung: sembunyikan semua dengan cara yang pasti
+                    // 1. Hapus semua class Bootstrap modal
+                    modal.removeClass('show fade in');
+                    modal.addClass('fade');
+
+                    // 2. Sembunyikan modal dengan CSS langsung
+                    modal.css({
+                        'display': 'none !important',
+                        'visibility': 'hidden',
+                        'opacity': '0',
+                        'padding-right': ''
+                    });
+
+                    // 3. Sembunyikan modal dialog
+                    modal.find('.modal-dialog').css('display', 'none');
+                    modal.find('.modal-content').css('display', 'none');
+
+                    // 4. Hapus class modal-open dari body
+                    $('body').removeClass('modal-open');
+                    $('body').css({
+                        'padding-right': '',
+                        'overflow': ''
+                    });
+
+                    // 5. Hapus semua backdrop
+                    $('.modal-backdrop').remove();
+                    $('#birthdayOverlay').removeClass('show');
+
+                    // 6. Set atribut style langsung pada element
+                    if (modalElement) {
+                        modalElement.style.display = 'none';
+                        modalElement.style.visibility = 'hidden';
+                        modalElement.style.opacity = '0';
+                        modalElement.classList.remove('show');
+                        modalElement.classList.remove('fade');
+                    }
+
+                    // 7. Trigger event hidden untuk kompatibilitas
+                    modal.trigger('hidden.bs.modal');
+
+                    // 8. Pastikan sekali lagi setelah beberapa saat
+                    setTimeout(function() {
+                        modal.hide();
+                        modal.css('display', 'none');
+                        if (modalElement) {
+                            modalElement.style.display = 'none';
+                        }
+                    }, 50);
+                }
+
+                // Event handler menggunakan event delegation untuk memastikan terikat
+                $(document).on('click', '.birthday-close-btn', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeBirthdayModal();
+                });
+
+                // Event handler untuk klik overlay/backdrop - tutup modal saat klik di overlay
+                $(document).on('click', '#birthdayOverlay', function(e) {
+                    if (e.target === this) {
+                        closeBirthdayModal();
+                    }
+                });
+
+                // Mencegah modal tutup saat klik di dalam modal content
+                $(document).on('click', '#birthdayModal .modal-content', function(e) {
+                    e.stopPropagation();
+                });
+
+                // Event handler untuk tombol "Terima Kasih"
+                $(document).on('click', '.birthday-button', function(e) {
+                    e.preventDefault();
+                    closeBirthdayModal();
+                });
+
+                // Coba Bootstrap 5 API dulu, jika tidak ada gunakan jQuery
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var birthdayModal = new bootstrap.Modal(document.getElementById('birthdayModal'), {
+                        backdrop: false,
+                        keyboard: false
+                    });
+
+                    // Tampilkan overlay sebelum modal
+                    showBirthdayOverlay();
+
+                    // Buat confetti
+                    createConfetti();
+
+                    // Tampilkan modal
+                    birthdayModal.show();
+
+                    // Pastikan overlay tetap muncul setelah modal muncul
+                    $('#birthdayModal').on('shown.bs.modal', function() {
+                        showBirthdayOverlay();
+                        // Buat confetti lagi setelah beberapa detik
+                        setTimeout(function() {
+                            createConfetti();
+                        }, 2000);
+                    });
+
+                    // Sembunyikan overlay saat modal ditutup
+                    $('#birthdayModal').on('hidden.bs.modal', function() {
+                        hideBirthdayOverlay();
+                    });
+                } else {
+                    $('#birthdayModal').modal({
+                        backdrop: false,
+                        keyboard: false
+                    });
+
+                    // Tampilkan overlay sebelum modal
+                    showBirthdayOverlay();
+
+                    // Buat confetti
+                    createConfetti();
+
+                    // Tampilkan modal
+                    $('#birthdayModal').modal('show');
+
+                    // Pastikan overlay tetap muncul setelah modal muncul
+                    $('#birthdayModal').on('shown.bs.modal', function() {
+                        showBirthdayOverlay();
+                        // Buat confetti lagi setelah beberapa detik
+                        setTimeout(function() {
+                            createConfetti();
+                        }, 2000);
+                    });
+
+                    // Sembunyikan overlay saat modal ditutup
+                    $('#birthdayModal').on('hidden.bs.modal', function() {
+                        hideBirthdayOverlay();
+                    });
+                }
+
+                // Update overlay saat window resize
+                $(window).on('resize', function() {
+                    if ($('#birthdayModal').hasClass('show')) {
+                        showBirthdayOverlay();
+                    }
+                });
+            });
+        @endif
     </script>
 @endpush

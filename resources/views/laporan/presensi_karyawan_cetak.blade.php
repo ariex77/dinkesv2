@@ -84,9 +84,9 @@
             <div id="detailkaryawan">
                 <table class="tablereport">
                     <tr>
-                        <td>Nama</td>
+                        <td>NIK</td>
                         <td>:</td>
-                        <td>{{ $karyawan->nama_karyawan }}</td>
+                        <td>{{ $karyawan->nik_show ?? $karyawan->nik }}</td>
                     </tr>
                     <tr>
                         <td>Nama</td>
@@ -147,6 +147,7 @@
                             $d->jam_akhir_istirahat,
                             $d->lintashari,
                         );
+                        $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
                         $potongan_tidak_hadir = $d->status == 'a' ? $d->total_jam : 0;
                         if ($d->status == 'h') {
                             $color_status = 'green';
@@ -168,7 +169,8 @@
                             @endphp
                         @else
                             @php
-                                $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                $potongan_jam_terlambat =
+                                    $terlambat['desimal_terlambat'] > $d->total_jam ? $d->total_jam : $terlambat['desimal_terlambat'];
                                 $denda = 0;
                             @endphp
                         @endif
@@ -196,7 +198,11 @@
                         }
 
                         $total_denda += $denda;
-                        $potongan_jam = $pulangcepat + $potongan_jam_terlambat + $potongan_tidak_hadir;
+                        $potongan_tidak_absen_masuk_atau_pulang = empty($d->jam_out) || empty($d->jam_in) ? $d->total_jam : 0;
+                        $potongan_jam =
+                            $potongan_tidak_absen_masuk_atau_pulang == 0
+                                ? $pulangcepat + $potongan_jam_terlambat
+                                : $potongan_tidak_absen_masuk_atau_pulang;
                         $total_potongan_jam += $potongan_jam;
                     @endphp
                     <tr>

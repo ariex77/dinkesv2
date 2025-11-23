@@ -30,7 +30,7 @@
                             <h4>{{ textCamelCase($karyawan->nama_karyawan) }}</h4>
                             <ul class="list-inline mb-0 d-flex align-items-center flex-wrap justify-content-sm-start justify-content-center gap-2">
                                 <li class="list-inline-item d-flex gap-1">
-                                    <i class="ti ti-barcode"></i> {{ textCamelCase($karyawan->nik) }}
+                                    <i class="ti ti-barcode"></i> {{ textCamelCase($karyawan->nik_show ?? $karyawan->nik) }}
                                 </li>
                                 <li class="list-inline-item d-flex gap-1">
                                     <i class="ti ti-building"></i> {{ textCamelCase($karyawan->nama_cabang) }}
@@ -69,7 +69,7 @@
                 <ul class="list-unstyled mb-4 mt-3">
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-barcode text-heading"></i><span class="fw-medium mx-2 text-heading">NIK:</span>
-                        <span>{{ $karyawan->nik }}</span>
+                        <span>{{ $karyawan->nik_show ?? $karyawan->nik }}</span>
                     </li>
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-credit-card text-heading"></i><span class="fw-medium mx-2 text-heading">No.
@@ -224,9 +224,11 @@
                             <a href="#" class="btn btn-primary" id="btnAddface"><i class="ti ti-face-id me-1"></i> Tambah Wajah</a>
                         </div>
                         <div>
-                            <form id="formHapusSemuaWajah" method="POST" action="{{ route('facerecognition.destroyAll', Crypt::encrypt($karyawan->nik)) }}" style="display:inline">
+                            <form id="formHapusSemuaWajah" method="POST"
+                                action="{{ route('facerecognition.destroyAll', Crypt::encrypt($karyawan->nik)) }}" style="display:inline">
                                 @csrf
-                                <button type="button" class="btn btn-danger" id="btnHapusSemuaWajah"><i class="ti ti-trash me-1"></i>Hapus Semua Wajah</button>
+                                <button type="button" class="btn btn-danger" id="btnHapusSemuaWajah"><i class="ti ti-trash me-1"></i>Hapus Semua
+                                    Wajah</button>
                             </form>
                         </div>
                     </div>

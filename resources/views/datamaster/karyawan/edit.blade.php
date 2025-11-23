@@ -1,7 +1,7 @@
 <form action="{{ route('karyawan.update', Crypt::encrypt($karyawan->nik)) }}" id="formcreateKaryawan" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
-    <x-input-with-icon-label icon="ti ti-barcode" label="NIK" name="nik" value="{{ $karyawan->nik }}" />
+    <x-input-with-icon-label icon="ti ti-barcode" label="NIK" name="nik_show" value="{{ $karyawan->nik_show ?? $karyawan->nik }}" />
     <x-input-with-icon-label icon="ti ti-credit-card" label="No. KTP" name="no_ktp" value="{{ $karyawan->no_ktp }}" />
     <x-input-with-icon-label icon="ti ti-user" label="Nama Karyawan" name="nama_karyawan" value="{{ $karyawan->nama_karyawan }}" />
     <div class="row">

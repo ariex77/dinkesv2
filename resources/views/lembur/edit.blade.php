@@ -1,20 +1,18 @@
-<form action="{{ route('lembur.update', Crypt::encrypt($lembur->id)) }}" method="POST" id="formLembur"
-    enctype="multipart/form-data">
+<form action="{{ route('lembur.update', Crypt::encrypt($lembur->id)) }}" method="POST" id="formLembur" enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <div class="form-group">
         <select name="nik" id="nik" class="form-select select2Nik">
             <option value="">Pilih Karyawan</option>
             @foreach ($karyawan as $d)
-                <option {{ $d->nik == $lembur->nik ? 'selected' : '' }} value="{{ $d->nik }}">{{ $d->nik }} -
+                <option {{ $d->nik == $lembur->nik ? 'selected' : '' }} value="{{ $d->nik }}">{{ $d->nik_show ?? $d->nik }} -
                     {{ $d->nama_karyawan }}</option>
             @endforeach
         </select>
     </div>
     <div class="row">
         <div class="col-lg-6 col-sm-12 col-md-12">
-            <x-input-with-icon icon="ti ti-calendar" value="{{ $lembur->lembur_mulai }}" label="Dari" name="dari"
-                datepicker="flatpickr-date" />
+            <x-input-with-icon icon="ti ti-calendar" value="{{ $lembur->lembur_mulai }}" label="Dari" name="dari" datepicker="flatpickr-date" />
         </div>
         <div class="col-lg-6 col-sm-12 col-md-12">
             <x-input-with-icon icon="ti ti-calendar" value="{{ $lembur->lembur_selesai }}" label="Sampai" name="sampai"
@@ -33,8 +31,8 @@
                 datepicker="flatpickr-date" />
         </div>
         <div class="col-lg-6 col-sm-12 col-md-12">
-            <x-input-with-icon icon="ti ti-calendar" value="{{ $lembur->lembur_out }}" label="Lembur OUT"
-                name="lembur_out" datepicker="flatpickr-date" />
+            <x-input-with-icon icon="ti ti-calendar" value="{{ $lembur->lembur_out }}" label="Lembur OUT" name="lembur_out"
+                datepicker="flatpickr-date" />
         </div>
     </div>
     <div class="form-group mb-3">

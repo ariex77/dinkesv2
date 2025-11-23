@@ -12,7 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Jalankan worker queue tiap menit untuk memproses job antrian
+        $schedule->command('queue:work --queue=default --sleep=3 --tries=3 --stop-when-empty')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**
@@ -20,7 +23,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

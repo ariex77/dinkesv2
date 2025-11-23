@@ -16,7 +16,7 @@ class BpjstenagakerjaController extends Controller
     {
         $query = Bpjstenagakerja::query();
         $query->join('karyawan', 'karyawan_bpjstenagakerja.nik', '=', 'karyawan.nik');
-        $query->select('karyawan_bpjstenagakerja.*', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'karyawan.kode_cabang');
+        $query->select('karyawan_bpjstenagakerja.*', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'karyawan.kode_cabang', 'karyawan.nik_show');
         if (!empty($request->nama_karyawan)) {
             $query->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
         }

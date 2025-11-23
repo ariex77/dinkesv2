@@ -6,7 +6,8 @@
         <select name="nik" id="nik" class="form-select select2Nik">
             <option value="">Pilih Karyawan</option>
             @foreach ($karyawan as $d)
-                <option value="{{ $d->nik }}" {{ $izindinas->nik == $d->nik ? 'selected' : '' }}>{{ $d->nik }} - {{ $d->nama_karyawan }}
+                <option value="{{ $d->nik }}" {{ $izindinas->nik == $d->nik ? 'selected' : '' }}>{{ $d->nik_show ?? $d->nik }} -
+                    {{ $d->nama_karyawan }}
                 </option>
             @endforeach
         </select>

@@ -166,6 +166,7 @@ class LaporanController extends Controller
         $q_presensi = Karyawan::query();
         $q_presensi->select(
             'karyawan.nik',
+            'karyawan.nik_show',
             'nama_karyawan',
             'nama_jabatan',
             'karyawan.kode_dept',
@@ -257,6 +258,7 @@ class LaporanController extends Controller
             $karyawan = Karyawan::join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
                 ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
                 ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+                ->select('karyawan.*', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang')
                 ->where('karyawan.nik', $request->nik)
                 ->first();
             $data['karyawan'] = $karyawan;
@@ -266,6 +268,7 @@ class LaporanController extends Controller
             $laporan_presensi = $presensi->groupBy('nik')->map(function ($rows) use ($jenis_tunjangan) {
                 $data = [
                     'nik' => $rows->first()->nik,
+                    'nik_show' => $rows->first()->nik_show,
                     'nama_karyawan' => $rows->first()->nama_karyawan,
                     'nama_jabatan' => $rows->first()->nama_jabatan,
                     'kode_dept' => $rows->first()->kode_dept,

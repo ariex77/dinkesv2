@@ -32,6 +32,7 @@ class TunjanganController extends Controller
             'karyawan.nama_karyawan',
             'karyawan.kode_dept',
             'karyawan.kode_cabang',
+            'karyawan.nik_show',
             'tanggal_berlaku',
             ...$select_tunjangan
         );
@@ -52,6 +53,7 @@ class TunjanganController extends Controller
             'karyawan.nama_karyawan',
             'karyawan.kode_dept',
             'karyawan.kode_cabang',
+            'karyawan.nik_show',
             'tanggal_berlaku'
         );
         // dd($query->get());

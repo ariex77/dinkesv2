@@ -22,8 +22,7 @@
             <tr>
                 <td>
                     @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
-                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan"
-                            style="max-width: 100px;">
+                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan" style="max-width: 100px;">
                     @else
                         <img src="https://placehold.co/100x100?text=Logo" alt="Logo Default" style="max-width: 100px;">
                     @endif
@@ -57,7 +56,7 @@
                     <th rowspan="3">Denda</th>
                     <th rowspan="3">Pot. Jam</th>
                     <th rowspan="3">Lembur</th>
-                    <th colspan="8">Rekap</th>
+                    <th colspan="9">Rekap</th>
                 </tr>
                 <tr>
                     @php
@@ -77,6 +76,7 @@
                     <th rowspan="2">Terlambat</th>
                     <th rowspan="2">Tidak Scan Masuk</th>
                     <th rowspan="2">Tidak Scan Pulang</th>
+                    <th rowspan="2">Pulang Cepat</th>
                 </tr>
                 <tr>
                     @php
@@ -97,7 +97,7 @@
                     @endphp
                     <tr>
                         <td style="width:1%">{{ $loop->iteration }}</td>
-                        <td style="width:2%">'{{ $d['nik'] }}</td>
+                        <td style="width:2%">'{{ $d['nik_show'] ?? $d['nik'] }}</td>
                         <td style="width:5%">{{ $d['nama_karyawan'] }}</td>
                         <td style="width:3%">{{ $d['nama_jabatan'] }}</td>
                         <td style="width:2%">{{ $d['kode_dept'] }}</td>
@@ -113,6 +113,7 @@
                             $jml_libur = 0;
                             $jml_alfa = 0;
                             $jml_terlambat = 0;
+                            $jml_pulangcepat = 0;
                             $jml_tidakscanmasuk = 0;
                             $jml_tidakscanpulang = 0;
                         @endphp
@@ -143,9 +144,7 @@
                                         $jml_hadir++;
 
                                         $ket_nama_jam_kerja =
-                                            '<h4 style="font-weight:bold; margin-bottom:10px">' .
-                                            $d[$tanggal_presensi]['nama_jam_kerja'] .
-                                            '</h4>';
+                                            '<h4 style="font-weight:bold; margin-bottom:10px">' . $d[$tanggal_presensi]['nama_jam_kerja'] . '</h4>';
                                         $ket_jadwal_kerja =
                                             '<p><span style="color:blue">' .
                                             date('H:i', strtotime($d[$tanggal_presensi]['jam_masuk'])) .
@@ -178,6 +177,7 @@
                                             '</span></p>';
 
                                         $terlambat = hitungjamterlambat($d[$tanggal_presensi]['jam_in'], $jam_masuk);
+
                                         $color_terlambat = $terlambat != null ? $terlambat['color'] : '';
                                         $ket_terlambat =
                                             $terlambat != null
@@ -194,7 +194,10 @@
                                                 $potongan_jam_terlambat = 0;
                                                 $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
                                             } else {
-                                                $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                                $potongan_jam_terlambat =
+                                                    $terlambat['desimal_terlambat'] > $d[$tanggal_presensi]['total_jam']
+                                                        ? $d[$tanggal_presensi]['total_jam']
+                                                        : $terlambat['desimal_terlambat'];
                                                 $denda = 0;
                                             }
                                             if ($terlambat['menitterlambat'] > 0) {
@@ -205,12 +208,7 @@
                                             $denda = 0;
                                         }
 
-                                        $ket_denda =
-                                            $denda != 0
-                                                ? '<p><span style="color:red">Denda : ' .
-                                                    formatAngka($denda) .
-                                                    '</span></p>'
-                                                : '';
+                                        $ket_denda = $denda != 0 ? '<p><span style="color:red">Denda : ' . formatAngka($denda) . '</span></p>' : '';
 
                                         $pulangcepat = hitungpulangcepat(
                                             $tanggal_presensi,
@@ -222,24 +220,30 @@
                                             $d[$tanggal_presensi]['lintashari'],
                                         );
 
-                                        $ket_pulang_cepat =
-                                            $pulangcepat != null
-                                                ? '<p><span style="color:red">PC : ' . $pulangcepat . ' Jam </span></p>'
-                                                : '';
-                                        $color_pulang_cepat = $pulangcepat != null ? 'red' : '';
+                                        $pulangcepat =
+                                            $pulangcepat > $d[$tanggal_presensi]['total_jam'] ? $d[$tanggal_presensi]['total_jam'] : $pulangcepat;
 
-                                        $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                                        if ($pulangcepat != null) {
+                                            $jml_pulangcepat++;
+                                        }
+                                        $ket_pulang_cepat =
+                                            $pulangcepat != null ? '<p><span style="color:red">PC : ' . $pulangcepat . ' Jam </span></p>' : '';
+                                        $color_pulang_cepat = $pulangcepat != null ? 'red' : '';
+                                        $potongan_tidak_absen_masuk_atau_pulang =
+                                            empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
+                                                ? $d[$tanggal_presensi]['total_jam']
+                                                : 0;
+                                        $potongan_jam =
+                                            $potongan_tidak_absen_masuk_atau_pulang == 0
+                                                ? $pulangcepat + $potongan_jam_terlambat
+                                                : $potongan_tidak_absen_masuk_atau_pulang;
                                         $ket_potongan_jam = !empty($potongan_jam)
-                                            ? '<p><span style="color:red">PJ: ' .
-                                                formatAngkaDesimal($potongan_jam) .
-                                                ' Jam</span></p>'
+                                            ? '<p><span style="color:red">PJ: ' . formatAngkaDesimal($potongan_jam) . ' Jam</span></p>'
                                             : '';
 
                                         $ket_jam_lembur =
                                             $jml_jam_lembur > 0
-                                                ? '<p><span style="color:rgb(11, 153, 179)"> Lembur :' .
-                                                    $jml_jam_lembur .
-                                                    ' Jam</span></p>'
+                                                ? '<p><span style="color:rgb(11, 153, 179)"> Lembur :' . $jml_jam_lembur . ' Jam</span></p>'
                                                 : '';
                                         $ket =
                                             $ket_nama_jam_kerja .
@@ -336,10 +340,7 @@
                                     if (!empty($ceklembur)) {
                                         $bgcolor = 'white';
                                         $textcolor = 'black';
-                                        $ket_jam_lembur =
-                                            '<p><span style="color:rgb(11, 153, 179)"> Lembur :' .
-                                            $jml_jam_lembur .
-                                            ' Jam</span></p>';
+                                        $ket_jam_lembur = '<p><span style="color:rgb(11, 153, 179)"> Lembur :' . $jml_jam_lembur . ' Jam</span></p>';
                                         $ket = $ket_jam_lembur;
                                     }
                                 @endphp
@@ -370,8 +371,29 @@
                         <td style="text-align:center">{{ $jml_terlambat }}</td>
                         <td style="text-align:center">{{ $jml_tidakscanmasuk }}</td>
                         <td style="text-align:center">{{ $jml_tidakscanpulang }}</td>
+                        <td style="text-align:center">{{ $jml_pulangcepat }}</td>
                     </tr>
                 @endforeach
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top: 30px; width: 350px;">
+        <table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse; width:100%;">
+            <thead>
+                <tr style="background-color: #f2f2f2;">
+                    <th style="text-align:center;">Kode</th>
+                    <th style="text-align:center;">Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="text-align:center;">PC</td>
+                    <td>Pulang Cepat</td>
+                </tr>
+                <tr>
+                    <td style="text-align:center;">PJ</td>
+                    <td>Potongan Jam</td>
+                </tr>
             </tbody>
         </table>
     </div>

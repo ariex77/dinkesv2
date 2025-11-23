@@ -44,7 +44,7 @@
                                 <tbody>
                                     @foreach ($detailpenyesuaian as $d)
                                         <tr>
-                                            <td>{{ $d->nik }}</td>
+                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>
                                             <td class="text-end">{{ formatAngka($d->penambah) }}</td>
                                             <td class="text-end">{{ formatAngka($d->pengurang) }}</td>

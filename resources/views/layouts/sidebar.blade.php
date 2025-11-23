@@ -59,9 +59,9 @@
                  </a>
              </li>
          @endcan
-         @if (auth()->user()->hasAnyPermission(['karyawan.index', 'departemen.index', 'cabang.index', 'cuti.index', 'jamkerja.index', 'jabatan.index']))
+         @if (auth()->user()->hasAnyPermission(['karyawan.index', 'departemen.index', 'cabang.index', 'cuti.index', 'jamkerja.index', 'jabatan.index', 'grup.index']))
              <li
-                 class="menu-item {{ request()->is(['karyawan', 'karyawan/*', 'departemen', 'cabang', 'cuti', 'jamkerja', 'jabatan']) ? 'open' : '' }}">
+                 class="menu-item {{ request()->is(['karyawan', 'karyawan/*', 'departemen', 'departemen/*', 'cabang', 'cuti', 'jamkerja', 'jabatan', 'grup', 'grup/*']) ? 'open' : '' }}">
                  <a href="javascript:void(0);" class="menu-link menu-toggle">
                      <i class="menu-icon tf-icons ti ti-database"></i>
                      <div>Data Master</div>
@@ -79,6 +79,13 @@
                          <li class="menu-item {{ request()->is(['departemen', 'departemen/*']) ? 'active' : '' }}">
                              <a href="{{ route('departemen.index') }}" class="menu-link">
                                  <div>Departemen</div>
+                             </a>
+                         </li>
+                     @endcan
+                     @can('grup.index')
+                         <li class="menu-item {{ request()->is(['grup', 'grup/*']) ? 'active' : '' }}">
+                             <a href="{{ route('grup.index') }}" class="menu-link">
+                                 <div>Grup</div>
                              </a>
                          </li>
                      @endcan

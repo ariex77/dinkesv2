@@ -13,6 +13,9 @@ class Karyawan extends Model
     protected $primaryKey = "nik";
     public $incrementing = false;
     protected $guarded = [];
+    protected $casts = [
+        'kode_cabang_array' => 'array',
+    ];
 
     function getRekapstatuskaryawan($request = null)
     {
@@ -38,4 +41,16 @@ class Karyawan extends Model
     {
         return $this->hasMany(Facerecognition::class, 'nik', 'nik');
     }
+
+    // Relasi dengan GrupDetail
+    // public function grupDetail()
+    // {
+    //     return $this->hasMany(GrupDetail::class, 'nik', 'nik');
+    // }
+
+    // // Relasi ke Grup melalui GrupDetail
+    // public function grup()
+    // {
+    //     return $this->hasManyThrough(Grup::class, GrupDetail::class, 'nik', 'kode_grup', 'nik', 'kode_grup');
+    // }
 }

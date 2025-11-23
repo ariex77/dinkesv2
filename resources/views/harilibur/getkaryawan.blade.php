@@ -1,7 +1,7 @@
 @foreach ($karyawan as $d)
     <tr>
         <td>{{ $loop->iteration }}</td>
-        <td>{{ $d->nik }}</td>
+        <td>{{ $d->nik_show ?? $d->nik }}</td>
         <td>{{ formatName2($d->nama_karyawan) }}</td>
         <td>{{ $d->nama_dept }}</td>
         <td>

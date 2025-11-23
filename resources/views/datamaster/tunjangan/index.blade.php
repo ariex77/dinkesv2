@@ -65,7 +65,7 @@
                                     @foreach ($tunjangan as $d)
                                         <tr>
                                             <td>{{ $d->kode_tunjangan }}</td>
-                                            <td>{{ $d->nik }}</td>
+                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>
                                             <td>{{ $d->kode_dept }}</td>
                                             <td>{{ $d->kode_cabang }}</td>

@@ -65,7 +65,7 @@
                                 <tbody>
                                     @foreach ($karyawan as $d)
                                         <tr>
-                                            <td>{{ $d->nik }}</td>
+                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>
                                             <td>{{ $d->nama_dept }}</td>
                                             <td>{{ $d->nama_jabatan }}</td>
@@ -131,6 +131,13 @@
                                                             </a>
                                                         </div>
                                                     @endcan
+                                                    @can('karyawan.setcabang')
+                                                        <div>
+                                                            <a href="#" class="me-2 btnSetCabang" nik="{{ Crypt::encrypt($d->nik) }}">
+                                                                <i class="ti ti-map text-warning"></i>
+                                                            </a>
+                                                        </div>
+                                                    @endcan
                                                     @can('karyawan.edit')
                                                         <div>
                                                             <a href="#" class="me-2 btnEdit" nik="{{ Crypt::encrypt($d->nik) }}">
@@ -189,6 +196,7 @@
 </div>
 <x-modal-form id="modal" show="loadmodal" />
 <x-modal-form id="modalSetJamkerja" show="loadmodalSetJamkerja" size="modal-lg" title="Set Jam Kerja" />
+<x-modal-form id="modalSetCabang" show="loadmodalSetCabang" size="modal-lg" title="Set Cabang Karyawan" />
 <x-modal-form id="modalImport" show="loadmodalImport" size="modal-lg" title="Import Data Karyawan" />
 @endsection
 @push('myscript')
@@ -243,6 +251,20 @@
             </div>`);
 
             $("#loadmodalSetJamkerja").load(`/karyawan/${nik}/setjamkerja`);
+        });
+
+        $(".btnSetCabang").click(function() {
+            const nik = $(this).attr("nik");
+            $("#modalSetCabang").modal("show");
+            $("#loadmodalSetCabang").html(`<div class="sk-wave sk-primary" style="margin:auto">
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            </div>`);
+
+            $("#loadmodalSetCabang").load(`/karyawan/${nik}/setcabang`);
         });
 
 

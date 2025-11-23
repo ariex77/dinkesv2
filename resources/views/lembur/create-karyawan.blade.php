@@ -29,14 +29,13 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row" style="margin-top: 80px">
+        <div class="row" style="margin-top: 30px">
             <div class="col pl-3 pr-3">
                 <form action="{{ route('lembur.store') }}" method="POST" id="formLembur" autocomplete="off">
                     @csrf
 
                     <input type="text" class="feedback-input dari" name="dari" placeholder="Dari" id="datePicker" />
-                    <input type="text" class="feedback-input sampai" name="sampai" placeholder="Sampai"
-                        id="datePicker2" />
+                    <input type="text" class="feedback-input sampai" name="sampai" placeholder="Sampai" id="datePicker2" />
                     <textarea placeholder="Keterangan" class="feedback-input keterangan" name="keterangan" style="height: 100px"></textarea>
                     <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Buat Lembur</button>
                 </form>

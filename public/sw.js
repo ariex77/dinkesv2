@@ -1,14 +1,14 @@
 // Service Worker untuk E-Presensi GPS V2
 // TIDAK akan cache file apapun - semua data selalu fresh dari network
 
-console.log('Service Worker: No Cache Mode - All requests go to network');
+//console.log('Service Worker: No Cache Mode - All requests go to network');
 
 // Install event - tidak cache apapun
 self.addEventListener('install', event => {
-    console.log('Service Worker: Installing (No Cache Mode)...');
+    //console.log('Service Worker: Installing (No Cache Mode)...');
     event.waitUntil(
         Promise.resolve().then(() => {
-            console.log('Service Worker: Installation complete (No Cache)');
+            //console.log('Service Worker: Installation complete (No Cache)');
             return self.skipWaiting();
         })
     );
@@ -16,19 +16,19 @@ self.addEventListener('install', event => {
 
 // Activate event - clear semua cache yang ada
 self.addEventListener('activate', event => {
-    console.log('Service Worker: Activating (Clearing all caches)...');
+    //console.log('Service Worker: Activating (Clearing all caches)...');
     event.waitUntil(
         caches.keys()
             .then(cacheNames => {
                 return Promise.all(
                     cacheNames.map(cacheName => {
-                        console.log('Service Worker: Deleting cache', cacheName);
+                        // console.log('Service Worker: Deleting cache', cacheName);
                         return caches.delete(cacheName);
                     })
                 );
             })
             .then(() => {
-                console.log('Service Worker: All caches cleared');
+                //console.log('Service Worker: All caches cleared');
                 return self.clients.claim();
             })
     );
@@ -39,7 +39,7 @@ self.addEventListener('fetch', event => {
     const request = event.request;
     const url = new URL(request.url);
 
-    console.log('Service Worker: Fetching from network only:', url.pathname);
+    //console.log('Service Worker: Fetching from network only:', url.pathname);
 
     // Skip non-GET requests
     if (request.method !== 'GET') {
@@ -51,11 +51,11 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         fetch(request)
             .then(response => {
-                console.log('Service Worker: Network response for', url.pathname);
+                //console.log('Service Worker: Network response for', url.pathname);
                 return response;
             })
             .catch(error => {
-                console.error('Service Worker: Network error for', url.pathname, error);
+                //console.error('Service Worker: Network error for', url.pathname, error);
 
                 // Fallback untuk offline - return basic response
                 if (request.headers.get('accept').includes('text/html')) {
@@ -125,14 +125,14 @@ self.addEventListener('fetch', event => {
 // Background sync untuk presensi offline (opsional)
 self.addEventListener('sync', event => {
     if (event.tag === 'background-sync-presensi') {
-        console.log('Service Worker: Background sync for presensi');
+        //console.log('Service Worker: Background sync for presensi');
         event.waitUntil(doBackgroundSync());
     }
 });
 
 async function doBackgroundSync() {
     // Implementasi sync data presensi jika diperlukan
-    console.log('Service Worker: Performing background sync');
+    // console.log('Service Worker: Performing background sync');
 }
 
 // Push notification (opsional)
