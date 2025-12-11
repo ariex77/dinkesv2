@@ -22,11 +22,17 @@ class StatusKaryawanChart
         $query = Karyawan::query();
         $query->select('status_karyawan', DB::raw('count(*) as total'));
         $query->groupBy('status_karyawan');
-        if (!empty($request->kode_cabang)) {
+        
+        // Filter berdasarkan akses user jika ada di request
+        if (!empty($request->user_cabangs) && is_array($request->user_cabangs)) {
+            $query->whereIn('karyawan.kode_cabang', $request->user_cabangs);
+        } elseif (!empty($request->kode_cabang)) {
             $query->where('karyawan.kode_cabang', $request->kode_cabang);
         }
 
-        if (!empty($request->kode_dept)) {
+        if (!empty($request->user_departemens) && is_array($request->user_departemens)) {
+            $query->whereIn('karyawan.kode_dept', $request->user_departemens);
+        } elseif (!empty($request->kode_dept)) {
             $query->where('karyawan.kode_dept', $request->kode_dept);
         }
 

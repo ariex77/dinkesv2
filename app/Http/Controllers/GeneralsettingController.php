@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Artisan;
 
 class GeneralsettingController extends Controller
 {
@@ -31,7 +33,7 @@ class GeneralsettingController extends Controller
             'provider_wa' => 'required|in:ig,fe',
             'tujuan_notifikasi_wa' => 'required|in:0,1',
             'id_group_wa' => 'nullable|string|max:255',
-
+            'timezone' => 'required|string|max:50',
         ]);
 
         try {
@@ -65,6 +67,7 @@ class GeneralsettingController extends Controller
                 'batasi_hari_izin' => $request->has('batasi_hari_izin') ? true : false,
                 'jml_hari_izin_max' => $request->jml_hari_izin_max,
                 'batas_presensi_lintashari' => $request->batas_presensi_lintashari,
+                'timezone' => $request->timezone,
             ];
 
             if ($request->hasFile('logo')) {
@@ -80,12 +83,54 @@ class GeneralsettingController extends Controller
                 $data['logo'] = $logoName;
             }
 
+            $oldTimezone = $setting->timezone ?? 'Asia/Jakarta';
             $setting->update($data);
+            
+            // Update .env file dengan timezone baru jika timezone berubah
+            if ($oldTimezone != $request->timezone) {
+                $this->updateEnvFile('APP_TIMEZONE', $request->timezone);
+                
+                // Clear config cache agar perubahan .env langsung diterapkan
+                try {
+                    Artisan::call('config:clear');
+                    Artisan::call('cache:clear');
+                } catch (\Exception $e) {
+                    // Jika clear cache gagal, tetap lanjutkan (bisa di-clear manual)
+                }
+            }
+            
             DB::commit();
-            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan. Perubahan timezone telah diterapkan.'));
         } catch (\Exception $e) {
             DB::rollBack();
             return Redirect::back()->with(messageError($e->getMessage()));
         }
+    }
+
+    /**
+     * Update .env file dengan key dan value baru
+     */
+    private function updateEnvFile($key, $value)
+    {
+        $envFile = base_path('.env');
+        
+        if (!File::exists($envFile)) {
+            return false;
+        }
+
+        $envContent = File::get($envFile);
+        
+        // Cek apakah key sudah ada
+        if (preg_match("/^{$key}=.*/m", $envContent)) {
+            // Update existing key
+            $envContent = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $envContent);
+        } else {
+            // Tambahkan key baru di akhir file
+            $envContent .= "\n{$key}={$value}\n";
+        }
+
+        File::put($envFile, $envContent);
+        
+        return true;
     }
 }

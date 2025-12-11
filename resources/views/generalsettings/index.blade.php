@@ -220,6 +220,29 @@
 
             <div class="card mb-3">
                 <div class="card-header">
+                    <h6 class="mb-0">Pengaturan Sistem</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="timezone" style="font-weight: 600" class="form-label">Zona Waktu Default Sistem <span class="text-danger">*</span></label>
+                        <select class="form-select" name="timezone" id="timezone" required>
+                            <option value="">Pilih Zona Waktu</option>
+                            <option value="Asia/Jakarta" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Jakarta')>Asia/Jakarta (WIB)</option>
+                            <option value="Asia/Makassar" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Makassar')>Asia/Makassar (WITA)</option>
+                            <option value="Asia/Jayapura" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Jayapura')>Asia/Jayapura (WIT)</option>
+                            <option value="Asia/Singapore" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Singapore')>Asia/Singapore</option>
+                            <option value="Asia/Kuala_Lumpur" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Kuala_Lumpur')>Asia/Kuala_Lumpur</option>
+                            <option value="Asia/Bangkok" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Bangkok')>Asia/Bangkok</option>
+                            <option value="Asia/Manila" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'Asia/Manila')>Asia/Manila</option>
+                            <option value="UTC" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'UTC')>UTC</option>
+                        </select>
+                        <small class="text-muted">Zona waktu ini akan mengubah pengaturan timezone di file .env dan config/app.php</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header">
                     <h6 class="mb-0">Pengaturan Presensi</h6>
                 </div>
                 <div class="card-body">

@@ -25,12 +25,34 @@ class IzincutiController extends Controller
 {
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $qcuti = Izincuti::query();
         $qcuti->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik');
         $qcuti->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
         $qcuti->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         $qcuti->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
         $qcuti->join('cuti', 'presensi_izincuti.kode_cuti', '=', 'cuti.kode_cuti');
+        
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qcuti->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $qcuti->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qcuti->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $qcuti->whereRaw('1 = 0');
+            }
+        }
+        
         $qcuti->select('presensi_izincuti.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'presensi_izincuti.keterangan as nama_cuti');
         if (!empty($request->dari) && !empty($request->sampai)) {
             $qcuti->whereBetween('izincuti.dari', [$request->dari, $request->sampai]);
@@ -55,22 +77,42 @@ class IzincutiController extends Controller
         $cuti = $qcuti->paginate(15);
         $cuti->appends($request->all());
         $data['izincuti'] = $cuti;
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $user->getCabang();
+        $data['departemen'] = $user->getDepartemen();
         return view('izincuti.index', $data);
     }
 
 
     public function create()
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
 
         $qkaryawan = Karyawan::query();
         $qkaryawan->select('karyawan.nik', 'karyawan.nama_karyawan');
+        
+        // Filter karyawan berdasarkan akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qkaryawan->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qkaryawan->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+        }
+        
         $karyawan = $qkaryawan->get();
         $data['jenis_cuti'] = Cuti::orderBy('kode_cuti')->get();
         $data['karyawan'] = $karyawan;
 
-        $user = User::where('id', '=', auth()->user()->id)->first();
         if ($user->hasRole('karyawan')) {
             return view('izincuti.create-mobile', $data);
         }
@@ -166,10 +208,45 @@ class IzincutiController extends Controller
 
     public function edit($kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
-        $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->first();
+        $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
+            ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $karyawanData = Karyawan::where('nik', $izincuti->nik)->first();
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($karyawanData->kode_cabang, $userCabangs) || !in_array($karyawanData->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
+        
         $qkaryawan = Karyawan::query();
         $qkaryawan->select('karyawan.nik', 'karyawan.nama_karyawan');
+        
+        // Filter karyawan berdasarkan akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qkaryawan->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qkaryawan->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+        }
+        
         $karyawan = $qkaryawan->get();
         $data['karyawan'] = $karyawan;
         $data['izincuti'] = $izincuti;
@@ -209,6 +286,9 @@ class IzincutiController extends Controller
 
     public function approve($kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
         $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
             ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
@@ -216,6 +296,16 @@ class IzincutiController extends Controller
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
             ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
 
         $data['izincuti'] = $izincuti;
         return view('izincuti.approve', $data);
@@ -224,10 +314,23 @@ class IzincutiController extends Controller
 
     public function storeapprove(Request $request, $kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
         $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
             ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
         $dari = $izincuti->dari;
         $sampai = $izincuti->sampai;
         $nik = $izincuti->nik;
@@ -305,7 +408,24 @@ class IzincutiController extends Controller
 
     public function cancelapprove($kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
+        $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
+            ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
+        
         $presensi = Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->get();
         try {
             Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->update([
@@ -321,7 +441,24 @@ class IzincutiController extends Controller
 
     public function destroy($kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
+        $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
+            ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
+        
         try {
             Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->delete();
             return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
@@ -332,6 +469,9 @@ class IzincutiController extends Controller
 
     public function show($kode_izin_cuti)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
         $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
             ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
@@ -339,6 +479,16 @@ class IzincutiController extends Controller
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
             ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
 
         $data['izincuti'] = $izincuti;
         return view('izincuti.show', $data);

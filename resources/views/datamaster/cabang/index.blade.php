@@ -21,7 +21,7 @@
                             <div class="row">
                                 <div class="col-lg-10 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Cabang" value="{{ Request('nama_cabang') }}" name="nama_cabang"
-                                        icon="ti ti-search" />
+                                        icon="ti ti-search" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <button class="btn btn-primary"><i class="ti ti-icons ti-search me-1"></i>Cari</button>

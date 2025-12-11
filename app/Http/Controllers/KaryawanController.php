@@ -29,12 +29,39 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $query = Karyawan::query();
         $query->select('karyawan.*', 'departemen.nama_dept', 'jabatan.nama_jabatan', 'cabang.nama_cabang', 'id_user');
         $query->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         $query->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
         $query->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
         $query->leftJoin('users_karyawan', 'karyawan.nik', '=', 'users_karyawan.nik');
+
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            // Ambil kode cabang dan departemen yang diakses user
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+
+            // Filter berdasarkan cabang yang diakses
+            if (!empty($userCabangs)) {
+                $query->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                // Jika tidak ada akses cabang, tidak tampilkan data
+                $query->whereRaw('1 = 0');
+            }
+
+            // Filter berdasarkan departemen yang diakses
+            if (!empty($userDepartemens)) {
+                $query->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                // Jika tidak ada akses departemen, tidak tampilkan data
+                $query->whereRaw('1 = 0');
+            }
+        }
+
         if (!empty($request->kode_cabang)) {
             $query->where('karyawan.kode_cabang', $request->kode_cabang);
         }
@@ -51,20 +78,24 @@ class KaryawanController extends Controller
         }
         $query->orderBy('nama_karyawan', 'asc');
         $karyawan = $query->paginate(15);
+        $karyawan->appends($request->all());
 
         $data['karyawan'] = $karyawan;
-        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
+        $data['cabang'] = $user->getCabang();
+        $data['departemen'] = $user->getDepartemen();
+
         return view('datamaster.karyawan.index', $data);
     }
 
 
     public function create()
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
 
         $data['status_kawin'] = Statuskawin::orderBy('kode_status_kawin')->get();
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $user->getCabang();
+        $data['departemen'] = $user->getDepartemen();
         $data['jabatan'] = Jabatan::orderBy('kode_jabatan')->get();
         return view('datamaster.karyawan.create', $data);
     }
@@ -72,6 +103,9 @@ class KaryawanController extends Controller
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $request->validate([
             // nik akan digenerate otomatis; user mengisi nik_show
             'nik_show' => 'required',
@@ -90,6 +124,20 @@ class KaryawanController extends Controller
             'tanggal_masuk' => 'required',
             'status_karyawan' => 'required'
         ]);
+
+        // Validasi akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+
+            if (!in_array($request->kode_cabang, $userCabangs)) {
+                return Redirect::back()->with(messageError('Anda tidak memiliki akses ke cabang yang dipilih'));
+            }
+
+            if (!in_array($request->kode_dept, $userDepartemens)) {
+                return Redirect::back()->with(messageError('Anda tidak memiliki akses ke departemen yang dipilih'));
+            }
+        }
 
         try {
             // Generate NIK format YYMM + 5 digit urut per bulan
@@ -153,11 +201,14 @@ class KaryawanController extends Controller
 
     public function edit($nik)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $nik = Crypt::decrypt($nik);
         $data['karyawan'] = Karyawan::where('nik', $nik)->first();
         $data['status_kawin'] = Statuskawin::orderBy('kode_status_kawin')->get();
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $user->getCabang();
+        $data['departemen'] = $user->getDepartemen();
         $data['jabatan'] = Jabatan::orderBy('kode_jabatan')->get();
         return view('datamaster.karyawan.edit', $data);
     }
@@ -165,6 +216,9 @@ class KaryawanController extends Controller
 
     public function update($nik, Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $nik = Crypt::decrypt($nik);
         $request->validate([
             // nik tetap primary key dan tidak diedit; nik_show yang bisa diubah
@@ -184,6 +238,20 @@ class KaryawanController extends Controller
             'tanggal_masuk' => 'required',
             'status_karyawan' => 'required'
         ]);
+
+        // Validasi akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+
+            if (!in_array($request->kode_cabang, $userCabangs)) {
+                return Redirect::back()->with(messageError('Anda tidak memiliki akses ke cabang yang dipilih'));
+            }
+
+            if (!in_array($request->kode_dept, $userDepartemens)) {
+                return Redirect::back()->with(messageError('Anda tidak memiliki akses ke departemen yang dipilih'));
+            }
+        }
 
         try {
             $karyawan = Karyawan::where('nik', $nik)->first();

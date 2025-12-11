@@ -91,12 +91,43 @@ class TunjanganController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'nik' => 'required',
-            'kode_jenis_tunjangan' => 'required',
-            'jumlah' => 'required|array',
-            'jumlah.*' => 'required',
-            'tanggal_berlaku' => 'required',
+            'nik' => [
+                'required',
+                'exists:karyawan,nik'
+            ],
+            'kode_jenis_tunjangan' => [
+                'required',
+                'array'
+            ],
+            'kode_jenis_tunjangan.*' => [
+                'required',
+                'exists:jenis_tunjangan,kode_jenis_tunjangan'
+            ],
+            'jumlah' => [
+                'required',
+                'array'
+            ],
+            'jumlah.*' => [
+                'required'
+            ],
+            'tanggal_berlaku' => [
+                'required',
+                'date'
+            ]
+        ], [
+            'nik.required' => 'Karyawan wajib dipilih',
+            'nik.exists' => 'Karyawan yang dipilih tidak valid',
+            'kode_jenis_tunjangan.required' => 'Jenis Tunjangan wajib dipilih',
+            'kode_jenis_tunjangan.array' => 'Format Jenis Tunjangan tidak valid',
+            'kode_jenis_tunjangan.*.required' => 'Semua Jenis Tunjangan wajib dipilih',
+            'kode_jenis_tunjangan.*.exists' => 'Jenis Tunjangan yang dipilih tidak valid',
+            'jumlah.required' => 'Jumlah Tunjangan wajib diisi',
+            'jumlah.array' => 'Format Jumlah Tunjangan tidak valid',
+            'jumlah.*.required' => 'Semua Jumlah Tunjangan wajib diisi',
+            'tanggal_berlaku.required' => 'Tanggal Berlaku wajib diisi',
+            'tanggal_berlaku.date' => 'Format Tanggal Berlaku tidak valid'
         ]);
 
         //Kode Tunjangan = T250001;
@@ -106,9 +137,20 @@ class TunjanganController extends Controller
             ->first();
         $last_kode_tunjangan = $last_tunjangan != null ? $last_tunjangan->kode_tunjangan : '';
         $kode_tunjangan = buatkode($last_kode_tunjangan, "T" . substr($tahun_gaji, 2, 2), 4);
+        
         DB::beginTransaction();
         try {
-            //code...
+            // Validasi jumlah setelah konversi
+            foreach ($request->jumlah as $key => $jumlahValue) {
+                $jumlah = toNumber($jumlahValue);
+                if (!is_numeric($jumlah) || $jumlah < 0 || $jumlah > 999999999) {
+                    DB::rollBack();
+                    return Redirect::back()
+                        ->withInput()
+                        ->with(messageError('Jumlah Tunjangan harus berupa angka antara 0 sampai 999.999.999'));
+                }
+            }
+
             Tunjangan::create([
                 'kode_tunjangan' => $kode_tunjangan,
                 'nik' => $request->nik,
@@ -124,9 +166,25 @@ class TunjanganController extends Controller
             }
             DB::commit();
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
             DB::rollBack();
-            return Redirect::back()->with(messageError('Data Gagal Disimpan ' . $e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Data Gagal Disimpan: ' . $e->getMessage()));
         }
     }
 
@@ -134,15 +192,53 @@ class TunjanganController extends Controller
     public function update($kode_tunjangan, Request $request)
     {
         $kode_tunjangan = Crypt::decrypt($kode_tunjangan);
+
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'kode_jenis_tunjangan' => 'required',
-            'jumlah' => 'required|array',
-            'jumlah.*' => 'required',
-            'tanggal_berlaku' => 'required',
+            'kode_jenis_tunjangan' => [
+                'required',
+                'array'
+            ],
+            'kode_jenis_tunjangan.*' => [
+                'required',
+                'exists:jenis_tunjangan,kode_jenis_tunjangan'
+            ],
+            'jumlah' => [
+                'required',
+                'array'
+            ],
+            'jumlah.*' => [
+                'required'
+            ],
+            'tanggal_berlaku' => [
+                'required',
+                'date'
+            ]
+        ], [
+            'kode_jenis_tunjangan.required' => 'Jenis Tunjangan wajib dipilih',
+            'kode_jenis_tunjangan.array' => 'Format Jenis Tunjangan tidak valid',
+            'kode_jenis_tunjangan.*.required' => 'Semua Jenis Tunjangan wajib dipilih',
+            'kode_jenis_tunjangan.*.exists' => 'Jenis Tunjangan yang dipilih tidak valid',
+            'jumlah.required' => 'Jumlah Tunjangan wajib diisi',
+            'jumlah.array' => 'Format Jumlah Tunjangan tidak valid',
+            'jumlah.*.required' => 'Semua Jumlah Tunjangan wajib diisi',
+            'tanggal_berlaku.required' => 'Tanggal Berlaku wajib diisi',
+            'tanggal_berlaku.date' => 'Format Tanggal Berlaku tidak valid'
         ]);
+
         DB::beginTransaction();
         try {
-            //code...
+            // Validasi jumlah setelah konversi
+            foreach ($request->jumlah as $key => $jumlahValue) {
+                $jumlah = toNumber($jumlahValue);
+                if (!is_numeric($jumlah) || $jumlah < 0 || $jumlah > 999999999) {
+                    DB::rollBack();
+                    return Redirect::back()
+                        ->withInput()
+                        ->with(messageError('Jumlah Tunjangan harus berupa angka antara 0 sampai 999.999.999'));
+                }
+            }
+
             Tunjangan::where('kode_tunjangan', $kode_tunjangan)->update([
                 'tanggal_berlaku' => $request->tanggal_berlaku
             ]);
@@ -156,10 +252,26 @@ class TunjanganController extends Controller
                 ]);
             }
             DB::commit();
-            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+            return Redirect::back()->with(messageSuccess('Data Berhasil Diupdate'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
             DB::rollBack();
-            return Redirect::back()->with(messageError('Data Gagal Disimpan ' . $e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Data Gagal Diupdate: ' . $e->getMessage()));
         }
     }
 

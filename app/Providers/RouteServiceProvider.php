@@ -28,6 +28,15 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Rate limiter khusus untuk endpoint fingerprint dengan limit lebih tinggi
+        // Karena mesin fingerprint bisa mengirim banyak request dalam waktu singkat
+        RateLimiter::for('fingerprint', function (Request $request) {
+            // 1000 request per menit per device ID atau IP
+            // Ini cukup untuk mesin fingerprint yang aktif
+            $key = $request->header('dev-id') ?: $request->ip();
+            return Limit::perMinute(1000)->by($key);
+        });
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')

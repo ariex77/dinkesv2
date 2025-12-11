@@ -19,6 +19,106 @@ class FacerecognitionController extends Controller
         return view('facerecognition.create', $data);
     }
 
+    // Halaman daftarkan wajah untuk karyawan (mobile layout)
+    public function createKaryawan()
+    {
+        $user = auth()->user();
+        $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
+
+        if (!$userkaryawan) {
+            return redirect()->route('dashboard.index')->with('error', 'Data karyawan tidak ditemukan');
+        }
+
+        $data['nik'] = $userkaryawan->nik;
+        $data['karyawan'] = Karyawan::where('nik', $userkaryawan->nik)->first();
+
+        // Cek apakah sudah ada data wajah sebelumnya
+        $existingWajah = Facerecognition::where('nik', $userkaryawan->nik)->get();
+        if ($existingWajah->count() > 0) {
+            // Jika sudah ada, redirect ke halaman preview
+            return redirect()->route('facerecognition.karyawan.preview');
+        }
+
+        return view('facerecognition.create-karyawan', $data);
+    }
+
+    // Halaman preview data wajah yang sudah ada untuk karyawan
+    public function previewKaryawan()
+    {
+        $user = auth()->user();
+        $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
+
+        if (!$userkaryawan) {
+            return redirect()->route('dashboard.index')->with('error', 'Data karyawan tidak ditemukan');
+        }
+
+        $data['nik'] = $userkaryawan->nik;
+        $data['karyawan'] = Karyawan::where('nik', $userkaryawan->nik)->first();
+        
+        // Ambil semua data wajah yang sudah ada
+        $wajahList = Facerecognition::where('nik', $userkaryawan->nik)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Siapkan URL untuk setiap gambar dengan pengecekan file
+        $nama_folder = $data['karyawan']->nik . "-" . getNamaDepan(strtolower($data['karyawan']->nama_karyawan));
+        $folderPath = 'public/uploads/facerecognition/' . $nama_folder . '/';
+        
+        $data['wajahList'] = $wajahList->map(function($wajah) use ($folderPath, $nama_folder) {
+            $filePath = $folderPath . $wajah->wajah;
+            $wajah->file_exists = Storage::exists($filePath);
+            
+            // Buat URL dengan encoding yang benar
+            if ($wajah->file_exists) {
+                // Encode setiap bagian path secara terpisah
+                $encodedFolder = rawurlencode($nama_folder);
+                $encodedFileName = rawurlencode($wajah->wajah);
+                // Ganti %2F kembali menjadi / untuk folder (karena folder separator tidak perlu di-encode)
+                $encodedFolder = str_replace('%2F', '/', $encodedFolder);
+                $wajah->image_url = url('/storage/uploads/facerecognition/' . $encodedFolder . '/' . $encodedFileName);
+            } else {
+                $wajah->image_url = null;
+            }
+            
+            return $wajah;
+        });
+
+        return view('facerecognition.preview-karyawan', $data);
+    }
+
+    // Hapus semua wajah karyawan yang sedang login
+    public function destroyAllKaryawan()
+    {
+        $user = auth()->user();
+        $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
+
+        if (!$userkaryawan) {
+            return redirect()->route('dashboard.index')->with('error', 'Data karyawan tidak ditemukan');
+        }
+
+        $karyawan = Karyawan::where('nik', $userkaryawan->nik)->first();
+        if (!$karyawan) {
+            return redirect()->route('dashboard.index')->with('error', 'Data karyawan tidak ditemukan');
+        }
+
+        $folder = $karyawan->nik . '-' . getNamaDepan(strtolower($karyawan->nama_karyawan));
+        $folderPath = 'public/uploads/facerecognition/' . $folder;
+        
+        try {
+            // Hapus semua file di folder
+            if (Storage::exists($folderPath)) {
+                Storage::deleteDirectory($folderPath);
+            }
+            // Hapus semua record di database
+            Facerecognition::where('nik', $userkaryawan->nik)->delete();
+            
+            // Redirect ke halaman create untuk perekaman baru
+            return redirect()->route('facerecognition.karyawan.create')->with('success', 'Data wajah lama berhasil dihapus. Silakan lakukan perekaman ulang.');
+        } catch (\Exception $e) {
+            return redirect()->route('facerecognition.karyawan.preview')->with('error', 'Gagal menghapus data wajah: ' . $e->getMessage());
+        }
+    }
+
     public function store(Request $request)
     {
         $karyawan = Karyawan::where('nik', $request->nik)->first();

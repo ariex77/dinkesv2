@@ -522,7 +522,7 @@ class WagatewayController extends Controller
             if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
                 $domain = 'http://' . $domain;
             }
-            $apiUrl = $domain . '/api-fetch-groups';
+            $apiUrl = $domain . '/fetch-contact-group';
 
             // Data untuk API
             $apiData = [
@@ -544,11 +544,20 @@ class WagatewayController extends Controller
             if ($response->successful()) {
                 $responseData = $response->json();
 
+                // Handle response format baru: { status, msg, data }
+                if (isset($responseData['status']) && $responseData['status'] === true) {
                 return response()->json([
                     'success' => true,
-                    'message' => $responseData['message'] ?? 'Groups berhasil diambil',
-                    'data' => $responseData['data'] ?? $responseData
-                ]);
+                        'message' => $responseData['msg'] ?? 'Groups berhasil diambil',
+                        'data' => $responseData['data'] ?? []
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $responseData['msg'] ?? 'Gagal mengambil groups',
+                        'data' => []
+                    ], 400);
+                }
             } else {
                 $errorResponse = $response->json();
                 $statusCode = $response->status();

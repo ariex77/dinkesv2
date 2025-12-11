@@ -15,17 +15,20 @@ class TrackingKunjunganController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         // Default tanggal hari ini
         $tanggal = $request->get('tanggal', Carbon::today()->format('Y-m-d'));
         $nik = $request->get('nik');
 
-        // Ambil semua karyawan untuk filter
-        $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+        // Ambil karyawan untuk filter berdasarkan akses user
+        $karyawans = $this->getKaryawansByAccess($user);
 
         // Ambil data kunjungan dengan koordinat - hanya jika NIK dipilih
         $kunjungans = collect(); // Default empty collection
         if ($nik) {
-            $kunjungans = $this->getKunjunganData($tanggal, $tanggal, $nik);
+            $kunjungans = $this->getKunjunganData($tanggal, $tanggal, $nik, $user);
         }
 
         return view('tracking-kunjungan.index', compact('kunjungans', 'karyawans', 'tanggal', 'nik'));
@@ -36,10 +39,13 @@ class TrackingKunjunganController extends Controller
      */
     public function getData(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $tanggal = $request->get('tanggal', Carbon::today()->format('Y-m-d'));
         $nik = $request->get('nik');
 
-        $kunjungans = $this->getKunjunganData($tanggal, $tanggal, $nik);
+        $kunjungans = $this->getKunjunganData($tanggal, $tanggal, $nik, $user);
 
         return response()->json([
             'kunjungans' => $kunjungans
@@ -49,7 +55,7 @@ class TrackingKunjunganController extends Controller
     /**
      * Get kunjungan data with coordinates
      */
-    private function getKunjunganData($tanggal_awal, $tanggal_akhir, $nik = null)
+    private function getKunjunganData($tanggal_awal, $tanggal_akhir, $nik = null, $user = null)
     {
         $query = Kunjungan::select([
             'kunjungan.id',
@@ -61,6 +67,7 @@ class TrackingKunjunganController extends Controller
             'kunjungan.created_at',
             'karyawan.nama_karyawan',
             'karyawan.kode_cabang',
+            'karyawan.kode_dept',
             'cabang.nama_cabang',
             'cabang.lokasi_cabang'
         ])
@@ -69,6 +76,24 @@ class TrackingKunjunganController extends Controller
             ->whereBetween('kunjungan.tanggal_kunjungan', [$tanggal_awal, $tanggal_akhir])
             ->whereNotNull('kunjungan.lokasi')
             ->where('kunjungan.lokasi', '!=', '');
+
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if ($user && !$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $query->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $query->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         // Filter by karyawan jika dipilih
         if ($nik) {
@@ -204,5 +229,32 @@ class TrackingKunjunganController extends Controller
                 return $hours . ' jam';
             }
         }
+    }
+    
+    /**
+     * Get karyawans based on user access
+     */
+    private function getKaryawansByAccess($user)
+    {
+        $query = Karyawan::query();
+        
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $query->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $query->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query->orderBy('nama_karyawan')->get();
     }
 }

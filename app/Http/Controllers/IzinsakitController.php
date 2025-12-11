@@ -25,11 +25,32 @@ class IzinsakitController extends Controller
 {
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         $qizin = Izinsakit::query();
         $qizin->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik');
         $qizin->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
         $qizin->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         $qizin->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
+
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qizin->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $qizin->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qizin->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $qizin->whereRaw('1 = 0');
+            }
+        }
 
         $qizin->select('presensi_izinsakit.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang');
         if (!empty($request->dari) && !empty($request->sampai)) {
@@ -56,17 +77,38 @@ class IzinsakitController extends Controller
         $izinsakit = $qizin->paginate(15);
         $izinsakit->appends($request->all());
 
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $user->getCabang();
+        $data['departemen'] = $user->getDepartemen();
         $data['izinsakit'] = $izinsakit;
         return view('izinsakit.index', $data);
     }
 
     public function create()
     {
-        $user = User::where('id', '=', auth()->user()->id)->first();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $qkaryawan = Karyawan::query();
         $qkaryawan->select('karyawan.nik', 'karyawan.nama_karyawan');
+        
+        // Filter karyawan berdasarkan akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qkaryawan->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qkaryawan->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+        }
+        
         $karyawan = $qkaryawan->get();
 
         $data['karyawan'] = $karyawan;
@@ -80,11 +122,45 @@ class IzinsakitController extends Controller
 
     public function edit($kode_izin_sakit)
     {
-        $user = User::where('id', '=', auth()->user()->id)->first();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
-        $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->first();
+        $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
+            ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $karyawanData = Karyawan::where('nik', $izinsakit->nik)->first();
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($karyawanData->kode_cabang, $userCabangs) || !in_array($karyawanData->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
+        
         $qkaryawan = Karyawan::query();
         $qkaryawan->select('karyawan.nik', 'karyawan.nama_karyawan');
+        
+        // Filter karyawan berdasarkan akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qkaryawan->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qkaryawan->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $qkaryawan->whereRaw('1 = 0');
+            }
+        }
+        
         $karyawan = $qkaryawan->get();
         $data['karyawan'] = $karyawan;
         $data['izinsakit'] = $izinsakit;
@@ -187,6 +263,9 @@ class IzinsakitController extends Controller
 
     public function approve($kode_izin_sakit)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
         $izinabsen = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
             ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
@@ -194,6 +273,16 @@ class IzinsakitController extends Controller
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
             ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izinabsen->kode_cabang, $userCabangs) || !in_array($izinabsen->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
 
         $data['izinsakit'] = $izinabsen;
         return view('izinsakit.approve', $data);
@@ -201,10 +290,23 @@ class IzinsakitController extends Controller
 
     public function storeapprove(Request $request, $kode_izin_sakit)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
         $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
             ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izinsakit->kode_cabang, $userCabangs) || !in_array($izinsakit->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
         $dari = $izinsakit->dari;
         $sampai = $izinsakit->sampai;
         $nik = $izinsakit->nik;
@@ -283,7 +385,24 @@ class IzinsakitController extends Controller
 
     public function cancelapprove($kode_izin_sakit)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
+        $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
+            ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izinsakit->kode_cabang, $userCabangs) || !in_array($izinsakit->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
+        
         $presensi = Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->get();
         try {
             Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
@@ -349,7 +468,24 @@ class IzinsakitController extends Controller
 
     public function destroy($kode_izin_sakit)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
+        $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
+            ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
+            ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izinsakit->kode_cabang, $userCabangs) || !in_array($izinsakit->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
+        
         try {
             Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->delete();
             return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
@@ -361,6 +497,9 @@ class IzinsakitController extends Controller
 
     public function show($kode_izin_sakit)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
         $izinabsen = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
             ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
@@ -368,6 +507,16 @@ class IzinsakitController extends Controller
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
             ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
             ->first();
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izinabsen->kode_cabang, $userCabangs) || !in_array($izinabsen->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
+            }
+        }
 
         $data['izinsakit'] = $izinabsen;
         return view('izinsakit.show', $data);

@@ -14,18 +14,18 @@
                 <div class="row">
                     <div class="col-12">
                         <form action="{{ route('presensi.index') }}">
-                            <x-input-with-icon label="Tanggal" value="{{ Request('tanggal') }}" name="tanggal" icon="ti ti-calendar"
-                                datepicker="flatpickr-date" />
+                            <x-input-with-icon label="" value="{{ Request('tanggal') }}" name="tanggal" icon="ti ti-calendar"
+                                datepicker="flatpickr-date" placeholder="Tanggal" />
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12 col-md-12">
-                                    <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
-                                        selected="{{ Request('kode_cabang') }}" upperCase="true" select2="select2Kodecabangsearch" />
+                                    <x-select label="" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
+                                        selected="{{ Request('kode_cabang') }}" upperCase="true" select2="select2Kodecabangsearch" placeholder="Cabang" />
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12 col-md-12">
-                                    <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
-                                        icon="ti ti-search" />
+                                    <x-input-with-icon label="" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
+                                        icon="ti ti-search" placeholder="Cari Nama Karyawan" />
                                 </div>
                             </div>
                             <div class="row mb-3">

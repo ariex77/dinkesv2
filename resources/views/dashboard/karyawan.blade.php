@@ -361,15 +361,29 @@
                                 <img src="{{ asset('assets/template/img/3d/maps.png') }}" alt="" style="width: 50px" class="mb-0">
                                 <br>
                                 <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                    Kunjungan
+                                    Visit
                                 </span>
                             </div>
                         </div>
                     </a>
                 </div>
             @endcan
+            <div class="col-3">
+                <a href="javascript:void(0)" id="btnDaftarkanWajah">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Wajah
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
+
     <div id="histori-section">
         <div class="tab-pane fade show active" id="pilled" role="tabpanel">
             <ul class="nav nav-tabs style1" role="tablist">
@@ -1043,6 +1057,51 @@
     </style>
 @endsection
 @push('myscript')
+    <!-- Preload Face Recognition Models dengan IndexedDB Caching -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="{{ asset('js/face-model-cache.js') }}"></script>
+    <script>
+        // Auto preload models dan descriptors di background saat dashboard load (non-blocking)
+        (function() {
+            function startPreload() {
+                if (typeof faceapi !== 'undefined' && window.FaceModelCache) {
+                    // Delay 1 detik agar tidak blocking render halaman
+                    setTimeout(async () => {
+                        // Preload models dulu
+                        await window.FaceModelCache.preloadFaceModels();
+                        console.log('[Dashboard] Face models preloaded in background');
+
+                        // Setelah models loaded, preload descriptors
+                        @if (isset($karyawan) && $karyawan)
+                            const nik = "{{ $karyawan->nik }}";
+                            const label = "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}";
+
+                            // Preload descriptors di background (non-blocking, delay 2 detik setelah models loaded)
+                            setTimeout(() => {
+                                window.FaceModelCache.preloadFaceDescriptors(nik, label).then((success) => {
+                                    if (success) {
+                                        console.log('[Dashboard] Face descriptors preloaded in background');
+                                    }
+                                }).catch(err => {
+                                    console.warn('[Dashboard] Failed to preload descriptors:', err);
+                                });
+                            }, 2000);
+                        @endif
+                    }, 1000);
+                } else {
+                    // Retry jika face-api.js belum loaded
+                    setTimeout(startPreload, 500);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', startPreload);
+            } else {
+                startPreload();
+            }
+        })();
+    </script>
+
     <script type="text/javascript">
         window.onload = function() {
             jam();
@@ -1282,5 +1341,11 @@
                 });
             });
         @endif
+
+        // Handler untuk tombol Daftarkan Wajah - redirect ke halaman baru
+        $("#btnDaftarkanWajah").click(function(e) {
+            e.preventDefault();
+            window.location.href = "{{ route('facerecognition.karyawan.create') }}";
+        });
     </script>
 @endpush

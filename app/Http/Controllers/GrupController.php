@@ -28,21 +28,81 @@ class GrupController extends Controller
 
     public function store(Request $request)
     {
-
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'kode_grup' => 'required',
-            'nama_grup' => 'required'
+            'kode_grup' => [
+                'required',
+                'string',
+                'max:3',
+                'unique:grup,kode_grup'
+            ],
+            'nama_grup' => [
+                'required',
+                'string',
+                'max:50'
+            ]
+        ], [
+            'kode_grup.required' => 'Kode Grup wajib diisi',
+            'kode_grup.max' => 'Kode Grup maksimal 3 karakter',
+            'kode_grup.unique' => 'Kode Grup sudah digunakan, silakan gunakan kode lain',
+            'nama_grup.required' => 'Nama Grup wajib diisi',
+            'nama_grup.max' => 'Nama Grup maksimal 50 karakter'
         ]);
+
         try {
-            //Simpan Data Grup
+            // Cek duplicate sebelum insert
+            $existing = Grup::where('kode_grup', $request->kode_grup)->first();
+            if ($existing) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Kode Grup sudah digunakan, silakan gunakan kode lain'));
+            }
+
+            // Trim whitespace
+            $kode_grup = strtoupper(trim($request->kode_grup));
+            $nama_grup = trim($request->nama_grup);
+
+            // Validasi panjang setelah trim
+            if (strlen($kode_grup) > 3) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Kode Grup maksimal 3 karakter'));
+            }
+
+            if (strlen($nama_grup) > 50) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Nama Grup maksimal 50 karakter'));
+            }
+
+            // Simpan Data Grup
             Grup::create([
-                'kode_grup' => $request->kode_grup,
-                'nama_grup' => $request->nama_grup
+                'kode_grup' => $kode_grup,
+                'nama_grup' => $nama_grup
             ]);
 
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Duplicate entry')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Kode Grup sudah digunakan, silakan gunakan kode lain'));
+            } elseif (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang. Kode maksimal 3 karakter, Nama maksimal 50 karakter'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
-            return Redirect::back()->with(messageError($e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Terjadi kesalahan: ' . $e->getMessage()));
         }
     }
 
@@ -56,21 +116,85 @@ class GrupController extends Controller
 
     public function update($kode_grup, Request $request)
     {
-        $kode_grup = Crypt::decrypt($kode_grup);
+        $kode_grup_old = Crypt::decrypt($kode_grup);
+
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'kode_grup' => 'required',
-            'nama_grup' => 'required'
+            'kode_grup' => [
+                'required',
+                'string',
+                'max:3',
+                'unique:grup,kode_grup,' . $kode_grup_old . ',kode_grup'
+            ],
+            'nama_grup' => [
+                'required',
+                'string',
+                'max:50'
+            ]
+        ], [
+            'kode_grup.required' => 'Kode Grup wajib diisi',
+            'kode_grup.max' => 'Kode Grup maksimal 3 karakter',
+            'kode_grup.unique' => 'Kode Grup sudah digunakan, silakan gunakan kode lain',
+            'nama_grup.required' => 'Nama Grup wajib diisi',
+            'nama_grup.max' => 'Nama Grup maksimal 50 karakter'
         ]);
 
         try {
-            Grup::where('kode_grup', $kode_grup)->update([
-                'kode_grup' => $request->kode_grup,
-                'nama_grup' => $request->nama_grup
+            // Trim whitespace
+            $kode_grup_new = strtoupper(trim($request->kode_grup));
+            $nama_grup = trim($request->nama_grup);
+
+            // Validasi panjang setelah trim
+            if (strlen($kode_grup_new) > 3) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Kode Grup maksimal 3 karakter'));
+            }
+
+            if (strlen($nama_grup) > 50) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Nama Grup maksimal 50 karakter'));
+            }
+
+            // Cek duplicate jika kode berubah
+            if ($kode_grup_new !== $kode_grup_old) {
+                $existing = Grup::where('kode_grup', $kode_grup_new)->first();
+                if ($existing) {
+                    return Redirect::back()
+                        ->withInput()
+                        ->with(messageError('Kode Grup sudah digunakan, silakan gunakan kode lain'));
+                }
+            }
+
+            // Update Data Grup
+            Grup::where('kode_grup', $kode_grup_old)->update([
+                'kode_grup' => $kode_grup_new,
+                'nama_grup' => $nama_grup
             ]);
 
             return Redirect::back()->with(messageSuccess('Data Berhasil Diupdate'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Duplicate entry')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Kode Grup sudah digunakan, silakan gunakan kode lain'));
+            } elseif (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang. Kode maksimal 3 karakter, Nama maksimal 50 karakter'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
-            return Redirect::back()->with(messageError($e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Terjadi kesalahan: ' . $e->getMessage()));
         }
     }
 

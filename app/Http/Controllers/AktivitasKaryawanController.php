@@ -18,6 +18,7 @@ class AktivitasKaryawanController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
         $query = AktivitasKaryawan::join('karyawan', 'aktivitas_karyawan.nik', '=', 'karyawan.nik')
@@ -27,6 +28,24 @@ class AktivitasKaryawanController extends Controller
         if ($user->hasRole('karyawan')) {
             $query->where('aktivitas_karyawan.nik', $user_karyawan->nik);
         } else {
+            // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!empty($userCabangs)) {
+                    $query->whereIn('karyawan.kode_cabang', $userCabangs);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+
+                if (!empty($userDepartemens)) {
+                    $query->whereIn('karyawan.kode_dept', $userDepartemens);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
             // Filter by NIK if provided (for admin)
             if ($request->filled('nik')) {
                 $query->where('aktivitas_karyawan.nik', $request->nik);
@@ -43,7 +62,13 @@ class AktivitasKaryawanController extends Controller
         }
 
         $aktivitas = $query->orderBy('aktivitas_karyawan.created_at', 'desc')->paginate(10);
-        $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+
+        // Get karyawans based on access
+        if ($user->hasRole('karyawan')) {
+            $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+        } else {
+            $karyawans = $this->getKaryawansByAccess($user);
+        }
 
         // If user is karyawan role, use mobile view
         if ($user->hasRole('karyawan')) {
@@ -54,10 +79,38 @@ class AktivitasKaryawanController extends Controller
     }
 
     /**
+     * Get karyawans based on user access
+     */
+    private function getKaryawansByAccess($user)
+    {
+        $query = Karyawan::query();
+
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+
+            if (!empty($userCabangs)) {
+                $query->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+
+            if (!empty($userDepartemens)) {
+                $query->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        return $query->orderBy('nama_karyawan')->get();
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
@@ -66,7 +119,7 @@ class AktivitasKaryawanController extends Controller
             $karyawan = Karyawan::where('nik', $user_karyawan->nik)->first();
             return view('aktivitaskaryawan.create-mobile', compact('karyawan'));
         } else {
-            $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+            $karyawans = $this->getKaryawansByAccess($user);
             return view('aktivitaskaryawan.create', compact('karyawans'));
         }
     }
@@ -76,12 +129,34 @@ class AktivitasKaryawanController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
         // If user is karyawan role, force their own NIK
         if ($user->hasRole('karyawan')) {
             $request->merge(['nik' => $user_karyawan->nik]);
+        } else {
+            // Validasi akses untuk admin jika bukan super admin
+            if (!$user->isSuperAdmin() && $request->filled('nik')) {
+                $karyawan = Karyawan::where('nik', $request->nik)->first();
+                if ($karyawan) {
+                    $userCabangs = $user->getCabangCodes();
+                    $userDepartemens = $user->getDepartemenCodes();
+
+                    if (!in_array($karyawan->kode_cabang, $userCabangs)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari cabang ini.'])
+                            ->withInput();
+                    }
+
+                    if (!in_array($karyawan->kode_dept, $userDepartemens)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari departemen ini.'])
+                            ->withInput();
+                    }
+                }
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -150,6 +225,7 @@ class AktivitasKaryawanController extends Controller
      */
     public function edit(AktivitasKaryawan $aktivitaskaryawan)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
 
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
@@ -159,12 +235,25 @@ class AktivitasKaryawanController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $aktivitaskaryawan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke aktivitas karyawan ini.');
+                }
+            }
+        }
+
         // If user is karyawan role, only show their own data
         if ($user->hasRole('karyawan')) {
             $karyawan = Karyawan::where('nik', $user_karyawan->nik)->first();
             return view('aktivitaskaryawan.edit-mobile', compact('aktivitaskaryawan', 'karyawan'));
         } else {
-            $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+            $karyawans = $this->getKaryawansByAccess($user);
             return view('aktivitaskaryawan.edit', compact('aktivitaskaryawan', 'karyawans'));
         }
     }
@@ -174,6 +263,7 @@ class AktivitasKaryawanController extends Controller
      */
     public function update(Request $request, AktivitasKaryawan $aktivitaskaryawan)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
@@ -182,9 +272,43 @@ class AktivitasKaryawanController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $aktivitaskaryawan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke aktivitas karyawan ini.');
+                }
+            }
+        }
+
         // If user is karyawan role, force their own NIK
         if ($user->hasRole('karyawan')) {
             $request->merge(['nik' => $user_karyawan->nik]);
+        } else {
+            // Validasi akses untuk admin jika bukan super admin dan NIK berubah
+            if (!$user->isSuperAdmin() && $request->filled('nik') && $request->nik !== $aktivitaskaryawan->nik) {
+                $karyawan = Karyawan::where('nik', $request->nik)->first();
+                if ($karyawan) {
+                    $userCabangs = $user->getCabangCodes();
+                    $userDepartemens = $user->getDepartemenCodes();
+
+                    if (!in_array($karyawan->kode_cabang, $userCabangs)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari cabang ini.'])
+                            ->withInput();
+                    }
+
+                    if (!in_array($karyawan->kode_dept, $userDepartemens)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari departemen ini.'])
+                            ->withInput();
+                    }
+                }
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -249,12 +373,26 @@ class AktivitasKaryawanController extends Controller
      */
     public function destroy(AktivitasKaryawan $aktivitaskaryawan)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
         // If user is karyawan role, only allow deleting their own activities
         if ($user->hasRole('karyawan') && $aktivitaskaryawan->nik !== $user_karyawan->nik) {
             abort(403, 'Unauthorized action.');
+        }
+
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $aktivitaskaryawan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke aktivitas karyawan ini.');
+                }
+            }
         }
 
         // Delete foto if exists
@@ -297,6 +435,24 @@ class AktivitasKaryawanController extends Controller
         if ($user->hasRole('karyawan')) {
             $query->where('aktivitas_karyawan.nik', $user_karyawan->nik);
         } else {
+            // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!empty($userCabangs)) {
+                    $query->whereIn('karyawan.kode_cabang', $userCabangs);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+
+                if (!empty($userDepartemens)) {
+                    $query->whereIn('karyawan.kode_dept', $userDepartemens);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
             // Filter by NIK (required for admin)
             $query->where('aktivitas_karyawan.nik', $request->nik);
         }

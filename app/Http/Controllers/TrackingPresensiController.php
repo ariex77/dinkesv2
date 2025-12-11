@@ -14,17 +14,20 @@ class TrackingPresensiController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         // Default tanggal hari ini
         $tanggal = $request->get('tanggal', Carbon::today()->format('Y-m-d'));
 
-        // Ambil semua cabang untuk filter
-        $cabangs = Cabang::all();
+        // Ambil cabang untuk filter berdasarkan akses user
+        $cabangs = $user->getCabang();
 
         // Ambil data presensi dengan koordinat
-        $presensis = $this->getPresensiData($tanggal, $request->get('kode_cabang'));
+        $presensis = $this->getPresensiData($tanggal, $request->get('kode_cabang'), $user);
 
         // Ambil data cabang dengan radius untuk ditampilkan di peta
-        $cabangRadius = $this->getCabangRadius($request->get('kode_cabang'));
+        $cabangRadius = $this->getCabangRadius($request->get('kode_cabang'), $user);
 
         return view('trackingpresensi.index', compact('presensis', 'cabangs', 'tanggal', 'cabangRadius'));
     }
@@ -34,11 +37,14 @@ class TrackingPresensiController extends Controller
      */
     public function getData(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
         $tanggal = $request->get('tanggal', Carbon::today()->format('Y-m-d'));
         $kode_cabang = $request->get('kode_cabang');
 
-        $presensis = $this->getPresensiData($tanggal, $kode_cabang);
-        $cabangRadius = $this->getCabangRadius($kode_cabang);
+        $presensis = $this->getPresensiData($tanggal, $kode_cabang, $user);
+        $cabangRadius = $this->getCabangRadius($kode_cabang, $user);
 
         return response()->json([
             'presensis' => $presensis,
@@ -49,7 +55,7 @@ class TrackingPresensiController extends Controller
     /**
      * Get presensi data with coordinates
      */
-    private function getPresensiData($tanggal, $kode_cabang = null)
+    private function getPresensiData($tanggal, $kode_cabang = null, $user = null)
     {
         $query = Presensi::select([
             'presensi.id',
@@ -63,6 +69,7 @@ class TrackingPresensiController extends Controller
             'presensi.foto_out',
             'karyawan.nama_karyawan',
             'karyawan.kode_cabang',
+            'karyawan.kode_dept',
             'cabang.nama_cabang',
             'cabang.lokasi_cabang',
             'cabang.radius_cabang'
@@ -72,6 +79,24 @@ class TrackingPresensiController extends Controller
             ->where('presensi.tanggal', $tanggal)
             ->whereNotNull('presensi.lokasi_in')
             ->where('presensi.lokasi_in', '!=', '');
+
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if ($user && !$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $query->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $query->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         // Filter by cabang jika dipilih
         if ($kode_cabang) {
@@ -124,7 +149,7 @@ class TrackingPresensiController extends Controller
     /**
      * Get cabang data with radius for map display
      */
-    private function getCabangRadius($kode_cabang = null)
+    private function getCabangRadius($kode_cabang = null, $user = null)
     {
         $query = Cabang::select([
             'kode_cabang',
@@ -136,6 +161,16 @@ class TrackingPresensiController extends Controller
             ->where('lokasi_cabang', '!=', '')
             ->whereNotNull('radius_cabang')
             ->where('radius_cabang', '>', 0);
+
+        // Filter berdasarkan akses cabang jika bukan super admin
+        if ($user && !$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            if (!empty($userCabangs)) {
+                $query->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
 
         // Filter by cabang jika dipilih
         if ($kode_cabang) {

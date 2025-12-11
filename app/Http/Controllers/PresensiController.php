@@ -22,6 +22,7 @@ use App\Models\Setjamkerjabydept;
 use App\Models\User;
 use App\Models\Userkaryawan;
 use App\Jobs\SendWaMessage;
+use Carbon\Carbon;
 use CURLFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -34,6 +35,8 @@ class PresensiController extends Controller
 
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
 
         $tanggal = !empty($request->tanggal) ? $request->tanggal : date('Y-m-d');
         $presensi = Presensi::join('presensi_jamkerja', 'presensi.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
@@ -87,6 +90,25 @@ class PresensiController extends Controller
         $query->leftjoinSub($presensi, 'presensi', function ($join) {
             $join->on('karyawan.nik', '=', 'presensi.nik');
         });
+        
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $query->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $query->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
         $query->orderBy('nama_karyawan');
         if (!empty($request->kode_cabang)) {
             $query->where('karyawan.kode_cabang', $request->kode_cabang);
@@ -98,9 +120,8 @@ class PresensiController extends Controller
 
         $karyawan = $query->paginate(10);
         $karyawan->appends(request()->all());
-        $cabang = Cabang::orderBy('kode_cabang')->get();
         $data['karyawan'] = $karyawan;
-        $data['cabang'] = $cabang;
+        $data['cabang'] = $user->getCabang();
         $data['denda_list'] = Denda::all()->toArray();
         return view('presensi.index', $data);
     }
@@ -127,15 +148,20 @@ class PresensiController extends Controller
         //Cek Lokasi Kantor
         $lokasi_kantor = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
 
-        //Cek Lintas Hari
-        $hariini = date("Y-m-d");
-        $jamsekarang = date("H:i");
-        $tgl_sebelumnya = date('Y-m-d', strtotime("-1 days", strtotime($hariini)));
+        // Ambil timezone dari cabang (jika ada), jika tidak gunakan default sistem
+        $timezone_cabang = $lokasi_kantor->timezone ?? $general_setting->timezone ?? config('app.timezone');
+
+        // Gunakan Carbon dengan timezone cabang untuk mendapatkan waktu lokal cabang
+        $carbon_now = Carbon::now($timezone_cabang);
+        $hariini = $carbon_now->format('Y-m-d');
+        $jamsekarang = $carbon_now->format('H:i');
+        $tgl_sebelumnya = $carbon_now->copy()->subDay()->format('Y-m-d');
         $cekpresensi_sebelumnya = Presensi::join('presensi_jamkerja', 'presensi.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
             ->where('tanggal', $tgl_sebelumnya)
             ->where('nik', $karyawan->nik)
             ->first();
 
+        // dd($cekpresensi_sebelumnya);
         $ceklintashari_presensi = $cekpresensi_sebelumnya != null  ? $cekpresensi_sebelumnya->lintashari : 0;
 
         if ($ceklintashari_presensi == 1) {
@@ -238,14 +264,20 @@ class PresensiController extends Controller
         $lokasi = $request->lokasi;
         $kode_jam_kerja = $request->kode_jam_kerja;
 
+        //Get Lokasi Kantor untuk mendapatkan timezone cabang
+        $cabang = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
+        $lokasi_kantor = $request->lokasi_cabang;
 
+        // Ambil timezone dari cabang (jika ada), jika tidak gunakan default sistem
+        $timezone_cabang = $cabang->timezone ?? $generalsetting->timezone ?? config('app.timezone');
 
-        $tanggal_sekarang = date("Y-m-d");
-        $jam_sekarang = date("H:i");
-
-        $tanggal_kemarin = date("Y-m-d", strtotime("-1 days"));
-
-        $tanggal_besok = date("Y-m-d", strtotime("+1 days"));
+        // Konversi waktu presensi ke timezone cabang
+        // Waktu dari client biasanya dalam UTC atau timezone sistem, konversi ke timezone cabang
+        $carbon_now = Carbon::now($timezone_cabang);
+        $tanggal_sekarang = $carbon_now->format('Y-m-d');
+        $jam_sekarang = $carbon_now->format('H:i');
+        $tanggal_kemarin = $carbon_now->copy()->subDay()->format('Y-m-d');
+        $tanggal_besok = $carbon_now->copy()->addDay()->format('Y-m-d');
 
         //Cek Presensi Kemarin
         $presensi_kemarin = Presensi::where('nik', $karyawan->nik)
@@ -255,20 +287,19 @@ class PresensiController extends Controller
 
         $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
 
-        //Jika Presensi Kemarin Status Lintas Hari nya 1 Makan Tanggal Presensi Sekarang adalah Tanggal Kemarin
-        //$tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
+        $batas_presensi_lintashari = $generalsetting->batas_presensi_lintashari;
+        $tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
+        $tanggal_pulang = $lintas_hari == 1 ? $tanggal_besok : $tanggal_sekarang;
+        if ($jam_sekarang > $batas_presensi_lintashari && $lintas_hari == 1) {
+            $tanggal_presensi = $tanggal_sekarang;
+            $tanggal_pulang = $tanggal_besok;
+        }
 
+        //dd($jam_sekarang);
         //Get Lokasi User
         $koordinat_user = explode(",", $lokasi);
         $latitude_user = $koordinat_user[0];
         $longitude_user = $koordinat_user[1];
-
-        //Get Lokasi Kantor
-        $cabang = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
-        // $lokasi_kantor = $cabang->lokasi_cabang;
-        $lokasi_kantor = $request->lokasi_cabang;
-
-
 
         $koordinat_kantor = explode(",", $lokasi_kantor);
         $latitude_kantor = $koordinat_kantor[0];
@@ -339,15 +370,34 @@ class PresensiController extends Controller
         $fileName = $formatName . ".png";
         $file = $folderPath . $fileName;
 
-        $jam_masuk = $tanggal_presensi . " " . date('H:i', strtotime($jam_kerja->jam_masuk));
-        //Jam Mulai Absen adalah 60 Menit Sebelum Jam Masuk
-        $jam_mulai_masuk = $tanggal_presensi . " " . date('H:i', strtotime('-' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
-        $jam_akhir_masuk = $tanggal_presensi . " " . date('H:i', strtotime('+' . $batas_jam_absen . ' minutes', strtotime($jam_masuk)));
-        $jam_pulang = $tanggal_pulang . " " . $jam_kerja_pulang;
+        // Gunakan Carbon dengan timezone cabang untuk perhitungan jam
+        // Parse jam_masuk (bisa H:i atau H:i:s) dan gabungkan dengan tanggal
+        $jam_masuk_string = $tanggal_presensi . " " . $jam_kerja->jam_masuk;
+        $jam_masuk_carbon = Carbon::parse($jam_masuk_string, $timezone_cabang);
+        $jam_masuk = $jam_masuk_carbon->format('Y-m-d H:i');
+
+        //Jam Mulai Absen adalah X Menit Sebelum Jam Masuk (dalam timezone cabang)
+        $jam_mulai_masuk_carbon = $jam_masuk_carbon->copy()->subMinutes($batas_jam_absen);
+        $jam_mulai_masuk = $jam_mulai_masuk_carbon->format('Y-m-d H:i');
+
+        //Jam Akhir Absen adalah X Menit Setelah Jam Masuk (dalam timezone cabang)
+        $jam_akhir_masuk_carbon = $jam_masuk_carbon->copy()->addMinutes($batas_jam_absen);
+        $jam_akhir_masuk = $jam_akhir_masuk_carbon->format('Y-m-d H:i');
+
+        // Jika jam akhir masuk melewati tengah malam, sesuaikan tanggalnya
+        if ($jam_akhir_masuk_carbon->format('H:i') >= '00:00' && $jam_akhir_masuk_carbon->day != $jam_masuk_carbon->day) {
+            $jam_akhir_masuk = $jam_akhir_masuk_carbon->format('Y-m-d H:i');
+        }
+
+        // Parse jam_pulang (bisa H:i atau H:i:s) dan gabungkan dengan tanggal
+        $jam_pulang_string = $tanggal_pulang . " " . $jam_kerja_pulang;
+        $jam_pulang_carbon = Carbon::parse($jam_pulang_string, $timezone_cabang);
+        $jam_pulang = $jam_pulang_carbon->format('Y-m-d H:i');
         // dd($presensi_kemarin);
 
-        // dd($jam_pulang);
-        $jam_mulai_pulang =  date('Y-m-d H:i', strtotime('-' . $batas_jam_absen_pulang . ' minutes', strtotime($jam_pulang)));
+        //Jam Mulai Absen Pulang adalah X Menit Sebelum Jam Pulang (dalam timezone cabang)
+        $jam_mulai_pulang_carbon = $jam_pulang_carbon->copy()->subMinutes($batas_jam_absen_pulang);
+        $jam_mulai_pulang = $jam_mulai_pulang_carbon->format('Y-m-d H:i');
         //return $jam_mulai_pulang;
 
         // Cek Izin Dinas
@@ -369,16 +419,27 @@ class PresensiController extends Controller
             ->where('tanggal', $tanggal_presensi)
             ->first();
 
+        // Konversi jam_presensi ke Carbon untuk perbandingan
+        // Gunakan parse() yang lebih fleksibel untuk menghindari error format
+        $jam_presensi_carbon = Carbon::parse($jam_presensi, $timezone_cabang);
+
+        // $jam_mulai_masuk, $jam_akhir_masuk, dan $jam_mulai_pulang sudah dalam format Y-m-d H:i dari Carbon
+        $jam_mulai_masuk_carbon = Carbon::parse($jam_mulai_masuk, $timezone_cabang);
+        $jam_akhir_masuk_carbon = Carbon::parse($jam_akhir_masuk, $timezone_cabang);
+        $jam_mulai_pulang_carbon = Carbon::parse($jam_mulai_pulang, $timezone_cabang);
+
         //dd($presensi_hariini);
+
+        //dd($jam_presensi . " " . $jam_akhir_masuk);
         if ($status_lock_location == 1 && $radius > $cabang->radius_cabang) {
             return response()->json(['status' => false, 'message' => 'Anda Berada Di Luar Radius Kantor, Jarak Anda ' . formatAngka($radius) . ' Meters Dari Kantor', 'notifikasi' => 'notifikasi_radius'], 400);
         } else {
             if ($status == 1) {
                 if ($presensi_hariini && $presensi_hariini->jam_in != null) {
                     return response()->json(['status' => false, 'message' => 'Anda Sudah Absen Masuk Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
-                } else if ($jam_presensi < $jam_mulai_masuk && $generalsetting->batasi_absen == 1) {
+                } else if ($jam_presensi_carbon->lt($jam_mulai_masuk_carbon) && $generalsetting->batasi_absen == 1) {
                     return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Masuk, Waktu Absen Dimulai Pukul ' . formatIndo3($jam_mulai_masuk), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
-                } else if ($jam_presensi > $jam_akhir_masuk && $generalsetting->batasi_absen == 1) {
+                } else if ($jam_presensi_carbon->gt($jam_akhir_masuk_carbon) && $generalsetting->batasi_absen == 1) {
                     return response()->json(['status' => false, 'message' => 'Maaf Waktu Absen Masuk Sudah Habis ', 'notifikasi' => 'notifikasi_akhirabsen'], 400);
                 } else {
                     try {
@@ -434,7 +495,7 @@ class PresensiController extends Controller
             } else {
                 if ($presensi_hariini && $presensi_hariini->jam_out != null) {
                     return response()->json(['status' => false, 'message' => 'Anda Sudah Absen Pulang Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
-                } else if ($jam_presensi < $jam_mulai_pulang && $generalsetting->batasi_absen == 1) {
+                } else if ($jam_presensi_carbon->lt($jam_mulai_pulang_carbon) && $generalsetting->batasi_absen == 1) {
                     return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Pulang, Waktu Absen Dimulai Pukul ' . formatIndo3($jam_mulai_pulang), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
                 } else {
                     try {
@@ -697,11 +758,17 @@ class PresensiController extends Controller
             $nik = $karyawan->nik;
         }
 
-        $tanggal_sekarang   = date("Y-m-d", strtotime($scan));
-        $jam_sekarang = date("H:i", strtotime($scan));
-        $tanggal_kemarin = date("Y-m-d", strtotime("-1 days"));
+        // Ambil timezone dari cabang
+        $cabang = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
+        $generalsetting = Pengaturanumum::where('id', 1)->first();
+        $timezone_cabang = $cabang->timezone ?? $generalsetting->timezone ?? config('app.timezone');
 
-        $tanggal_besok = date("Y-m-d", strtotime("+1 days"));
+        // Konversi waktu scan ke timezone cabang
+        $carbon_scan = Carbon::parse($scan)->setTimezone($timezone_cabang);
+        $tanggal_sekarang = $carbon_scan->format('Y-m-d');
+        $jam_sekarang = $carbon_scan->format('H:i');
+        $tanggal_kemarin = $carbon_scan->copy()->subDay()->format('Y-m-d');
+        $tanggal_besok = $carbon_scan->copy()->addDay()->format('Y-m-d');
 
         //Cek Presensi Kemarin
         $presensi_kemarin = Presensi::where('nik', $karyawan->nik)

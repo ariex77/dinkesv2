@@ -555,6 +555,9 @@
     </audio>
 @endsection
 @push('myscript')
+    <!-- Face Recognition dengan Caching -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="{{ asset('js/face-model-cache.js') }}"></script>
     <script type="text/javascript">
         // Fungsi yang dijalankan ketika halaman selesai dimuat
         window.onload = function() {
@@ -602,8 +605,14 @@
             let multi_lokasi = {{ $general_setting->multi_lokasi }};
             let lokasi_cabang = multi_lokasi ? document.getElementById('cabang').value :
                 "{{ $lokasi_kantor->lokasi_cabang }}";
-            // Variabel map global
+            // Variabel map global & pengecekan izin
             let map;
+            let cameraPermissionGranted = false;
+            let locationPermissionGranted = false;
+            let cameraPermissionDenied = false;
+            let locationPermissionDenied = false;
+            let cameraPermissionAlertShown = false;
+            let locationPermissionAlertShown = false;
             // alert(lokasi_cabang);
             // Mengambil elemen HTML dengan id 'notifikasi_radius'
             let notifikasi_radius = document.getElementById('notifikasi_radius');
@@ -669,13 +678,33 @@
 
                 // Tambahkan event listener untuk memastikan webcam berjalan setelah refresh
                 Webcam.on('load', function() {
+                    cameraPermissionGranted = true;
+                    cameraPermissionDenied = false;
+                    cameraPermissionAlertShown = false;
                     console.log('Webcam loaded successfully');
                 });
 
                 // Tambahkan event listener untuk menangani error
                 Webcam.on('error', function(err) {
                     console.error('Webcam error:', err);
-                    // Coba inisialisasi ulang webcam jika terjadi error
+                    cameraPermissionGranted = false;
+
+                    const errName = (err && err.name ? err.name : '').toLowerCase();
+                    const errMessage = (err && err.message ? err.message : '').toLowerCase();
+                    const permissionDenied = errName.includes('notallowed') || errName.includes('permission') ||
+                        errMessage.includes('permission');
+
+                    if (permissionDenied && !cameraPermissionAlertShown) {
+                        cameraPermissionAlertShown = true;
+                        cameraPermissionDenied = true;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Izin Kamera Dibutuhkan',
+                            text: 'Akses kamera diperlukan untuk proses presensi. Mohon izinkan kamera pada browser Anda.'
+                        });
+                    }
+
+                    // Coba inisialisasi ulang webcam jika terjadi error lainnya
                     setTimeout(initWebcam, 1000);
                 });
             }
@@ -705,6 +734,9 @@
 
             // Fungsi yang dijalankan ketika geolocation berhasil
             function successCallback(position) {
+                locationPermissionGranted = true;
+                locationPermissionDenied = false;
+                locationPermissionAlertShown = false;
                 try {
                     // Membuat objek map
                     //alert(position.coords.latitude + "," + position.coords.longitude);
@@ -765,6 +797,17 @@
                 document.getElementById('map-loading').innerHTML =
                     'Gagal mendapatkan lokasi. Silakan cek izin lokasi.';
 
+                locationPermissionGranted = false;
+                if (!locationPermissionAlertShown && error && error.code === error.PERMISSION_DENIED) {
+                    locationPermissionAlertShown = true;
+                    locationPermissionDenied = true;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Izin Lokasi Dibutuhkan',
+                        text: 'Akses lokasi diperlukan untuk proses presensi. Mohon izinkan lokasi pada browser/perangkat Anda.'
+                    });
+                }
+
                 // Coba inisialisasi peta dengan lokasi cabang default
                 try {
                     var lok = lokasi_cabang.split(",");
@@ -815,16 +858,34 @@
                 loadingIndicator.style.textAlign = 'center';
                 document.getElementById('facedetection').appendChild(loadingIndicator);
 
-                // Preload model di background
-                const modelLoadingPromise = isMobile ? Promise.all([
-                    faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-                    faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-                    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-                ]) : Promise.all([
-                    faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
-                    faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-                    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-                ]);
+                // Load model dengan caching (menggunakan utility dari dashboard jika ada)
+                let modelLoadingPromise;
+
+                if (window.FaceModelCache && typeof window.FaceModelCache.loadModelWithCache === 'function') {
+                    // Gunakan cached loading jika utility tersedia
+                    console.log('Using cached model loading...');
+                    modelLoadingPromise = isMobile ? Promise.all([
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.tinyFaceDetector, '/models'),
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.faceRecognitionNet, '/models'),
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.faceLandmark68Net, '/models'),
+                    ]) : Promise.all([
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.ssdMobilenetv1, '/models'),
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.faceRecognitionNet, '/models'),
+                        window.FaceModelCache.loadModelWithCache(faceapi.nets.faceLandmark68Net, '/models'),
+                    ]);
+                } else {
+                    // Fallback: load normal jika utility tidak tersedia
+                    console.log('Using normal model loading (cache utility not available)...');
+                    modelLoadingPromise = isMobile ? Promise.all([
+                        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+                        faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                    ]) : Promise.all([
+                        faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
+                        faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                    ]);
+                }
 
                 // Mulai pengenalan wajah setelah model dimuat
                 modelLoadingPromise.then(() => {
@@ -874,6 +935,7 @@
                     const labels = [
                         "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}"
                     ];
+                    const nik = "{{ $karyawan->nik }}";
                     let namakaryawan;
                     let jmlwajah = "{{ $wajah == 0 ? 1 : $wajah }}";
 
@@ -895,6 +957,27 @@
                     document.getElementById('facedetection').appendChild(faceDataLoading);
 
                     try {
+                        // Cek apakah descriptors sudah di-cache
+                        let cachedDescriptors = null;
+                        if (window.FaceModelCache && typeof window.FaceModelCache.loadDescriptors === 'function') {
+                            cachedDescriptors = await window.FaceModelCache.loadDescriptors(nik);
+                        }
+
+                        if (cachedDescriptors && cachedDescriptors.descriptors && cachedDescriptors.descriptors.length > 0) {
+                            // Gunakan cached descriptors (HAMPIR INSTANT!)
+                            console.log(
+                                `[Presensi] Using cached descriptors for ${nik} (${cachedDescriptors.descriptors.length} descriptors)`);
+                            document.getElementById('face-data-loading').remove();
+
+                            const result = labels.map(label => {
+                                return new faceapi.LabeledFaceDescriptors(label, cachedDescriptors.descriptors);
+                            });
+
+                            return result;
+                        }
+
+                        // Fallback: Generate descriptors secara parallel (jika cache tidak ada)
+                        console.log(`[Presensi] Cache not found, generating descriptors in parallel for ${nik}...`);
                         const timestamp = new Date().getTime();
                         const response = await fetch(`/facerecognition/getwajah?t=${timestamp}`);
                         const data = await response.json();
@@ -904,72 +987,69 @@
                             labels.map(async (label) => {
                                 const descriptions = [];
                                 let validFaceFound = false;
+                                const wajahFiles = [];
 
-                                // Proses setiap data wajah yang diterima
-                                // Batasi hanya 5 foto pertama yang diproses
-                                for (const faceData of data.slice(0, 5)) {
+                                // Proses semua foto secara PARALLEL (bukan sequential)
+                                const processPromises = data.slice(0, 5).map(async (faceData) => {
                                     try {
-                                        console.log('Memproses data wajah:', faceData);
-                                        console.log('NIK:', faceData.nik);
-                                        console.log('Nama file wajah:', faceData.wajah);
+                                        // Cache busting yang lebih agresif
+                                        const randomBust = Math.random().toString(36).substring(7);
+                                        const imagePath =
+                                            `/storage/uploads/facerecognition/${label}/${faceData.wajah}?t=${timestamp}&r=${randomBust}&v=${Date.now()}`;
 
-                                        // Cek keberadaan file foto wajah terlebih dahulu
-                                        const checkImage = async (label, wajahFile) => {
-                                            try {
-                                                const imagePath =
-                                                    `/storage/uploads/facerecognition/${label}/${wajahFile}?t=${timestamp}`;
-                                                console.log('Mencoba mengakses file:', imagePath);
+                                        const imgResponse = await fetch(imagePath);
+                                        if (!imgResponse.ok) {
+                                            console.warn(`File foto wajah ${faceData.wajah} tidak ditemukan`);
+                                            return null;
+                                        }
 
-                                                const response = await fetch(imagePath);
-                                                if (!response.ok) {
-                                                    console.warn(
-                                                        `File foto wajah ${wajahFile} tidak ditemukan untuk ${label}`);
-                                                    return null;
-                                                }
-                                                console.log('File wajah berhasil diakses:', imagePath);
-                                                return await faceapi.fetchImage(imagePath);
-                                            } catch (err) {
-                                                console.error(`Error checking image ${wajahFile} for ${label}:`, err);
-                                                return null;
-                                            }
-                                        };
+                                        const img = await faceapi.fetchImage(imagePath);
+                                        if (!img) return null;
 
-                                        const img = await checkImage(label, faceData.wajah);
+                                        // Generate descriptor
+                                        let detections;
+                                        if (isMobile) {
+                                            detections = await faceapi.detectSingleFace(
+                                                img, new faceapi.TinyFaceDetectorOptions({
+                                                    inputSize: 160,
+                                                    scoreThreshold: 0.5
+                                                })
+                                            ).withFaceLandmarks().withFaceDescriptor();
+                                        } else {
+                                            detections = await faceapi.detectSingleFace(
+                                                img, new faceapi.SsdMobilenetv1Options({
+                                                    minConfidence: 0.5
+                                                })
+                                            ).withFaceLandmarks().withFaceDescriptor();
+                                        }
 
-                                        if (img) {
-                                            try {
-                                                console.log('Memulai deteksi wajah untuk file:', faceData.wajah);
-                                                let detections;
-                                                if (isMobile) {
-                                                    detections = await faceapi.detectSingleFace(
-                                                            img, new faceapi.TinyFaceDetectorOptions({
-                                                                inputSize: 160,
-                                                                scoreThreshold: 0.5
-                                                            })
-                                                        )
-                                                        .withFaceLandmarks()
-                                                        .withFaceDescriptor();
-                                                } else {
-                                                    detections = await faceapi.detectSingleFace(
-                                                            img, new faceapi.SsdMobilenetv1Options({
-                                                                minConfidence: 0.5
-                                                            })
-                                                        )
-                                                        .withFaceLandmarks()
-                                                        .withFaceDescriptor();
-                                                }
-                                                if (detections) {
-                                                    console.log('Wajah berhasil dideteksi dan descriptor dibuat');
-                                                    descriptions.push(detections.descriptor);
-                                                    validFaceFound = true;
-                                                }
-                                            } catch (err) {
-                                                console.error(`Error processing image ${faceData.wajah} for ${label}:`, err);
-                                            }
+                                        if (detections) {
+                                            return {
+                                                descriptor: detections.descriptor,
+                                                wajahFile: faceData.wajah
+                                            };
                                         }
                                     } catch (err) {
-                                        console.error(`Error processing face data:`, err);
+                                        console.error(`Error processing ${faceData.wajah}:`, err);
                                     }
+                                    return null;
+                                });
+
+                                // Wait semua proses selesai secara parallel
+                                const results = await Promise.all(processPromises);
+                                const validResults = results.filter(r => r !== null);
+
+                                validResults.forEach(result => {
+                                    descriptions.push(result.descriptor);
+                                    wajahFiles.push(result.wajahFile);
+                                    validFaceFound = true;
+                                });
+
+                                // Simpan ke cache untuk next time
+                                if (validFaceFound && window.FaceModelCache && typeof window.FaceModelCache.saveDescriptors ===
+                                    'function') {
+                                    await window.FaceModelCache.saveDescriptors(nik, descriptions, wajahFiles);
+                                    console.log(`[Presensi] Descriptors cached for ${nik}`);
                                 }
 
                                 if (!validFaceFound) {
@@ -1396,7 +1476,27 @@
                 }
             }
 
+            function showPermissionWarning(type) {
+                const messages = {
+                    camera: 'Akses kamera diperlukan untuk proses presensi. Mohon izinkan kamera terlebih dahulu.',
+                    location: 'Akses lokasi diperlukan untuk proses presensi. Mohon aktifkan dan izinkan lokasi.'
+                };
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Izin Diperlukan',
+                    text: messages[type] || 'Mohon lengkapi perizinan yang dibutuhkan.'
+                });
+            }
+
             $("#absenmasuk").click(function() {
+                if (cameraPermissionDenied) {
+                    showPermissionWarning('camera');
+                    return;
+                }
+                if (locationPermissionDenied) {
+                    showPermissionWarning('location');
+                    return;
+                }
                 // alert(lokasi);
                 $("#absenmasuk").prop('disabled', true);
                 $("#absenpulang").prop('disabled', true);
@@ -1487,6 +1587,14 @@
             });
 
             $("#absenpulang").click(function() {
+                if (cameraPermissionDenied) {
+                    showPermissionWarning('camera');
+                    return;
+                }
+                if (locationPermissionDenied) {
+                    showPermissionWarning('location');
+                    return;
+                }
                 // alert(lokasi);
                 $("#absenmasuk").prop('disabled', true);
                 $("#absenpulang").prop('disabled', true);

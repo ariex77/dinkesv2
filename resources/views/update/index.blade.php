@@ -167,15 +167,58 @@
     </div>
 </div>
 
-<!-- Loading Modal -->
-<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <div class="modal-body text-center py-5">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Loading...</span>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="ti ti-refresh me-2"></i>Proses Update
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="closeProgressBtn"
+                    style="display: none;"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Progress Bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold">Progress</span>
+                        <span class="badge bg-primary" id="progressPercentage">0%</span>
+                    </div>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="progressBar" style="width: 0%"
+                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progressText">0%</span>
+                        </div>
+                    </div>
                 </div>
-                <p id="loadingText">Memproses...</p>
+
+                <!-- Status -->
+                <div class="mb-3">
+                    <div class="alert alert-info mb-0" id="statusMessage">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <span id="statusText">Memulai proses update...</span>
+                    </div>
+                </div>
+
+                <!-- Terminal Log -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold">
+                            <i class="ti ti-terminal me-1"></i>Log Proses
+                        </span>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearTerminal()">
+                            <i class="ti ti-trash me-1"></i>Clear
+                        </button>
+                    </div>
+                    <div class="terminal-container bg-dark text-light p-3 rounded"
+                        style="height: 300px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;" id="terminalLog">
+                        <div class="text-success">[SYSTEM] Terminal siap...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn" style="display: none;">Tutup</button>
             </div>
         </div>
     </div>
@@ -184,8 +227,8 @@
 @push('myscript')
 <script>
     function checkUpdate() {
-        $('#loadingModal').modal('show');
-        $('#loadingText').text('Mengecek update...');
+        $('#progressModal').modal('show');
+        updateProgress(0, 'Mengecek update...', '');
 
         $.ajax({
             url: '{{ route('update.check') }}',
@@ -194,7 +237,7 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                $('#loadingModal').modal('hide');
+                $('#progressModal').modal('hide');
 
                 if (response.has_update) {
                     showUpdateInfo(response);
@@ -208,7 +251,7 @@
                 }
             },
             error: function(xhr) {
-                $('#loadingModal').modal('hide');
+                $('#progressModal').modal('hide');
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -280,6 +323,9 @@
         return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     }
 
+    let progressInterval = null;
+    let updateLogId = null;
+
     function updateNow(version) {
         Swal.fire({
             title: 'Konfirmasi Update',
@@ -290,9 +336,13 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                $('#loadingModal').modal('show');
-                $('#loadingText').text('Mengupdate aplikasi...');
+                // Reset progress
+                updateProgress(0, 'Memulai proses update...', '');
+                $('#progressModal').modal('show');
+                $('#cancelBtn').hide();
+                $('#closeProgressBtn').hide();
 
+                // Start update process
                 $.ajax({
                     url: `/update/${version}/update-now`,
                     method: 'POST',
@@ -300,27 +350,20 @@
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
-                        $('#loadingModal').modal('hide');
-                        if (response.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil',
-                                text: 'Update berhasil diinstall. Halaman akan direload.',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                location.reload();
-                            });
+                        if (response.update_log_id) {
+                            updateLogId = response.update_log_id;
+                            // Start polling progress
+                            startProgressPolling(updateLogId);
                         } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Gagal',
-                                text: response.message || 'Gagal menginstall update',
-                                confirmButtonText: 'OK'
-                            });
+                            // Fallback jika tidak ada update_log_id
+                            setTimeout(() => {
+                                checkUpdateComplete(version);
+                            }, 2000);
                         }
                     },
                     error: function(xhr) {
-                        $('#loadingModal').modal('hide');
+                        $('#progressModal').modal('hide');
+                        addTerminalLog('ERROR: ' + (xhr.responseJSON?.error || 'Gagal mengupdate aplikasi'), 'error');
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
@@ -333,9 +376,126 @@
         });
     }
 
+    function startProgressPolling(logId) {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+        }
+
+        progressInterval = setInterval(() => {
+            $.ajax({
+                url: `/update/progress/${logId}`,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const data = response.data;
+                        updateProgress(
+                            data.progress_percentage || 0,
+                            data.message || data.status,
+                            data.progress_log || ''
+                        );
+
+                        // Check if completed
+                        if (data.status === 'success' || data.status === 'failed') {
+                            clearInterval(progressInterval);
+                            progressInterval = null;
+
+                            if (data.status === 'success') {
+                                $('#cancelBtn').show();
+                                $('#closeProgressBtn').show();
+                                setTimeout(() => {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Update berhasil diinstall. Halaman akan direload.',
+                                        confirmButtonText: 'OK'
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                }, 1000);
+                            } else {
+                                $('#cancelBtn').show();
+                                $('#closeProgressBtn').show();
+                                addTerminalLog('UPDATE GAGAL!', 'error');
+                            }
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error polling progress:', xhr);
+                }
+            });
+        }, 1000); // Poll every 1 second
+    }
+
+    function updateProgress(percentage, message, log) {
+        // Update progress bar
+        $('#progressBar').css('width', percentage + '%').attr('aria-valuenow', percentage);
+        $('#progressText').text(percentage + '%');
+        $('#progressPercentage').text(percentage + '%');
+
+        // Update status
+        $('#statusText').text(message || 'Memproses...');
+
+        // Update terminal log
+        if (log) {
+            const lines = log.split('\n').filter(line => line.trim());
+            $('#terminalLog').empty();
+            lines.forEach(line => {
+                addTerminalLog(line);
+            });
+            // Auto scroll to bottom
+            const terminal = document.getElementById('terminalLog');
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+    }
+
+    function addTerminalLog(message, type = 'info') {
+        const terminal = $('#terminalLog');
+        const timestamp = new Date().toLocaleTimeString();
+        let className = 'text-light';
+
+        if (type === 'error') {
+            className = 'text-danger';
+        } else if (type === 'success') {
+            className = 'text-success';
+        } else if (message.includes('✓') || message.includes('selesai')) {
+            className = 'text-success';
+        } else if (message.includes('ERROR') || message.includes('Gagal')) {
+            className = 'text-danger';
+        } else if (message.includes('Memulai') || message.includes('Meng')) {
+            className = 'text-info';
+        }
+
+        terminal.append(`<div class="${className}">${message}</div>`);
+
+        // Auto scroll to bottom
+        const terminalEl = document.getElementById('terminalLog');
+        terminalEl.scrollTop = terminalEl.scrollHeight;
+    }
+
+    function clearTerminal() {
+        $('#terminalLog').html('<div class="text-success">[SYSTEM] Terminal cleared...</div>');
+    }
+
+    function checkUpdateComplete(version) {
+        // Fallback method if polling doesn't work
+        setTimeout(() => {
+            $('#progressModal').modal('hide');
+            location.reload();
+        }, 10000);
+    }
+
+    // Cleanup on modal close
+    $('#progressModal').on('hidden.bs.modal', function() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    });
+
     function downloadUpdate(version) {
-        $('#loadingModal').modal('show');
-        $('#loadingText').text('Mengunduh file update...');
+        $('#progressModal').modal('show');
+        updateProgress(0, 'Mengunduh file update...', '');
 
         $.ajax({
             url: `/update/${version}/download`,
@@ -344,7 +504,7 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             success: function(response) {
-                $('#loadingModal').modal('hide');
+                $('#progressModal').modal('hide');
                 if (response.success) {
                     Swal.fire({
                         icon: 'success',
@@ -362,7 +522,7 @@
                 }
             },
             error: function(xhr) {
-                $('#loadingModal').modal('hide');
+                $('#progressModal').modal('hide');
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',

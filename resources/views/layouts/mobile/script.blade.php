@@ -117,24 +117,24 @@
 <script>
     $(document).ready(function() {
 
-        function adjustZoom() {
-            var width = $(window).width(); // Ambil lebar layar
-            //alert(width);
-            // $('body').css('zoom', '120%');
-            if (width <= 400) { // Misalnya untuk layar kecil (mobile)
-                $('body').css('zoom', '88%'); // Zoom out ke 80%
-            } else if (width <= 768) { // Untuk tablet kecil
-                $('body').css('zoom', '90%');
-            } else {
-                $('body').css('zoom', '100%'); // Normal zoom
-            }
-        }
+        // function adjustZoom() {
+        //     var width = $(window).width(); // Ambil lebar layar
+        //     //alert(width);
+        //     // $('body').css('zoom', '120%');
+        //     if (width <= 400) { // Misalnya untuk layar kecil (mobile)
+        //         $('body').css('zoom', '88%'); // Zoom out ke 80%
+        //     } else if (width <= 768) { // Untuk tablet kecil
+        //         $('body').css('zoom', '90%');
+        //     } else {
+        //         $('body').css('zoom', '100%'); // Normal zoom
+        //     }
+        // }
 
-        adjustZoom(); // Panggil saat halaman dimuat
+        // adjustZoom(); // Panggil saat halaman dimuat
 
-        $(window).resize(function() {
-            adjustZoom(); // Panggil lagi saat ukuran layar berubah
-        });
+        // $(window).resize(function() {
+        //     adjustZoom(); // Panggil lagi saat ukuran layar berubah
+        // });
     });
 </script>
 @stack('myscript')

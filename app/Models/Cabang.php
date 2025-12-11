@@ -12,4 +12,10 @@ class Cabang extends Model
     protected $primaryKey = "kode_cabang";
     public $incrementing = false;
     protected $guarded = [];
+
+    // Relasi dengan User (Many to Many)
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_cabang_access', 'kode_cabang', 'user_id', 'kode_cabang', 'id');
+    }
 }

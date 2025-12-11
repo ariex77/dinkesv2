@@ -6,7 +6,7 @@
     <span>Jam Kerja</span>
 @endsection
 <div class="row">
-    <div class="col-lg-10 col-sm-12 col-xs-12">
+    <div class="col-lg-12 col-sm-12 col-xs-12">
         <div class="card">
             <div class="card-header">
                 @can('jamkerja.create')
@@ -21,7 +21,7 @@
                             <div class="row">
                                 <div class="col-lg-10 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Jam Kerja" value="{{ Request('nama_jam_kerja_search') }}"
-                                        name="nama_jam_kerja_search" icon="ti ti-search" />
+                                        name="nama_jam_kerja_search" icon="ti ti-search" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <button class="btn btn-primary"><i class="ti ti-icons ti-search me-1"></i>Cari</button>

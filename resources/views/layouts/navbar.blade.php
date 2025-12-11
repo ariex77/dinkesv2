@@ -182,7 +182,10 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                        <img src="{{ asset('/assets/img/avatars/1.png') }}" alt class="h-auto rounded-circle" />
+                        <div class="avatar-initial rounded-circle d-flex align-items-center justify-content-center bg-label-primary"
+                            style="width: 40px; height: 40px;">
+                            <i class="ti ti-user fs-4 text-white"></i>
+                        </div>
                     </div>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">

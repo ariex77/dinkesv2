@@ -18,6 +18,7 @@ class KunjunganController extends Controller
      */
     public function index(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
         $query = Kunjungan::join('karyawan', 'kunjungan.nik', '=', 'karyawan.nik')
@@ -27,6 +28,24 @@ class KunjunganController extends Controller
         if ($user->hasRole('karyawan')) {
             $query->where('kunjungan.nik', $user_karyawan->nik);
         } else {
+            // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!empty($userCabangs)) {
+                    $query->whereIn('karyawan.kode_cabang', $userCabangs);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                
+                if (!empty($userDepartemens)) {
+                    $query->whereIn('karyawan.kode_dept', $userDepartemens);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+            
             // Filter by NIK if provided (for admin)
             if ($request->filled('nik')) {
                 $query->where('kunjungan.nik', $request->nik);
@@ -43,7 +62,13 @@ class KunjunganController extends Controller
         }
 
         $kunjungan = $query->orderBy('kunjungan.tanggal_kunjungan', 'desc')->paginate(10);
-        $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+        
+        // Get karyawans based on access
+        if ($user->hasRole('karyawan')) {
+            $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+        } else {
+            $karyawans = $this->getKaryawansByAccess($user);
+        }
 
         // If user is karyawan role, use mobile view
         if ($user->hasRole('karyawan')) {
@@ -52,12 +77,40 @@ class KunjunganController extends Controller
 
         return view('kunjungan.index', compact('kunjungan', 'karyawans'));
     }
+    
+    /**
+     * Get karyawans based on user access
+     */
+    private function getKaryawansByAccess($user)
+    {
+        $query = Karyawan::query();
+        
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $query->whereIn('kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $query->whereIn('kode_dept', $userDepartemens);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        
+        return $query->orderBy('nama_karyawan')->get();
+    }
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
@@ -66,7 +119,7 @@ class KunjunganController extends Controller
             $karyawan = Karyawan::where('nik', $user_karyawan->nik)->first();
             return view('kunjungan.create-mobile', compact('karyawan'));
         } else {
-            $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+            $karyawans = $this->getKaryawansByAccess($user);
             return view('kunjungan.create', compact('karyawans'));
         }
     }
@@ -76,12 +129,34 @@ class KunjunganController extends Controller
      */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = User::where('id', auth()->user()->id)->first();
         $user_karyawan = Userkaryawan::where('id_user', $user->id)->first();
 
         // If user is karyawan role, force their own NIK
         if ($user->hasRole('karyawan')) {
             $request->merge(['nik' => $user_karyawan->nik]);
+        } else {
+            // Validasi akses untuk admin jika bukan super admin
+            if (!$user->isSuperAdmin() && $request->filled('nik')) {
+                $karyawan = Karyawan::where('nik', $request->nik)->first();
+                if ($karyawan) {
+                    $userCabangs = $user->getCabangCodes();
+                    $userDepartemens = $user->getDepartemenCodes();
+                    
+                    if (!in_array($karyawan->kode_cabang, $userCabangs)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari cabang ini.'])
+                            ->withInput();
+                    }
+                    
+                    if (!in_array($karyawan->kode_dept, $userDepartemens)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari departemen ini.'])
+                            ->withInput();
+                    }
+                }
+            }
         }
 
         $validator = Validator::make($request->all(), [
@@ -138,7 +213,23 @@ class KunjunganController extends Controller
      */
     public function edit(Kunjungan $kunjungan)
     {
-        $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+        /** @var \App\Models\User $user */
+        $user = User::where('id', auth()->user()->id)->first();
+        
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $kunjungan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke kunjungan karyawan ini.');
+                }
+            }
+        }
+        
+        $karyawans = $this->getKaryawansByAccess($user);
         return view('kunjungan.edit', compact('kunjungan', 'karyawans'));
     }
 
@@ -147,6 +238,43 @@ class KunjunganController extends Controller
      */
     public function update(Request $request, Kunjungan $kunjungan)
     {
+        /** @var \App\Models\User $user */
+        $user = User::where('id', auth()->user()->id)->first();
+        
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $kunjungan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke kunjungan karyawan ini.');
+                }
+            }
+            
+            // Validasi jika NIK berubah
+            if ($request->filled('nik') && $request->nik !== $kunjungan->nik) {
+                $newKaryawan = Karyawan::where('nik', $request->nik)->first();
+                if ($newKaryawan) {
+                    $userCabangs = $user->getCabangCodes();
+                    $userDepartemens = $user->getDepartemenCodes();
+                    
+                    if (!in_array($newKaryawan->kode_cabang, $userCabangs)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari cabang ini.'])
+                            ->withInput();
+                    }
+                    
+                    if (!in_array($newKaryawan->kode_dept, $userDepartemens)) {
+                        return redirect()->back()
+                            ->withErrors(['nik' => 'Anda tidak memiliki akses ke karyawan dari departemen ini.'])
+                            ->withInput();
+                    }
+                }
+            }
+        }
+        
         $validator = Validator::make($request->all(), [
             'nik' => 'required|exists:karyawan,nik',
             'deskripsi' => 'nullable|string|max:1000',
@@ -199,6 +327,22 @@ class KunjunganController extends Controller
      */
     public function destroy(Kunjungan $kunjungan)
     {
+        /** @var \App\Models\User $user */
+        $user = User::where('id', auth()->user()->id)->first();
+        
+        // Validasi akses untuk admin jika bukan super admin
+        if (!$user->hasRole('karyawan') && !$user->isSuperAdmin()) {
+            $karyawan = Karyawan::where('nik', $kunjungan->nik)->first();
+            if ($karyawan) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!in_array($karyawan->kode_cabang, $userCabangs) || !in_array($karyawan->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke kunjungan karyawan ini.');
+                }
+            }
+        }
+        
         // Delete foto if exists
         if ($kunjungan->foto && Storage::disk('public')->exists('uploads/kunjungan/' . $kunjungan->foto)) {
             Storage::disk('public')->delete('uploads/kunjungan/' . $kunjungan->foto);
@@ -239,6 +383,24 @@ class KunjunganController extends Controller
         if ($user->hasRole('karyawan')) {
             $query->where('kunjungan.nik', $user_karyawan->nik);
         } else {
+            // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!empty($userCabangs)) {
+                    $query->whereIn('karyawan.kode_cabang', $userCabangs);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+                
+                if (!empty($userDepartemens)) {
+                    $query->whereIn('karyawan.kode_dept', $userDepartemens);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+            
             // Filter by NIK (required for admin)
             $query->where('kunjungan.nik', $request->nik);
         }

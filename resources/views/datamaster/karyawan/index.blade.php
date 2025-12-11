@@ -23,15 +23,15 @@
                             <div class="row">
                                 <div class="col-lg-4 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
-                                        icon="ti ti-search" />
+                                        icon="ti ti-search" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
-                                        selected="{{ Request('kode_cabang') }}" />
+                                        selected="{{ Request('kode_cabang') }}" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <x-select label="Departemen" name="kode_dept" :data="$departemen" key="kode_dept" textShow="nama_dept"
-                                        selected="{{ Request('kode_dept') }}" upperCase="true" />
+                                        selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <button class="btn btn-primary"><i class="ti ti-icons ti-search me-1"></i>Cari</button>

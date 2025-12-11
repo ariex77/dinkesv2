@@ -24,7 +24,10 @@ class DashboardController extends Controller
     {
         $agent = new Agent();
         $user = User::where('id', auth()->user()->id)->first();
-        $hari_ini = date("Y-m-d");
+
+        // Gunakan Carbon dengan timezone aplikasi (dari config/app.php)
+        // BUKAN date() yang menggunakan timezone PHP default
+        $hari_ini = Carbon::now(config('app.timezone'))->format('Y-m-d');
         if ($user->hasRole('karyawan')) {
             $userkaryawan = Userkaryawan::where('id_user', auth()->user()->id)->first();
             $data['karyawan'] = Karyawan::where('nik', $userkaryawan->nik)
@@ -98,13 +101,57 @@ class DashboardController extends Controller
 
             return view('dashboard.karyawan', $data);
         } else {
+            /** @var \App\Models\User $user */
+            $user = auth()->user();
 
             //Dashboard Admin
             $sk = new Karyawan();
-            $data['status_karyawan'] = $sk->getRekapstatuskaryawan($request);
-            $data['chart'] = $chart->build($request);
-            $data['jkchart'] = $jkchart->build($request);
-            $data['pddchart'] = $pddchart->build($request);
+
+            // Modifikasi request untuk getRekapstatuskaryawan dengan filter akses
+            $filterRequest = new Request($request->all());
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                // Jika user tidak punya akses, set filter untuk tidak menampilkan data
+                if (empty($userCabangs) || empty($userDepartemens)) {
+                    $filterRequest->merge(['kode_cabang' => 'INVALID']);
+                } else {
+                    // Tambahkan filter akses ke request jika belum ada filter dari user
+                    if (empty($filterRequest->kode_cabang) && !empty($userCabangs)) {
+                        // Jika hanya 1 cabang, set sebagai default
+                        if (count($userCabangs) == 1) {
+                            $filterRequest->merge(['kode_cabang' => $userCabangs[0]]);
+                        }
+                    }
+                    if (empty($filterRequest->kode_dept) && !empty($userDepartemens)) {
+                        // Jika hanya 1 departemen, set sebagai default
+                        if (count($userDepartemens) == 1) {
+                            $filterRequest->merge(['kode_dept' => $userDepartemens[0]]);
+                        }
+                    }
+                }
+            }
+            $data['status_karyawan'] = $sk->getRekapstatuskaryawan($filterRequest);
+
+            // Modifikasi request untuk chart dengan filter akses
+            $chartRequest = new Request($request->all());
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                // Tambahkan filter akses ke request
+                if (!empty($userCabangs)) {
+                    $chartRequest->merge(['user_cabangs' => $userCabangs]);
+                }
+                if (!empty($userDepartemens)) {
+                    $chartRequest->merge(['user_departemens' => $userDepartemens]);
+                }
+            }
+
+            $data['chart'] = $chart->build($chartRequest);
+            $data['jkchart'] = $jkchart->build($chartRequest);
+            $data['pddchart'] = $pddchart->build($chartRequest);
 
             $queryPresensi = Presensi::query();
             $queryPresensi->join('karyawan', 'presensi.nik', '=', 'karyawan.nik');
@@ -115,10 +162,29 @@ class DashboardController extends Controller
                 DB::raw("SUM(IF(status='a',1,0)) as alpa"),
                 DB::raw("SUM(IF(status='c',1,0)) as cuti")
             );
+
+            // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+
+                if (!empty($userCabangs)) {
+                    $queryPresensi->whereIn('karyawan.kode_cabang', $userCabangs);
+                } else {
+                    $queryPresensi->whereRaw('1 = 0');
+                }
+
+                if (!empty($userDepartemens)) {
+                    $queryPresensi->whereIn('karyawan.kode_dept', $userDepartemens);
+                } else {
+                    $queryPresensi->whereRaw('1 = 0');
+                }
+            }
+
             if (!empty($request->tanggal)) {
                 $queryPresensi->where('tanggal', $request->tanggal);
             } else {
-                $queryPresensi->where('tanggal', date('Y-m-d'));
+                $queryPresensi->where('tanggal', Carbon::now(config('app.timezone'))->format('Y-m-d'));
             }
 
             if (!empty($request->kode_cabang)) {
@@ -129,9 +195,10 @@ class DashboardController extends Controller
                 $queryPresensi->where('karyawan.kode_dept', $request->kode_dept);
             }
             $data['rekappresensi'] = $queryPresensi->first();
-            $data['departemen'] = Departemen::orderBy('kode_dept')->get();
-            $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-            $data['birthday'] = Karyawan::whereMonth('tanggal_lahir', date('m'))->whereDay('tanggal_lahir', date('d'))
+            $data['departemen'] = $user->getDepartemen();
+            $data['cabang'] = $user->getCabang();
+            $today = Carbon::now(config('app.timezone'));
+            $data['birthday'] = Karyawan::whereMonth('tanggal_lahir', $today->month)->whereDay('tanggal_lahir', $today->day)
                 ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
                 ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
                 ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
@@ -142,6 +209,22 @@ class DashboardController extends Controller
                     'cabang.nama_cabang',
                     'karyawan.status_karyawan'
                 )
+                ->when(!$user->isSuperAdmin(), function ($query) use ($user) {
+                    $userCabangs = $user->getCabangCodes();
+                    $userDepartemens = $user->getDepartemenCodes();
+
+                    if (!empty($userCabangs)) {
+                        $query->whereIn('karyawan.kode_cabang', $userCabangs);
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+
+                    if (!empty($userDepartemens)) {
+                        $query->whereIn('karyawan.kode_dept', $userDepartemens);
+                    } else {
+                        $query->whereRaw('1 = 0');
+                    }
+                })
                 ->when($request->kode_cabang, function ($query) use ($request) {
                     $query->where('karyawan.kode_cabang', $request->kode_cabang);
                 })
@@ -149,6 +232,20 @@ class DashboardController extends Controller
                     $query->where('karyawan.kode_dept', $request->kode_dept);
                 })
                 ->orderBy('tanggal_lahir', 'asc')->get();
+
+
+            // Filter akses untuk kontrak
+            $userCabangs = null;
+            $userDepartemens = null;
+            if (!$user->isSuperAdmin()) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+            }
+
+            $data['kontrak_lewat'] = $sk->getRekapkontrak(0, $userCabangs, $userDepartemens);
+            $data['kontrak_bulanini'] = $sk->getRekapkontrak(1, $userCabangs, $userDepartemens);
+            $data['kontrak_bulandepan'] = $sk->getRekapkontrak(2, $userCabangs, $userDepartemens);
+            $data['kontrak_duabulan'] = $sk->getRekapkontrak(3, $userCabangs, $userDepartemens);
             // dd($data['rekappresensi']);
             return view('dashboard.dashboard', $data);
         }
@@ -157,9 +254,10 @@ class DashboardController extends Controller
     public function kirimUcapanBirthday(Request $request)
     {
         try {
-            // Ambil karyawan yang ulang tahun hari ini
-            $birthday = Karyawan::whereMonth('tanggal_lahir', date('m'))
-                ->whereDay('tanggal_lahir', date('d'))
+            // Ambil karyawan yang ulang tahun hari ini (menggunakan timezone aplikasi)
+            $today = Carbon::now(config('app.timezone'));
+            $birthday = Karyawan::whereMonth('tanggal_lahir', $today->month)
+                ->whereDay('tanggal_lahir', $today->day)
                 ->when($request->kode_cabang, function ($query) use ($request) {
                     $query->where('kode_cabang', $request->kode_cabang);
                 })

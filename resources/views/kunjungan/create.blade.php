@@ -37,8 +37,8 @@
                         <div class="col-lg-6 col-sm-12 col-md-12">
                             <div class="form-group mb-3">
                                 <label for="tanggal_kunjungan" class="form-label">Tanggal Kunjungan <span class="text-danger">*</span></label>
-                                <x-input-with-icon icon="ti ti-calendar" label="Tanggal Kunjungan" name="tanggal_kunjungan"
-                                    datepicker="flatpickr-date" value="{{ old('tanggal_kunjungan', date('Y-m-d')) }}" />
+                                <x-input-with-icon icon="ti ti-calendar" label="" name="tanggal_kunjungan" datepicker="flatpickr-date"
+                                    value="{{ old('tanggal_kunjungan', date('Y-m-d')) }}" />
                                 @error('tanggal_kunjungan')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror

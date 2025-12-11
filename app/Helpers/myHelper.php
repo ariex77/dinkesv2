@@ -657,3 +657,63 @@ function hitungLembur($datalembur)
         return 0;
     }
 }
+function hitungSisaHari($endDate)
+{
+    $today = new DateTime();
+    $end = new DateTime($endDate);
+
+    $interval = $today->diff($end);
+    $daysRemaining = $interval->days;
+
+    if ($today > $end) {
+        $daysRemaining = -$daysRemaining;
+    }
+
+    return $daysRemaining;
+}
+
+function formatName($fullName)
+{
+    // Pisahkan string menjadi array kata-kata
+    $words = explode(' ', $fullName);
+
+    // Jika ada lebih dari 3 kata
+    if (count($words) >= 3) {
+        // Ambil dua kata pertama
+        $firstTwoWords = array_slice($words, 0, 2);
+
+        // Ambil huruf pertama dari setiap kata setelah dua kata pertama
+        $initials = array_map(function ($word) {
+            return strtoupper($word[0]);
+        }, array_slice($words, 2));
+
+        // Gabungkan dua kata pertama dengan inisial-inisial
+        $formattedName = implode(' ', $firstTwoWords) . ' ' . implode('', $initials);
+    } else {
+        // Jika tidak lebih dari 3 kata, gunakan nama asli
+        $formattedName = $fullName;
+    }
+
+    return $formattedName;
+}
+
+function singkatString($string)
+{
+    $words = explode(' ', $string);
+
+    // Jika string terdiri dari tepat 3 kata, buat singkatan huruf besar
+    if (count($words) === 3) {
+        $abbreviation = '';
+
+        foreach ($words as $word) {
+            if (strlen($word) >= 3) {
+                $abbreviation .= strtoupper($word[0]);
+            }
+        }
+
+        return $abbreviation;
+    }
+
+    // Jika tidak, buat camelCase
+    return ucwords(strtolower($string));
+}

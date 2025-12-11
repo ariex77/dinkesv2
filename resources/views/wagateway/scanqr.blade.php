@@ -1170,8 +1170,13 @@
                                 <strong>Total Groups:</strong> ${data.total_groups || data.groups.length}
                             </div>
                             <div class="col-6">
-                                <strong>Device:</strong> ${data.device_name || data.device_number || 'Unknown'}
+                                <strong>Device:</strong> ${data.device_number || 'Unknown'}
                             </div>
+                            ${data.total_new_contacts !== undefined ? `
+                                <div class="col-6 mt-2">
+                                    <strong>New Contacts:</strong> ${data.total_new_contacts}
+                                </div>
+                                ` : ''}
                         </div>
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped">
@@ -1180,8 +1185,8 @@
                                         <th>No</th>
                                         <th>Group ID</th>
                                         <th>Group Name</th>
-                                        <th>Tag ID</th>
-                                        <th>Tag Name</th>
+                                        <th>Phonebook Name</th>
+                                        <th>Phonebook ID</th>
                                         <th>Participants</th>
                                         <th>Contacts</th>
                                     </tr>
@@ -1190,21 +1195,15 @@
                     `;
 
                     data.groups.forEach((group, index) => {
-                        const contactsHtml = group.contacts && group.contacts.length > 0 ?
-                            group.contacts.map(contact =>
-                                `<span class="badge bg-secondary me-1 mb-1">${contact.name || contact.number}</span>`
-                            ).join('') :
-                            '<span class="text-muted">No contacts</span>';
-
                         html += `
                             <tr>
                                 <td>${index + 1}</td>
-                                <td><code>${group.group_id}</code></td>
-                                <td><strong>${group.group_name}</strong></td>
-                                <td><span class="badge bg-info">${group.tag_id}</span></td>
-                                <td>${group.tag_name}</td>
-                                <td><span class="badge bg-success">${group.participants_count}</span></td>
-                                <td>${contactsHtml}</td>
+                                <td><code>${group.group_id || '-'}</code></td>
+                                <td><strong>${group.group_name || '-'}</strong></td>
+                                <td>${group.phonebook_name || '-'}</td>
+                                <td><span class="badge bg-info">${group.phonebook_id || '-'}</span></td>
+                                <td><span class="badge bg-success">${group.total_participants || 0}</span></td>
+                                <td><span class="badge bg-secondary">${group.contacts_count || 0}</span></td>
                             </tr>
                         `;
                     });

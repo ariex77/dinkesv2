@@ -12,4 +12,10 @@ class Departemen extends Model
     protected $primaryKey = "kode_dept";
     public $incrementing = false;
     protected $guarded = [];
+
+    // Relasi dengan User (Many to Many)
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_departemen_access', 'kode_dept', 'user_id', 'kode_dept', 'id');
+    }
 }

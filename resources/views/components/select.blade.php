@@ -8,13 +8,16 @@
     'upperCase' => false,
     'select2' => '',
     'showKey' => false,
+    'hideLabel' => false,
+    'placeholder' => null,
 ])
 
-
-
 <div class="form-group mb-3">
+    @if($label && !$hideLabel)
+        <label for="{{ $name }}" class="form-label" style="font-weight: 600;">{{ $label }}</label>
+    @endif
     <select name="{{ $name }}" id="{{ $name }}" class="form-select {{ $select2 }}">
-        <option value="">{{ $label }}</option>
+        <option value="">{{ $placeholder ?? $label }}</option>
         @foreach ($data as $d)
             <option {{ $d->$key == $selected ? 'selected' : '' }} value="{{ $d->$key }}">
                 {{ $showKey ? $d->$key . '-' : '' }}

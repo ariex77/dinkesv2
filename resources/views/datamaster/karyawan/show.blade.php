@@ -295,8 +295,9 @@
                 <h5 class="modal-title" id="modalFotoWajahLabel">Foto Wajah</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <img src="" id="modalImage" class="img-fluid" alt="Foto Wajah">
             <div class="modal-body text-center">
-                <img src="" id="modalImage" class="img-fluid" alt="Foto Wajah">
+
             </div>
         </div>
     </div>
@@ -308,7 +309,7 @@
     $("#btnAddface").click(function(e) {
         e.preventDefault();
         $('#modal').modal("show");
-        $('#modal').find(".modal-title").text("Tambah Wajah");
+        // $('#modal').find(".modal-title").text("Tambah Wajah");
         $("#loadmodal").html(`<div class="sk-wave sk-primary" style="margin:auto">
             <div class="sk-wave-rect"></div>
             <div class="sk-wave-rect"></div>

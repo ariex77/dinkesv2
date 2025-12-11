@@ -44,31 +44,69 @@ class BpjstenagakerjaController extends Controller
 
     public function store(Request $request)
     {
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'nik' => 'required',
-            'jumlah' => 'required',
-            'tanggal_berlaku' => 'required'
+            'nik' => [
+                'required',
+                'exists:karyawan,nik'
+            ],
+            'jumlah' => [
+                'required'
+            ],
+            'tanggal_berlaku' => [
+                'required',
+                'date'
+            ]
+        ], [
+            'nik.required' => 'Karyawan wajib dipilih',
+            'nik.exists' => 'Karyawan yang dipilih tidak valid',
+            'jumlah.required' => 'BPJS Tenaga Kerja wajib diisi',
+            'tanggal_berlaku.required' => 'Tanggal Berlaku wajib diisi',
+            'tanggal_berlaku.date' => 'Format Tanggal Berlaku tidak valid'
         ]);
 
-        //Kode Gaji = G250001;
+        //Kode BPJS Tenaga Kerja = K250001;
         $tahun = date('Y', strtotime($request->tanggal_berlaku));
         $last_bpjs_tenagakerja = Bpjstenagakerja::orderBy('kode_bpjs_tk', 'desc')
             ->whereRaw('YEAR(tanggal_berlaku) = ' . $tahun)
             ->first();
         $last_kode_bpjs_tk = $last_bpjs_tenagakerja != null ? $last_bpjs_tenagakerja->kode_bpjs_tk : '';
         $kode_bpjs_tk = buatkode($last_kode_bpjs_tk, "K" . substr($tahun, 2, 2), 4);
+        
         try {
-            //code...
+            // Validasi jumlah setelah konversi
+            $jumlah = toNumber($request->jumlah);
+            if (!is_numeric($jumlah) || $jumlah < 0 || $jumlah > 999999999) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('BPJS Tenaga Kerja harus berupa angka antara 0 sampai 999.999.999'));
+            }
+
             Bpjstenagakerja::create([
                 'kode_bpjs_tk' => $kode_bpjs_tk,
                 'nik' => $request->nik,
-                'jumlah' => toNumber($request->jumlah),
+                'jumlah' => $jumlah,
                 'tanggal_berlaku' => $request->tanggal_berlaku
             ]);
 
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
-            return Redirect::back()->with(messageError('Data Gagal Disimpan ' . $e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Data Gagal Disimpan: ' . $e->getMessage()));
         }
     }
 
@@ -84,18 +122,53 @@ class BpjstenagakerjaController extends Controller
     public function update(Request $request, $kode_bpjs_tk)
     {
         $kode_bpjs_tk = Crypt::decrypt($kode_bpjs_tk);
+        
+        // Validasi dengan pesan error yang jelas
         $request->validate([
-            'jumlah' => 'required',
-            'tanggal_berlaku' => 'required'
+            'jumlah' => [
+                'required'
+            ],
+            'tanggal_berlaku' => [
+                'required',
+                'date'
+            ]
+        ], [
+            'jumlah.required' => 'BPJS Tenaga Kerja wajib diisi',
+            'tanggal_berlaku.required' => 'Tanggal Berlaku wajib diisi',
+            'tanggal_berlaku.date' => 'Format Tanggal Berlaku tidak valid'
         ]);
+        
         try {
+            // Validasi jumlah setelah konversi
+            $jumlah = toNumber($request->jumlah);
+            if (!is_numeric($jumlah) || $jumlah < 0 || $jumlah > 999999999) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('BPJS Tenaga Kerja harus berupa angka antara 0 sampai 999.999.999'));
+            }
+
             Bpjstenagakerja::where('kode_bpjs_tk', $kode_bpjs_tk)->update([
-                'jumlah' => toNumber($request->jumlah),
+                'jumlah' => $jumlah,
                 'tanggal_berlaku' => $request->tanggal_berlaku
             ]);
             return Redirect::back()->with(messageSuccess('Data Berhasil Diupdate'));
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangani error database khusus
+            $errorMessage = $e->getMessage();
+
+            if (str_contains($errorMessage, 'Data too long')) {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Data yang dimasukkan terlalu panjang'));
+            } else {
+                return Redirect::back()
+                    ->withInput()
+                    ->with(messageError('Terjadi kesalahan: ' . $errorMessage));
+            }
         } catch (\Exception $e) {
-            return Redirect::back()->with(messageError('Data Gagal Diupdate ' . $e->getMessage()));
+            return Redirect::back()
+                ->withInput()
+                ->with(messageError('Data Gagal Diupdate: ' . $e->getMessage()));
         }
     }
 

@@ -14,6 +14,8 @@ class UpdateLog extends Model
         'version',
         'previous_version',
         'status',
+        'progress_percentage',
+        'progress_log',
         'message',
         'error_log',
         'started_at',

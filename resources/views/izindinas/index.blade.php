@@ -20,19 +20,19 @@
                             <form action="{{ route('izindinas.index') }}">
                                 <div class="row">
                                     <div class="col-lg-6 col-sm-12 col-md-12">
-                                        <x-input-with-icon label="Dari" value="{{ Request('dari') }}" name="dari" icon="ti ti-calendar"
-                                            datepicker="flatpickr-date" />
+                                        <x-input-with-icon label="" value="{{ Request('dari') }}" name="dari" icon="ti ti-calendar"
+                                            datepicker="flatpickr-date" placeholder="Dari" />
                                     </div>
                                     <div class="col-lg-6 col-sm-12 col-md-12">
-                                        <x-input-with-icon label="Sampai" value="{{ Request('sampai') }}" name="sampai" icon="ti ti-calendar"
-                                            datepicker="flatpickr-date" />
+                                        <x-input-with-icon label="" value="{{ Request('sampai') }}" name="sampai" icon="ti ti-calendar"
+                                            datepicker="flatpickr-date" placeholder="Sampai" />
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col">
                                         <div class="form-group">
                                             <select name="kode_cabang" id="kode_cabang" class="form-select">
-                                                <option value="">Semua Cabang</option>
+                                                <option value="">Cabang</option>
                                                 @foreach ($cabang as $d)
                                                     <option value="{{ $d->kode_cabang }}"
                                                         {{ Request('kode_cabang') == $d->kode_cabang ? 'selected' : '' }}>
@@ -45,7 +45,7 @@
                                     <div class="col">
                                         <div class="form-group">
                                             <select name="kode_dept" id="kode_dept" class="form-select">
-                                                <option value="">Semua Departemen</option>
+                                                <option value="">Departemen</option>
                                                 @foreach ($departemen as $d)
                                                     <option value="{{ $d->kode_dept }}" {{ Request('kode_dept') == $d->kode_dept ? 'selected' : '' }}>
                                                         {{ textUpperCase($d->nama_dept) }}
@@ -59,7 +59,7 @@
                                     <div class="col">
                                         <div class="form-group">
                                             <select name="status" id="status" class="form-select">
-                                                <option value="">Semua Status</option>
+                                                <option value="">Status</option>
                                                 <option value="0" {{ Request('status') == '0' ? 'selected' : '' }}>Pending</option>
                                                 <option value="1" {{ Request('status') == '1' ? 'selected' : '' }}>Disetujui</option>
                                                 <option value="2" {{ Request('status') == '2' ? 'selected' : '' }}>Ditolak</option>
@@ -69,8 +69,8 @@
                                 </div>
                                 <div class="row">
                                     <div class="col">
-                                        <x-input-with-icon label="Nama Karyawan" name="nama_karyawan" value="{{ Request('nama_karyawan') }}"
-                                            icon="ti ti-user" />
+                                        <x-input-with-icon label="" name="nama_karyawan" value="{{ Request('nama_karyawan') }}"
+                                            icon="ti ti-user" placeholder="Nama Karyawan" />
                                     </div>
                                 </div>
                                 <div class="row">
