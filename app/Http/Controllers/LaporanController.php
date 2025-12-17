@@ -96,6 +96,96 @@ class LaporanController extends Controller
             )
             ->whereBetween('presensi.tanggal', [$periode_dari, $periode_sampai]);
 
+        /**
+         * Mapping jadwal kerja per karyawan dengan prioritas:
+         * 1. presensi_jamkerja_bydate (per karyawan per tanggal)
+         * 2. grup_jamkerja_bydate (berdasarkan grup karyawan)
+         * 3. presensi_jamkerja_byday (per karyawan per hari)
+         * 4. presensi_jamkerja_bydept_detail (per departemen & cabang per hari)
+         *
+         * Agar laporan tidak berat, semua jadwal diambil sekali di sini
+         * lalu dikonversi menjadi array PHP sederhana yang dipakai di view.
+         */
+
+        // 1) Jadwal by-date per karyawan
+        $jadwal_bydate = DB::table('presensi_jamkerja_bydate')
+            ->join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'presensi_jamkerja_bydate.nik',
+                'presensi_jamkerja_bydate.tanggal',
+                'presensi_jamkerja.total_jam'
+            )
+            ->whereBetween('presensi_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
+            ->get()
+            ->groupBy('nik')
+            ->map(function ($rows) {
+                $result = [];
+                foreach ($rows as $row) {
+                    $result[$row->tanggal] = $row->total_jam;
+                }
+                return $result;
+            });
+
+        // 2) Jadwal grup by-date (grup_jamkerja_bydate)
+        $jadwal_grup_bydate = DB::table('grup_detail')
+            ->join('grup_jamkerja_bydate', 'grup_detail.kode_grup', '=', 'grup_jamkerja_bydate.kode_grup')
+            ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'grup_detail.nik',
+                'grup_jamkerja_bydate.tanggal',
+                'presensi_jamkerja.total_jam'
+            )
+            ->whereBetween('grup_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
+            ->get()
+            ->groupBy('nik')
+            ->map(function ($rows) {
+                $result = [];
+                foreach ($rows as $row) {
+                    $result[$row->tanggal] = $row->total_jam;
+                }
+                return $result;
+            });
+
+        // 3) Jadwal by-day per karyawan (presensi_jamkerja_byday)
+        $jadwal_byday = DB::table('presensi_jamkerja_byday')
+            ->join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'presensi_jamkerja_byday.nik',
+                'presensi_jamkerja_byday.hari',
+                'presensi_jamkerja.total_jam'
+            )
+            ->get()
+            ->groupBy('nik')
+            ->map(function ($rows) {
+                $result = [];
+                foreach ($rows as $row) {
+                    $result[$row->hari] = $row->total_jam;
+                }
+                return $result;
+            });
+
+        // 4) Jadwal by-day per departemen & cabang (presensi_jamkerja_bydept_detail)
+        $jadwal_bydept = DB::table('presensi_jamkerja_bydept_detail')
+            ->join('presensi_jamkerja_bydept', 'presensi_jamkerja_bydept_detail.kode_jk_dept', '=', 'presensi_jamkerja_bydept.kode_jk_dept')
+            ->join('presensi_jamkerja', 'presensi_jamkerja_bydept_detail.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'presensi_jamkerja_bydept.kode_dept',
+                'presensi_jamkerja_bydept.kode_cabang',
+                'presensi_jamkerja_bydept_detail.hari',
+                'presensi_jamkerja.total_jam'
+            )
+            ->get()
+            ->groupBy(function ($row) {
+                return $row->kode_dept . '|' . $row->kode_cabang;
+            })
+            ->map(function ($rows) {
+                $result = [];
+                foreach ($rows as $row) {
+                    $result[$row->hari] = $row->total_jam;
+                }
+                return $result;
+            });
+
 
         $gaji_pokok = Gajipokok::select(
             'nik',
@@ -248,6 +338,11 @@ class LaporanController extends Controller
         $data['datalibur'] = getdatalibur($periode_dari, $periode_sampai);
         $data['datalembur'] = getlembur($periode_dari, $periode_sampai);
         $data['generalsetting'] = $generalsetting;
+        // Kirim mapping jadwal ke view untuk dipakai saat karyawan tidak presensi
+        $data['jadwal_bydate'] = $jadwal_bydate;
+        $data['jadwal_grup_bydate'] = $jadwal_grup_bydate;
+        $data['jadwal_byday'] = $jadwal_byday;
+        $data['jadwal_bydept'] = $jadwal_bydept;
 
         if (isset($_POST['exportButton'])) {
             header("Content-type: application/vnd-ms-excel");

@@ -15,14 +15,14 @@
 <script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
 <script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
 <script src="{{ asset('assets/template/js/maskMoney.js') }}"></script>
 <!-- Base Js File -->
 <script src="{{ asset('assets/template/js/base.js') }}"></script>
 <script src="https://cdn.jsdelivr.net/npm/rolldate@3.1.3/dist/rolldate.min.js"></script>
 <script src="{{ asset('assets/vendor/libs/toastr/toastr.js') }}"></script>
-<script src="{{ asset('assets/vendor/face-api.min.js') }}"></script>
+{{-- <script src="{{ asset('assets/vendor/face-api.min.js') }}"></script> --}}
 <style>
     .toast-bottom-full-width {
         bottom: 5rem

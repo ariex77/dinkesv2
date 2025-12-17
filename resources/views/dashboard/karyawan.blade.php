@@ -1058,7 +1058,7 @@
 @endsection
 @push('myscript')
     <!-- Preload Face Recognition Models dengan IndexedDB Caching -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    {{-- <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="{{ asset('js/face-model-cache.js') }}"></script>
     <script>
         // Auto preload models dan descriptors di background saat dashboard load (non-blocking)
@@ -1100,7 +1100,7 @@
                 startPreload();
             }
         })();
-    </script>
+    </script> --}}
 
     <script type="text/javascript">
         window.onload = function() {

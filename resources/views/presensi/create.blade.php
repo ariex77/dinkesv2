@@ -557,7 +557,7 @@
 @push('myscript')
     <!-- Face Recognition dengan Caching -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <script src="{{ asset('js/face-model-cache.js') }}"></script>
+    {{-- <script src="{{ asset('js/face-model-cache.js') }}"></script> --}}
     <script type="text/javascript">
         // Fungsi yang dijalankan ketika halaman selesai dimuat
         window.onload = function() {

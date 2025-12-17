@@ -116,6 +116,7 @@
                 <tr>
                     <th>No</th>
                     <th>Tanggal</th>
+                    <th>Hari</th>
                     <th>Jadwal</th>
                     <th>Masuk</th>
                     <th>Pulang</th>
@@ -133,34 +134,64 @@
                     $total_terlambat = 0;
                     $total_denda = 0;
                     $total_potongan_jam = 0;
+
+                    // Mapping presensi per tanggal agar mudah diakses
+                    $presensiByDate = [];
+                    foreach ($presensi as $row) {
+                        $presensiByDate[$row->tanggal] = $row;
+                    }
+
+                    // Mapping jadwal kerja untuk karyawan ini (mengikuti prioritas laporan lain)
+                    $mapJadwalByDate = $jadwal_bydate[$karyawan->nik] ?? [];
+                    $mapJadwalGrupByDate = $jadwal_grup_bydate[$karyawan->nik] ?? [];
+                    $mapJadwalByDay = $jadwal_byday[$karyawan->nik] ?? [];
+                    $keyDeptCabang = $karyawan->kode_dept . '|' . $karyawan->kode_cabang;
+                    $mapJadwalByDept = $jadwal_bydept[$keyDeptCabang] ?? [];
+
+                    // Mulai dari periode_dari sampai periode_sampai
+                    $tanggal_presensi = $periode_dari;
+                    $no = 1;
                 @endphp
-                @foreach ($presensi as $d)
+
+                @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                     @php
-                        $jam_masuk = $d->tanggal . ' ' . $d->jam_masuk;
-                        $terlambat = hitungjamterlambat($d->jam_in, $jam_masuk);
-                        $pulangcepat = hitungpulangcepat(
-                            $d->tanggal,
-                            $d->jam_out,
-                            $d->jam_pulang,
-                            $d->istirahat,
-                            $d->jam_awal_istirahat,
-                            $d->jam_akhir_istirahat,
-                            $d->lintashari,
-                        );
-                        $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
-                        $potongan_tidak_hadir = $d->status == 'a' ? $d->total_jam : 0;
-                        if ($d->status == 'h') {
+                        /** @var \App\Models\Presensi|null $d */
+                        $d = $presensiByDate[$tanggal_presensi] ?? null;
+
+                        $jam_masuk = $d ? $d->tanggal . ' ' . $d->jam_masuk : null;
+                        $terlambat = $d ? hitungjamterlambat($d->jam_in, $jam_masuk) : null;
+                        $pulangcepat = $d
+                            ? hitungpulangcepat(
+                                $d->tanggal,
+                                $d->jam_out,
+                                $d->jam_pulang,
+                                $d->istirahat,
+                                $d->jam_awal_istirahat,
+                                $d->jam_akhir_istirahat,
+                                $d->lintashari,
+                            )
+                            : 0;
+                        if ($d) {
+                            $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
+                        }
+
+                        // Default status
+                        $status = $d ? $d->status : '-';
+                        if ($status == 'h') {
                             $color_status = 'green';
-                        } elseif ($d->status == 'i') {
+                        } elseif ($status == 'i') {
                             $color_status = 'yellow';
-                        } elseif ($d->status == 's') {
+                        } elseif ($status == 's') {
                             $color_status = 'blue';
-                        } elseif ($d->status == 'c') {
+                        } elseif ($status == 'c') {
                             $color_status = 'orange';
-                        } elseif ($d->status == 'a') {
+                        } elseif ($status == 'a') {
                             $color_status = 'red';
+                        } else {
+                            $color_status = 'gray'; // default untuk tanggal tanpa presensi
                         }
                     @endphp
+
                     @if ($terlambat != null)
                         @if ($terlambat['desimal_terlambat'] < 1)
                             @php
@@ -170,7 +201,7 @@
                         @else
                             @php
                                 $potongan_jam_terlambat =
-                                    $terlambat['desimal_terlambat'] > $d->total_jam ? $d->total_jam : $terlambat['desimal_terlambat'];
+                                    $d && $terlambat['desimal_terlambat'] > $d->total_jam ? $d->total_jam : $terlambat['desimal_terlambat'];
                                 $denda = 0;
                             @endphp
                         @endif
@@ -181,39 +212,97 @@
                         @endphp
                     @endif
 
-
                     @php
+                        // Rekap & potongan jam
+                        if ($d) {
+                            // Ada data presensi
+                            if ($d->status == 'h') {
+                                $total_hadir++;
+                                $total_terlambat += $terlambat['desimal_terlambat'] ?? 0;
+                            } elseif ($d->status == 'i') {
+                                $total_izin++;
+                            } elseif ($d->status == 's') {
+                                $total_sakit++;
+                            } elseif ($d->status == 'c') {
+                                $total_cuti++;
+                            } elseif ($d->status == 'a') {
+                                $total_alfa++;
+                            }
 
-                        if ($d->status == 'h') {
-                            $total_hadir++;
-                            $total_terlambat += $terlambat['desimal_terlambat'];
-                        } elseif ($d->status == 'i') {
-                            $total_izin++;
-                        } elseif ($d->status == 's') {
-                            $total_sakit++;
-                        } elseif ($d->status == 'c') {
-                            $total_cuti++;
-                        } elseif ($d->status == 'a') {
-                            $total_alfa++;
+                            $total_denda += $denda;
+
+                            $potongan_tidak_absen_masuk_atau_pulang = empty($d->jam_out) || empty($d->jam_in) ? $d->total_jam : 0;
+                            $potongan_jam =
+                                $potongan_tidak_absen_masuk_atau_pulang == 0
+                                    ? $pulangcepat + $potongan_jam_terlambat
+                                    : $potongan_tidak_absen_masuk_atau_pulang;
+                        } else {
+                            // Tidak ada data presensi → cek apakah punya jadwal kerja
+                            $potongan_jam = 0;
+                            $denda = 0;
+
+                            // Cek jadwal berurutan (by-date, grup, by-day, by-dept)
+                            $totalJamJadwal = $mapJadwalByDate[$tanggal_presensi] ?? null;
+
+                            if ($totalJamJadwal === null) {
+                                $totalJamJadwal = $mapJadwalGrupByDate[$tanggal_presensi] ?? null;
+                            }
+
+                            if ($totalJamJadwal === null) {
+                                $nama_hari = getHari($tanggal_presensi);
+                                $totalJamJadwal = $mapJadwalByDay[$nama_hari] ?? null;
+                            }
+
+                            if ($totalJamJadwal === null) {
+                                $nama_hari = isset($nama_hari) ? $nama_hari : getHari($tanggal_presensi);
+                                $totalJamJadwal = $mapJadwalByDept[$nama_hari] ?? null;
+                            }
+
+                            if ($totalJamJadwal !== null) {
+                                // Ada jadwal tapi tidak presensi → Alpa & potong full jam
+                                $status = 'a';
+                                $color_status = 'red';
+                                $potongan_jam = $totalJamJadwal;
+                                $total_alfa++;
+                            } else {
+                                // Tidak ada jadwal kerja → Libur (tanpa potongan)
+                                $status = 'libur';
+                                $color_status = 'green';
+                            }
                         }
 
-                        $total_denda += $denda;
-                        $potongan_tidak_absen_masuk_atau_pulang = empty($d->jam_out) || empty($d->jam_in) ? $d->total_jam : 0;
-                        $potongan_jam =
-                            $potongan_tidak_absen_masuk_atau_pulang == 0
-                                ? $pulangcepat + $potongan_jam_terlambat
-                                : $potongan_tidak_absen_masuk_atau_pulang;
                         $total_potongan_jam += $potongan_jam;
                     @endphp
+
                     <tr>
-                        <td>{{ $loop->iteration }}</td>
-                        <td>{{ date('d-m-y', strtotime($d->tanggal)) }}</td>
-                        <td>{{ $d->nama_jam_kerja }} - {{ date('H:i', strtotime($d->jam_masuk)) }} -
-                            {{ date('H:i', strtotime($d->jam_pulang)) }}</td>
+                        <td>{{ $no }}</td>
+                        <td>{{ date('d-m-y', strtotime($tanggal_presensi)) }}</td>
+                        <td>{{ getHari($tanggal_presensi) }}</td>
+                        <td>
+                            @if ($d)
+                                {{ $d->nama_jam_kerja }} - {{ date('H:i', strtotime($d->jam_masuk)) }} -
+                                {{ date('H:i', strtotime($d->jam_pulang)) }}
+                            @else
+                                -
+                            @endif
+                        </td>
                         <td style="text-align: center">
-                            {!! $d->jam_in != null ? date('H:i', strtotime($d->jam_in)) : '<span style="color: red">Belum Absen</span>' !!}</td>
+                            @if ($d && $d->jam_in != null)
+                                {{ date('H:i', strtotime($d->jam_in)) }}
+                            @elseif ($d)
+                                <span style="color: red">Belum Absen</span>
+                            @else
+                                <span style="color: red">Belum Absen</span>
+                            @endif
+                        </td>
                         <td style="text-align: center">
-                            {!! $d->jam_out != null ? date('H:i', strtotime($d->jam_out)) : '<span style="color: red">Belum Absen</span>' !!}
+                            @if ($d && $d->jam_out != null)
+                                {{ date('H:i', strtotime($d->jam_out)) }}
+                            @elseif ($d)
+                                <span style="color: red">Belum Absen</span>
+                            @else
+                                <span style="color: red">Belum Absen</span>
+                            @endif
                             @if ($pulangcepat > 0)
                                 <span style="color: red">
                                     (-{{ $pulangcepat }})
@@ -221,7 +310,13 @@
                             @endif
                         </td>
                         <td style="text-align: center; background-color: {{ $color_status }}; color: #fff">
-                            {{ textUpperCase($d->status) }}
+                            @if ($status == 'libur')
+                                LIBUR
+                            @elseif ($status != '-')
+                                {{ textUpperCase($status) }}
+                            @else
+                                -
+                            @endif
                         </td>
                         <td style="text-align: center">
                             {!! $terlambat != null ? $terlambat['show'] : '' !!}
@@ -233,7 +328,12 @@
                             {{ $potongan_jam }}
                         </td>
                     </tr>
-                @endforeach
+
+                    @php
+                        $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
+                        $no++;
+                    @endphp
+                @endwhile
             </table>
         </div>
         <div class="rekap" style="margin-top: 40px">

@@ -64,7 +64,7 @@
                         @csrf
                         <div class="logo">
                             <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
-                            <h4>E-PRESENSI V2.0</h4>
+                            <h4>E-Presensi v2.0</h4>
                         </div>
 
                         <div class="heading">

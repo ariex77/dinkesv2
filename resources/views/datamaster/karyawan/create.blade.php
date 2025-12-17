@@ -78,6 +78,6 @@
 
         $(".flatpickr-date").flatpickr();
         // mask opsional untuk nik_show jika diperlukan; nonaktifkan jika format bebas
-        $('#nik_show').mask('00000000000000000000');
+        $('#nik').mask('00000000000000000000');
     });
 </script>

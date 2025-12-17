@@ -94,6 +94,10 @@
                 @foreach ($laporan_presensi as $d)
                     @php
                         $tanggal_presensi = $periode_dari;
+                        // Mapping jadwal untuk NIK ini dari berbagai sumber
+                        $mapJadwalByDate = $jadwal_bydate[$d['nik']] ?? [];
+                        $mapJadwalGrupByDate = $jadwal_grup_bydate[$d['nik']] ?? [];
+                        $mapJadwalByDay = $jadwal_byday[$d['nik']] ?? [];
                     @endphp
                     <tr>
                         <td style="width:1%">{{ $loop->iteration }}</td>
@@ -328,15 +332,49 @@
                                     $bgcolor = 'red';
                                     $textcolor = 'white';
                                     $ket = '';
+                                    $potongan_jam = 0;
 
-                                    //var_dump($ceklibur);
+                                    // Jika hari ini libur khusus karyawan, tandai libur
                                     if (!empty($ceklibur)) {
                                         $bgcolor = 'green';
                                         $textcolor = 'white';
                                         $jml_libur++;
                                         $ket = $ceklibur[0]['keterangan'];
+                                    } else {
+                                        // Bukan libur → cek jadwal berurutan:
+                                        // 1) Jadwal by-date per karyawan
+                                        $totalJamJadwal = $mapJadwalByDate[$tanggal_presensi] ?? null;
+
+                                        // 2) Kalau kosong, cek jadwal grup by-date
+                                        if ($totalJamJadwal === null) {
+                                            $totalJamJadwal = $mapJadwalGrupByDate[$tanggal_presensi] ?? null;
+                                        }
+
+                                        // 3) Kalau masih kosong, cek jadwal by-day per karyawan
+                                        if ($totalJamJadwal === null) {
+                                            $totalJamJadwal = $mapJadwalByDay[$nama_hari] ?? null;
+                                        }
+
+                                        // 4) Kalau masih kosong, cek jadwal by-day per departemen & cabang
+                                        if ($totalJamJadwal === null) {
+                                            $keyDeptCabang = $d['kode_dept'] . '|' . $d['kode_cabang'];
+                                            $mapDept = $jadwal_bydept[$keyDeptCabang] ?? [];
+                                            $totalJamJadwal = $mapDept[$nama_hari] ?? null;
+                                        }
+
+                                        if ($totalJamJadwal !== null) {
+                                            // Ada jadwal tapi tidak ada presensi sama sekali → Alpa & potong full jam kerja
+                                            $jml_alfa++;
+                                            $potongan_jam = $totalJamJadwal;
+                                            $ket =
+                                                '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>
+                                                <span>PJ : ' .
+                                                formatAngkaDesimal($potongan_jam) .
+                                                ' Jam</span>';
+                                        }
                                     }
 
+                                    // Jika ada lembur terpisah, tetap tampilkan info lembur
                                     if (!empty($ceklembur)) {
                                         $bgcolor = 'white';
                                         $textcolor = 'black';
