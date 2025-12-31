@@ -20,7 +20,7 @@
         <ul class="navbar-nav flex-row align-items-center ms-auto">
 
 
-            <!-- Quick links  -->
+            <!-- Quick links
             <li class="nav-item dropdown-shortcuts navbar-dropdown dropdown me-2 me-xl-0">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                     aria-expanded="false">
@@ -104,7 +104,7 @@
                     </div>
                 </div>
             </li>
-            <!-- Quick links -->
+             Quick links -->
 
             <!-- Notification -->
             <li class="nav-item dropdown-notifications navbar-dropdown dropdown me-3 me-xl-1">
@@ -190,11 +190,14 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="pages-account-settings-account.html">
+                        <a class="dropdown-item" href="#">
                             <div class="d-flex">
                                 <div class="flex-shrink-0 me-3">
                                     <div class="avatar avatar-online">
-                                        <img src="{{ asset('/assets/img/avatars/1.png') }}" alt class="h-auto rounded-circle" />
+                                        <div class="avatar-initial rounded-circle d-flex align-items-center justify-content-center bg-label-primary"
+                                            style="width: 40px; height: 40px;">
+                                            <i class="ti ti-user fs-4 text-white"></i>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="flex-grow-1">
@@ -207,24 +210,20 @@
                     <li>
                         <div class="dropdown-divider"></div>
                     </li>
-                    <li>
+                    {{-- <li>
                         <a class="dropdown-item" href="#">
                             <i class="ti ti-user-check me-2 ti-sm"></i>
                             <span class="align-middle">My Profile</span>
                         </a>
-                    </li>
-
-
-
+                    </li> --}}
                     <li>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-
-                            <x-responsive-nav-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-responsive-nav-link>
+                            <button type="submit" class="dropdown-item d-flex align-items-center"
+                                style="border: none; background: none; padding: 0.65rem 1rem; width: 100%; text-align: left;">
+                                <i class="ti ti-logout me-2 ti-sm"></i>
+                                <span class="align-middle">Log Out</span>
+                            </button>
                         </form>
                     </li>
                 </ul>

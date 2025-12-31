@@ -337,11 +337,18 @@ class IzindinasController extends Controller
         
         // Cek akses jika bukan super admin
         if (!$user->isSuperAdmin()) {
-            $userCabangs = $user->getCabangCodes();
-            $userDepartemens = $user->getDepartemenCodes();
+            // Cek apakah user adalah pemilik izin (untuk karyawan)
+            $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
+            $isOwner = $userkaryawan && $userkaryawan->nik == $izindinas->nik;
             
-            if (!in_array($izindinas->kode_cabang, $userCabangs) || !in_array($izindinas->kode_dept, $userDepartemens)) {
-                abort(403, 'Anda tidak memiliki akses ke izin dinas ini.');
+            // Jika bukan pemilik, cek akses cabang/dept
+            if (!$isOwner) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
+                
+                if (!in_array($izindinas->kode_cabang, $userCabangs) || !in_array($izindinas->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke izin dinas ini.');
+                }
             }
         }
         

@@ -16,7 +16,7 @@
         <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Jenis Kelamin</label>
         <select name="jenis_kelamin" id="jenis_kelamin" class="form-select">
             <option value="">Jenis Kelamin</option>
-            <option value="L">Laki - Laki</option>
+            <option value="L">Laki-Laki</option>
             <option value="P">Perempuan</option>
         </select>
     </div>

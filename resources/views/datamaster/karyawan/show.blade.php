@@ -305,6 +305,7 @@
 
 @endsection
 @push('myscript')
+<script src="{{ asset('assets/external/js/face-model-cache.js') }}"></script>
 <script>
     $("#btnAddface").click(function(e) {
         e.preventDefault();
@@ -330,6 +331,40 @@
 
                 const modalImage = this.querySelector('#modalImage');
                 modalImage.src = imageUrl;
+            });
+        }
+
+        // Clear cache ketika wajah dihapus (individual)
+        const deleteForms = document.querySelectorAll('.deleteform');
+        deleteForms.forEach(form => {
+            form.addEventListener('submit', async function(e) {
+                const nik = '{{ $karyawan->nik }}';
+                // Clear cache descriptors untuk NIK ini
+                if (window.FaceModelCache && typeof window.FaceModelCache.clearDescriptors === 'function') {
+                    try {
+                        await window.FaceModelCache.clearDescriptors(nik);
+                        console.log(`[Face Cache] Cleared descriptors for ${nik} after face deletion`);
+                    } catch (error) {
+                        console.warn(`[Face Cache] Failed to clear cache:`, error);
+                    }
+                }
+            });
+        });
+
+        // Clear cache ketika semua wajah dihapus
+        const btnHapusSemua = document.getElementById('btnHapusSemuaWajah');
+        if (btnHapusSemua) {
+            btnHapusSemua.addEventListener('click', async function(e) {
+                const nik = '{{ $karyawan->nik }}';
+                // Clear cache descriptors untuk NIK ini sebelum submit
+                if (window.FaceModelCache && typeof window.FaceModelCache.clearDescriptors === 'function') {
+                    try {
+                        await window.FaceModelCache.clearDescriptors(nik);
+                        console.log(`[Face Cache] Cleared descriptors for ${nik} before deleting all faces`);
+                    } catch (error) {
+                        console.warn(`[Face Cache] Failed to clear cache:`, error);
+                    }
+                }
             });
         }
     });

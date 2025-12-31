@@ -1,27 +1,34 @@
 <!-- ///////////// Js Files ////////////////////  -->
-<!-- Jquery -->
+<!-- Jquery - Required early, tidak bisa defer -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<!-- Bootstrap-->
+<!-- Bootstrap - Required after jQuery -->
 <script src="{{ asset('assets/template/js/lib/popper.min.js') }}"></script>
 <script src="{{ asset('assets/template/js/lib/bootstrap.min.js') }}"></script>
-<!-- Ionicons -->
+<!-- Ionicons - Module/nomodule pattern -->
 <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-<!-- Owl Carousel -->
-{{-- <script src="{{ asset('') }}assets/js/plugins/owl-carousel/owl.carousel.min.js"></script> --}}
-<!-- jQuery Circle Progress -->
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js" defer></script>
+<!-- jQuery Circle Progress - jQuery dependent -->
 <script src="{{ asset('assets/template/js/plugins/jquery-circle-progress/circle-progress.min.js') }}"></script>
-<script src="https://cdn.amcharts.com/lib/4/core.js"></script>
-<script src="https://cdn.amcharts.com/lib/4/charts.js"></script>
-<script src="https://cdn.amcharts.com/lib/4/themes/animated.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
-<script src="{{ asset('assets/template/js/maskMoney.js') }}"></script>
-<!-- Base Js File -->
+<!-- Base Js File - Required untuk layout -->
 <script src="{{ asset('assets/template/js/base.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/rolldate@3.1.3/dist/rolldate.min.js"></script>
+<!-- Toastr - jQuery dependent -->
 <script src="{{ asset('assets/vendor/libs/toastr/toastr.js') }}"></script>
+
+<!-- Non-critical scripts - menggunakan defer untuk non-blocking -->
+<!-- AmCharts - hanya digunakan di beberapa halaman -->
+<script src="https://cdn.amcharts.com/lib/4/core.js" defer></script>
+<script src="https://cdn.amcharts.com/lib/4/charts.js" defer></script>
+<script src="https://cdn.amcharts.com/lib/4/themes/animated.js" defer></script>
+<!-- Webcam - hanya digunakan di halaman tertentu -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js" defer></script>
+<!-- SweetAlert2 - jQuery dependent tapi bisa defer karena tidak critical -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js" defer></script>
+<!-- Materialize - hanya digunakan di beberapa halaman -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js" defer></script>
+<!-- MaskMoney - jQuery dependent -->
+<script src="{{ asset('assets/template/js/maskMoney.js') }}" defer></script>
+<!-- Rolldate - date picker -->
+<script src="https://cdn.jsdelivr.net/npm/rolldate@3.1.3/dist/rolldate.min.js" defer></script>
 {{-- <script src="{{ asset('assets/vendor/face-api.min.js') }}"></script> --}}
 <style>
     .toast-bottom-full-width {

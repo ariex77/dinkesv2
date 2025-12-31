@@ -18,7 +18,7 @@
         <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Jenis Kelamin</label>
         <select name="jenis_kelamin" id="jenis_kelamin" class="form-select">
             <option value="">Jenis Kelamin</option>
-            <option value="L" {{ $karyawan->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki - Laki</option>
+            <option value="L" {{ $karyawan->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-Laki</option>
             <option value="P" {{ $karyawan->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option>
         </select>
     </div>

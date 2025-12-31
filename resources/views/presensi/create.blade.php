@@ -557,7 +557,7 @@
 @push('myscript')
     <!-- Face Recognition dengan Caching -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    {{-- <script src="{{ asset('js/face-model-cache.js') }}"></script> --}}
+    <script src="{{ asset('assets/external/js/face-model-cache.js') }}"></script>
     <script type="text/javascript">
         // Fungsi yang dijalankan ketika halaman selesai dimuat
         window.onload = function() {
@@ -840,6 +840,37 @@
 
             // Jika face recognition diaktifkan
             if (faceRecognition == 1) {
+                // Preload descriptors di background (non-blocking)
+                const nik = "{{ $karyawan->nik }}";
+                const label = "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}";
+
+                // Preload descriptors jika cache utility tersedia
+                if (window.FaceModelCache && typeof window.FaceModelCache.preloadFaceDescriptors === 'function') {
+                    // Tunggu face-api.js selesai dimuat, lalu preload di background
+                    if (typeof faceapi !== 'undefined') {
+                        window.FaceModelCache.preloadFaceDescriptors(nik, label).then(success => {
+                            if (success) {
+                                console.log(`[Presensi] Descriptors preloaded for ${nik} in background`);
+                            }
+                        }).catch(err => {
+                            console.warn(`[Presensi] Failed to preload descriptors:`, err);
+                        });
+                    } else {
+                        // Tunggu face-api.js dimuat
+                        const checkFaceApi = setInterval(() => {
+                            if (typeof faceapi !== 'undefined') {
+                                clearInterval(checkFaceApi);
+                                window.FaceModelCache.preloadFaceDescriptors(nik, label).then(success => {
+                                    if (success) {
+                                        console.log(`[Presensi] Descriptors preloaded for ${nik} in background`);
+                                    }
+                                }).catch(err => {
+                                    console.warn(`[Presensi] Failed to preload descriptors:`, err);
+                                });
+                            }
+                        }, 100);
+                    }
+                }
 
                 // Tambahkan indikator loading dengan styling yang lebih baik
                 const loadingIndicator = document.createElement('div');
@@ -860,6 +891,16 @@
 
                 // Load model dengan caching (menggunakan utility dari dashboard jika ada)
                 let modelLoadingPromise;
+
+                // Cek apakah model sudah di-preload dari dashboard
+                const modelsPreloaded = sessionStorage.getItem('faceModelsPreloaded') === 'true';
+                const preloadTime = sessionStorage.getItem('faceModelsPreloadTime');
+                const preloadAge = preloadTime ? Date.now() - parseInt(preloadTime) : null;
+
+                // Jika sudah di-preload dalam 30 menit terakhir, model mungkin masih di memory browser
+                if (modelsPreloaded && preloadAge && preloadAge < 30 * 60 * 1000) {
+                    console.log('Models may be cached from dashboard preload, loading...');
+                }
 
                 if (window.FaceModelCache && typeof window.FaceModelCache.loadModelWithCache === 'function') {
                     // Gunakan cached loading jika utility tersedia
@@ -932,6 +973,9 @@
                 });
 
                 async function getLabeledFaceDescriptions() {
+                    // Pastikan model sudah dimuat sebelum memproses foto
+                    await ensureModelsLoaded();
+
                     const labels = [
                         "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}"
                     ];
@@ -964,16 +1008,55 @@
                         }
 
                         if (cachedDescriptors && cachedDescriptors.descriptors && cachedDescriptors.descriptors.length > 0) {
-                            // Gunakan cached descriptors (HAMPIR INSTANT!)
-                            console.log(
-                                `[Presensi] Using cached descriptors for ${nik} (${cachedDescriptors.descriptors.length} descriptors)`);
-                            document.getElementById('face-data-loading').remove();
+                            // Validasi: Cek apakah data wajah masih ada di server sebelum menggunakan cache
+                            const timestamp = new Date().getTime();
+                            try {
+                                const response = await fetch(`/facerecognition/getwajah?t=${timestamp}`);
+                                const serverData = await response.json();
 
-                            const result = labels.map(label => {
-                                return new faceapi.LabeledFaceDescriptors(label, cachedDescriptors.descriptors);
-                            });
+                                // Jika tidak ada data di server, clear cache dan regenerate
+                                if (!serverData || serverData.length === 0) {
+                                    console.log(`[Presensi] No face data on server for ${nik}, clearing cache...`);
+                                    if (window.FaceModelCache && typeof window.FaceModelCache.clearDescriptors === 'function') {
+                                        await window.FaceModelCache.clearDescriptors(nik);
+                                    }
+                                    cachedDescriptors = null; // Force regenerate
+                                } else {
+                                    // Validasi: Bandingkan jumlah file wajah dengan cache
+                                    // Jika jumlah berbeda, cache mungkin outdated, regenerate
+                                    const serverFileCount = serverData.length;
+                                    const cacheFileCount = cachedDescriptors.wajahFiles ? cachedDescriptors.wajahFiles.length : 0;
 
-                            return result;
+                                    if (serverFileCount !== cacheFileCount) {
+                                        console.log(
+                                            `[Presensi] Face count mismatch (server: ${serverFileCount}, cache: ${cacheFileCount}), clearing cache...`
+                                        );
+                                        if (window.FaceModelCache && typeof window.FaceModelCache.clearDescriptors === 'function') {
+                                            await window.FaceModelCache.clearDescriptors(nik);
+                                        }
+                                        cachedDescriptors = null; // Force regenerate
+                                    } else {
+                                        // Cache masih valid, gunakan cache
+                                        console.log(
+                                            `[Presensi] Using cached descriptors for ${nik} (${cachedDescriptors.descriptors.length} descriptors)`
+                                        );
+                                        document.getElementById('face-data-loading').remove();
+
+                                        const result = labels.map(label => {
+                                            return new faceapi.LabeledFaceDescriptors(label, cachedDescriptors.descriptors);
+                                        });
+
+                                        return result;
+                                    }
+                                }
+                            } catch (validationError) {
+                                console.warn(`[Presensi] Error validating cache, regenerating:`, validationError);
+                                // Jika error validasi, clear cache dan regenerate untuk aman
+                                if (window.FaceModelCache && typeof window.FaceModelCache.clearDescriptors === 'function') {
+                                    await window.FaceModelCache.clearDescriptors(nik);
+                                }
+                                cachedDescriptors = null; // Force regenerate
+                            }
                         }
 
                         // Fallback: Generate descriptors secara parallel (jika cache tidak ada)
@@ -992,12 +1075,14 @@
                                 // Proses semua foto secara PARALLEL (bukan sequential)
                                 const processPromises = data.slice(0, 5).map(async (faceData) => {
                                     try {
-                                        // Cache busting yang lebih agresif
-                                        const randomBust = Math.random().toString(36).substring(7);
+                                        // Gunakan timestamp tetap untuk cache browser, hanya tambahkan versi jika file baru
+                                        // Ini memungkinkan browser cache bekerja dengan baik
                                         const imagePath =
-                                            `/storage/uploads/facerecognition/${label}/${faceData.wajah}?t=${timestamp}&r=${randomBust}&v=${Date.now()}`;
+                                            `/storage/uploads/facerecognition/${label}/${faceData.wajah}?v=1`;
 
-                                        const imgResponse = await fetch(imagePath);
+                                        const imgResponse = await fetch(imagePath, {
+                                            cache: 'force-cache'
+                                        });
                                         if (!imgResponse.ok) {
                                             console.warn(`File foto wajah ${faceData.wajah} tidak ditemukan`);
                                             return null;
@@ -1008,19 +1093,68 @@
 
                                         // Generate descriptor
                                         let detections;
-                                        if (isMobile) {
-                                            detections = await faceapi.detectSingleFace(
-                                                img, new faceapi.TinyFaceDetectorOptions({
-                                                    inputSize: 160,
-                                                    scoreThreshold: 0.5
-                                                })
-                                            ).withFaceLandmarks().withFaceDescriptor();
-                                        } else {
-                                            detections = await faceapi.detectSingleFace(
-                                                img, new faceapi.SsdMobilenetv1Options({
-                                                    minConfidence: 0.5
-                                                })
-                                            ).withFaceLandmarks().withFaceDescriptor();
+                                        try {
+                                            if (isMobile) {
+                                                // Pastikan TinyFaceDetector sudah dimuat
+                                                if (!faceapi.nets.tinyFaceDetector || !faceapi.nets.tinyFaceDetector
+                                                    .isLoaded) {
+                                                    console.warn(
+                                                        'TinyFaceDetector not loaded yet, skipping this image');
+                                                    return null;
+                                                }
+                                                // Gunakan parameter yang sama dengan saat presensi (inputSize 224)
+                                                detections = await faceapi.detectSingleFace(
+                                                    img, new faceapi.TinyFaceDetectorOptions({
+                                                        inputSize: 224, // Sama dengan saat presensi
+                                                        scoreThreshold: 0.3 // Sama dengan saat presensi
+                                                    })
+                                                ).withFaceLandmarks().withFaceDescriptor();
+                                            } else {
+                                                // Pastikan SsdMobilenetv1 sudah dimuat
+                                                if (!faceapi.nets.ssdMobilenetv1 || !faceapi.nets.ssdMobilenetv1
+                                                    .isLoaded) {
+                                                    console.warn(
+                                                        'SsdMobilenetv1 not loaded yet, skipping this image');
+                                                    return null;
+                                                }
+                                                // Gunakan parameter yang sama dengan saat presensi (minConfidence 0.4)
+                                                detections = await faceapi.detectSingleFace(
+                                                    img, new faceapi.SsdMobilenetv1Options({
+                                                        minConfidence: 0.4 // Sama dengan saat presensi
+                                                    })
+                                                ).withFaceLandmarks().withFaceDescriptor();
+                                            }
+                                        } catch (modelError) {
+                                            console.error(`Model error while processing ${faceData.wajah}:`,
+                                                modelError);
+                                            // Jika error karena model belum dimuat, tunggu sebentar dan retry
+                                            if (modelError.message && modelError.message.includes(
+                                                    'load model before inference')) {
+                                                console.log('Model not ready, waiting 200ms before retry...');
+                                                await new Promise(resolve => setTimeout(resolve, 200));
+                                                // Retry sekali
+                                                try {
+                                                    if (isMobile) {
+                                                        detections = await faceapi.detectSingleFace(
+                                                            img, new faceapi.TinyFaceDetectorOptions({
+                                                                inputSize: 160,
+                                                                scoreThreshold: 0.5
+                                                            })
+                                                        ).withFaceLandmarks().withFaceDescriptor();
+                                                    } else {
+                                                        detections = await faceapi.detectSingleFace(
+                                                            img, new faceapi.SsdMobilenetv1Options({
+                                                                minConfidence: 0.5
+                                                            })
+                                                        ).withFaceLandmarks().withFaceDescriptor();
+                                                    }
+                                                } catch (retryError) {
+                                                    console.error(`Retry failed for ${faceData.wajah}:`, retryError);
+                                                    return null;
+                                                }
+                                            } else {
+                                                return null;
+                                            }
                                         }
 
                                         if (detections) {
@@ -1073,10 +1207,52 @@
                     }
                 }
 
+                // Fungsi untuk memastikan model benar-benar siap
+                async function ensureModelsLoaded() {
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                    // Cek apakah model sudah dimuat dengan mencoba mengakses properti isLoaded
+                    // Jika tidak ada properti isLoaded, kita coba langsung load model
+                    let maxRetries = 50; // Max 5 detik (50 x 100ms)
+                    let retries = 0;
+
+                    while (retries < maxRetries) {
+                        try {
+                            const detectorLoaded = isMobile ?
+                                (faceapi.nets.tinyFaceDetector && faceapi.nets.tinyFaceDetector.isLoaded) :
+                                (faceapi.nets.ssdMobilenetv1 && faceapi.nets.ssdMobilenetv1.isLoaded);
+
+                            const recognitionLoaded = faceapi.nets.faceRecognitionNet && faceapi.nets.faceRecognitionNet.isLoaded;
+                            const landmarkLoaded = faceapi.nets.faceLandmark68Net && faceapi.nets.faceLandmark68Net.isLoaded;
+
+                            if (detectorLoaded && recognitionLoaded && landmarkLoaded) {
+                                console.log('All models confirmed loaded');
+                                return true;
+                            }
+
+                            retries++;
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        } catch (error) {
+                            console.warn('Error checking model status:', error);
+                            retries++;
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                    }
+
+                    // Jika masih belum loaded setelah max retries, log warning
+                    console.warn('Models may not be fully loaded, proceeding anyway...');
+                    return true; // Proceed anyway, let face-api handle errors
+                }
+
                 async function startFaceRecognition() {
                     try {
+                        // Pastikan model benar-benar sudah dimuat sebelum digunakan
+                        await ensureModelsLoaded();
+
                         const labeledFaceDescriptors = await getLabeledFaceDescriptions();
-                        const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.6);
+                        // Threshold 0.5 untuk keseimbangan (tengah-tengah)
+                        // Distance < threshold = dikenali, > threshold = unknown
+                        const faceMatcher = new faceapi.FaceMatcher(labeledFaceDescriptors, 0.5);
 
                         const video = document.querySelector('.webcam-capture video');
 
@@ -1163,7 +1339,8 @@
                         let detectionInterval = isMobile ? 400 : 100; // Interval lebih stabil untuk mobile
                         let isProcessing = false;
                         let consecutiveMatches = 0;
-                        const requiredConsecutiveMatches = isMobile ? 2 : 4; // Lebih mudah untuk mobile
+                        // Diturunkan untuk lebih mudah terdeteksi (dari 2/4 menjadi 1/2)
+                        const requiredConsecutiveMatches = isMobile ? 1 : 2;
 
                         // PERBAIKAN: Anti-flicker system yang lebih reliable
                         let stableDetectionCount = 0;
@@ -1176,6 +1353,11 @@
                         let detectionHistory = [];
                         const historySize = isMobile ? 3 : 5;
 
+                        // Smoothing untuk match distance (mencegah kedap-kedip)
+                        let matchDistanceHistory = [];
+                        const matchDistanceHistorySize = isMobile ? 3 : 5;
+                        let lastMatchResult = null; // true = dikenali, false = tidak dikenali
+
                         async function detectFaces() {
                             try {
                                 // Pastikan video masih aktif
@@ -1185,16 +1367,17 @@
                                 }
 
                                 if (isMobile) {
+                                    // Naikkan inputSize dari 160 ke 224 untuk akurasi lebih baik
                                     const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-                                            inputSize: 160,
-                                            scoreThreshold: 0.4 // Sedikit lebih rendah untuk mobile
+                                            inputSize: 224, // Dinaikkan dari 160 untuk akurasi lebih baik
+                                            scoreThreshold: 0.3 // Diturunkan sedikit agar lebih sensitif
                                         }))
                                         .withFaceLandmarks()
                                         .withFaceDescriptor();
                                     return detection ? [detection] : [];
                                 } else {
                                     const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({
-                                            minConfidence: 0.5
+                                            minConfidence: 0.4 // Diturunkan sedikit untuk lebih sensitif
                                         }))
                                         .withFaceLandmarks()
                                         .withFaceDescriptor();
@@ -1270,17 +1453,43 @@
 
                                                     const box = detection.detection.box;
                                                     const isUnknown = match.toString().includes("unknown");
-                                                    const isNotRecognized = match.distance > 0.55;
+
+                                                    // Smoothing match distance untuk menghindari kedap-kedip
+                                                    matchDistanceHistory.push(match.distance);
+                                                    if (matchDistanceHistory.length > matchDistanceHistorySize) {
+                                                        matchDistanceHistory.shift();
+                                                    }
+
+                                                    // Hitung rata-rata distance dari history
+                                                    const avgDistance = matchDistanceHistory.reduce((a, b) => a + b, 0) /
+                                                        matchDistanceHistory.length;
+
+                                                    // Threshold 0.5 untuk keseimbangan (tengah-tengah)
+                                                    // Gunakan average distance untuk stabilitas
+                                                    // Distance < 0.5 = dikenali, > 0.5 = tidak dikenali
+                                                    const isNotRecognized = avgDistance > 0.5;
 
                                                     // Menentukan warna berdasarkan kondisi
                                                     let boxColor, labelColor, labelText;
 
-                                                    if (isUnknown || isNotRecognized) {
+                                                    // Smoothing: Hanya ubah status jika konsisten dalam beberapa frame
+                                                    let currentMatchResult = !isUnknown && !isNotRecognized;
+
+                                                    // Smoothing: Jika status berubah drastis, tunggu beberapa frame sebelum ubah status
+                                                    if (lastMatchResult !== null && lastMatchResult !== currentMatchResult) {
+                                                        // Jika masih mengumpulkan data history, gunakan status lama untuk stabilitas
+                                                        if (matchDistanceHistory.length < matchDistanceHistorySize) {
+                                                            currentMatchResult = lastMatchResult; // Tetap gunakan status lama
+                                                        }
+                                                    }
+
+                                                    if (isUnknown || !currentMatchResult) {
                                                         // Wajah tidak dikenali - warna kuning
                                                         boxColor = '#FFC107';
                                                         labelColor = 'rgba(255, 193, 7, 0.8)';
                                                         labelText = 'Wajah Tidak Dikenali';
                                                         consecutiveMatches = 0;
+                                                        lastMatchResult = false;
                                                     } else {
                                                         // Wajah dikenali - warna hijau
                                                         boxColor = '#4CAF50';
@@ -1290,6 +1499,7 @@
                                                         if (consecutiveMatches >= requiredConsecutiveMatches) {
                                                             faceRecognitionDetected = 1;
                                                         }
+                                                        lastMatchResult = true;
                                                     }
 
                                                     // Menggunakan style modern untuk box deteksi wajah

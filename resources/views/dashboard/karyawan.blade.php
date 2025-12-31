@@ -309,20 +309,7 @@
                     </div>
                 </a>
             </div>
-            <div class="col-3">
-                <a href="{{ route('lembur.index') }}">
-                    <div class="card">
-                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt="" style="width: 50px" class="mb-0">
-                            <br>
-                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                Lembur
-                            </span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
+            
             <div class="col-3">
                 <a href="{{ route('slipgaji.index') }}">
                     <div class="card">
@@ -336,7 +323,21 @@
                     </div>
                 </a>
             </div>
+            <div class="col-3">
+                <a href="javascript:void(0)" id="btnDaftarkanWajah">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Wajah
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
+        
         <div class="row mt-2">
             @can('aktivitaskaryawan.index')
                 <div class="col-3">
@@ -368,19 +369,7 @@
                     </a>
                 </div>
             @endcan
-            <div class="col-3">
-                <a href="javascript:void(0)" id="btnDaftarkanWajah">
-                    <div class="card">
-                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 50px" class="mb-0">
-                            <br>
-                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                Wajah
-                            </span>
-                        </div>
-                    </div>
-                </a>
-            </div>
+            
         </div>
     </div>
 

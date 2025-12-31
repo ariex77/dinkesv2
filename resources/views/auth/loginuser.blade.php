@@ -121,11 +121,10 @@
 
                 <div class="carousel">
                     <div class="images-wrapper">
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="" />
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-2" alt="" />
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-3" alt="" />
+                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
+                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-2" alt="Presensi illustration 2" />
+                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-3" alt="Presensi illustration 3" />
                     </div>
-
                     <div class="text-slider">
                         <div class="text-wrap">
                             <div class="text-group">

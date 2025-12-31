@@ -61,7 +61,7 @@
                         {{-- <img src="{{ asset('assets/img/logo/hibah.png') }}" alt="" width="160"> --}}
                     </div>
                     <!-- /Logo -->
-                    <h4 class="mb-1 pt-2">E-PRESENSI! 👋</h4>
+                    <h4 class="mb-1 pt-2">E-PRESENSI V2.0! 👋</h4>
                     <p class="mb-4">Silahkan Login !</p>
                     <x-alert-error :messages="$errors->get('id_user')" class="mt-2" />
                     <form id="formAuthentication" class="mb-3" action="{{ route('login') }}" method="POST">
@@ -103,16 +103,19 @@
                     </div>
 
                     <div class="d-flex justify-content-center">
-                        <a href="javascript:;" class="btn btn-icon btn-label-facebook me-3">
+                        <!-- Facebook -->
+                        <a href="https://www.facebook.com/Dinkeskampar/" target="_blank" class="btn btn-icon btn-label-facebook me-3">
                             <i class="tf-icons fa-brands fa-facebook-f fs-5"></i>
                         </a>
 
-                        <a href="javascript:;" class="btn btn-icon btn-label-google-plus me-3">
-                            <i class="tf-icons fa-brands fa-google fs-5"></i>
+                        <!-- Instagram -->
+                        <a href="https://www.instagram.com/dinkeskamparkab/?hl=en" target="_blank" rel="noopener noreferrer" class="btn btn-icon btn-label-instagram me-3">
+                            <i class="tf-icons fa-brands fa-instagram fs-5"></i>
                         </a>
 
-                        <a href="javascript:;" class="btn btn-icon btn-label-twitter">
-                            <i class="tf-icons fa-brands fa-twitter fs-5"></i>
+                        <!-- YouTube -->
+                        <a href="https://www.youtube.com/@dinkeskampar6030" target="_blank" rel="noopener noreferrer" class="btn btn-icon btn-label-youtube">
+                            <i class="tf-icons fa-brands fa-youtube fs-5"></i>
                         </a>
                     </div>
                 </div>

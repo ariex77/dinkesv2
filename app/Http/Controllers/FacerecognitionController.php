@@ -68,14 +68,25 @@ class FacerecognitionController extends Controller
             $filePath = $folderPath . $wajah->wajah;
             $wajah->file_exists = Storage::exists($filePath);
             
-            // Buat URL dengan encoding yang benar
+            // Buat URL dengan encoding yang benar dan cache busting
             if ($wajah->file_exists) {
                 // Encode setiap bagian path secara terpisah
                 $encodedFolder = rawurlencode($nama_folder);
                 $encodedFileName = rawurlencode($wajah->wajah);
                 // Ganti %2F kembali menjadi / untuk folder (karena folder separator tidak perlu di-encode)
                 $encodedFolder = str_replace('%2F', '/', $encodedFolder);
-                $wajah->image_url = url('/storage/uploads/facerecognition/' . $encodedFolder . '/' . $encodedFileName);
+                
+                // Gunakan timestamp dari file modified time untuk cache busting
+                // Jika file di-update, timestamp akan berubah dan browser akan fetch versi baru
+                try {
+                    $fileTimestamp = Storage::lastModified($filePath);
+                } catch (\Exception $e) {
+                    // Fallback ke created_at timestamp dari database jika file timestamp tidak tersedia
+                    $fileTimestamp = \Carbon\Carbon::parse($wajah->created_at)->timestamp;
+                }
+                
+                // Tambahkan cache busting dengan file timestamp untuk memastikan gambar selalu fresh
+                $wajah->image_url = url('/storage/uploads/facerecognition/' . $encodedFolder . '/' . $encodedFileName . '?v=' . $fileTimestamp);
             } else {
                 $wajah->image_url = null;
             }

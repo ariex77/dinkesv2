@@ -16,43 +16,32 @@
 
  <!-- Vendors JS -->
  <!-- Vendors JS -->
- <script src="{{ asset('assets/vendor/libs/moment/moment.js') }}"></script>
+<!-- Non-jQuery dependencies - can use defer -->
+<script src="{{ asset('assets/vendor/libs/moment/moment.js') }}" defer></script>
+<script src="{{ asset('assets/vendor/libs/pickr/pickr.js') }}" defer></script>
+<script src="{{ asset('assets/external/js/polyfill.js') }}" defer></script>
+<script src="{{ asset('assets/vendor/js/feather.min.js') }}" defer></script>
+<script src="{{ asset('assets/external/js/leaflet.js') }}" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin="" defer></script>
+<script src="{{ asset('assets/external/js/leaflet-routing-machine.js') }}" defer></script>
+<script src="{{ asset('assets/external/js/webcam.min.js') }}" defer></script>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="{{ asset('assets/external/js/ionicons.js') }}" defer></script>
+
+<!-- jQuery-dependent scripts - must load after jQuery -->
  <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
  <script src="{{ asset('assets/vendor/libs/bootstrap-datepicker/bootstrap-datepicker.js') }}"></script>
  <script src="{{ asset('assets/vendor/libs/bootstrap-daterangepicker/bootstrap-daterangepicker.js') }}"></script>
  <script src="{{ asset('assets/vendor/libs/jquery-timepicker/jquery-timepicker.js') }}"></script>
- <script src="{{ asset('assets/vendor/libs/pickr/pickr.js') }}"></script>
  <script src="{{ asset('/assets/vendor/libs/@form-validation/umd/bundle/popular.min.js') }}"></script>
  <script src="{{ asset('/assets/vendor/libs/@form-validation/umd/plugin-bootstrap5/index.min.js') }}"></script>
  <script src="{{ asset('/assets/vendor/libs/@form-validation/umd/plugin-auto-focus/index.min.js') }}"></script>
  <script src="{{ asset('/assets/vendor/libs/@form-validation/umd/plugin-start-end-date/index.min.js') }}"></script>
-
-
- <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
- <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
- {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"
-     integrity="sha512-VEd+nq25CkR676O+pLBnDW09R7VQX9Mdiij052gVCp5yVH3jGtH70Ho/UUv4mJDsEdTvqRCFZg0NKGiojGnUCw=="
-     crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
-
- {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.1/feather.min.js"
- integrity="sha512-4lykFR6C2W55I60sYddEGjieC2fU79R7GUtaqr3DzmNbo0vSaO1MfUjMoTFYYuedjfEix6uV9jVTtRCSBU/Xiw=="
- crossorigin="anonymous" referrerpolicy="no-referrer"></script> --}}
- {{-- <script src="{{ asset('assets/vendor/js/ionicons.esm.js') }}"></script>
- <script src="{{ asset('assets/vendor/js/ionicons.js') }}"></script> --}}
  <script src="{{ asset('assets/vendor/js/toastr.min.js') }}"></script>
- <script src="{{ asset('assets/vendor/js/feather.min.js') }}"></script>
-
- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
- <script src="https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.js"></script>
+ <script src="{{ asset('assets/external/js/sweetalert2@11.js') }}"></script>
  <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
  <script src="{{ asset('assets/js/jquery.mask.min.js') }}"></script>
- {{-- <script type="text/javascript" src="{{ asset('assets/vendor/libs/freeze/js/freeze-table.js') }}"></script> --}}
  <script src="{{ asset('assets/vendor/js/freeze-table.js') }}"></script>
- <script src="{{ asset('assets/vendor/libs/typeahead-js/typeahead.js') }}"></script>
  <script src="{{ asset('assets/js/ui-popover.js') }}"></script>
- <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
- <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/webcamjs/1.0.26/webcam.min.js"></script>
  <script>
      $(function() {
          $(".flatpickr-date").flatpickr();

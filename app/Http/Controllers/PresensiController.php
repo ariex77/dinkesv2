@@ -57,7 +57,8 @@ class PresensiController extends Controller
                 'foto_out',
                 'status',
                 'lintashari',
-                'total_jam'
+                'total_jam',
+                'presensi.denda'
             )
             ->where('presensi.tanggal', $tanggal);
 
@@ -85,7 +86,8 @@ class PresensiController extends Controller
             'foto_out',
             'lintashari',
             'karyawan.pin',
-            'total_jam'
+            'total_jam',
+            'presensi.denda'
         );
         $query->leftjoinSub($presensi, 'presensi', function ($join) {
             $join->on('karyawan.nik', '=', 'presensi.nik');

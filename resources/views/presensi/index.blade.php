@@ -19,13 +19,14 @@
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12 col-md-12">
                                     <x-select label="" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
-                                        selected="{{ Request('kode_cabang') }}" upperCase="true" select2="select2Kodecabangsearch" placeholder="Cabang" />
+                                        selected="{{ Request('kode_cabang') }}" upperCase="true" select2="select2Kodecabangsearch"
+                                        placeholder="Cabang" />
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-lg-12 col-sm-12 col-md-12">
-                                    <x-input-with-icon label="" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
-                                        icon="ti ti-search" placeholder="Cari Nama Karyawan" />
+                                    <x-input-with-icon label="" value="{{ Request('nama_karyawan') }}" name="nama_karyawan" icon="ti ti-search"
+                                        placeholder="Cari Nama Karyawan" />
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -75,25 +76,33 @@
                                                 $d->jam_akhir_istirahat,
                                                 $d->lintashari,
                                             );
-                                        @endphp
-                                        @if ($terlambat != null)
-                                            @if ($terlambat['desimal_terlambat'] < 1)
-                                                @php
+
+                                            // Jika denda sudah ada di tabel presensi (laporan sudah dikunci), gunakan nilai tersebut
+                                            if ($d->denda !== null) {
+                                                $denda = $d->denda;
+                                                // Tetap hitung potongan jam terlambat untuk display
+                                                if ($terlambat != null) {
+                                                    $potongan_jam_terlambat =
+                                                        $terlambat['desimal_terlambat'] >= 1 ? $terlambat['desimal_terlambat'] : 0;
+                                                } else {
                                                     $potongan_jam_terlambat = 0;
-                                                    $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
-                                                @endphp
-                                            @else
-                                                @php
-                                                    $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                                }
+                                            } else {
+                                                // Jika denda belum ada, hitung dengan rumus
+                                                if ($terlambat != null) {
+                                                    if ($terlambat['desimal_terlambat'] < 1) {
+                                                        $potongan_jam_terlambat = 0;
+                                                        $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
+                                                    } else {
+                                                        $potongan_jam_terlambat = $terlambat['desimal_terlambat'];
+                                                        $denda = 0;
+                                                    }
+                                                } else {
+                                                    $potongan_jam_terlambat = 0;
                                                     $denda = 0;
-                                                @endphp
-                                            @endif
-                                        @else
-                                            @php
-                                                $potongan_jam_terlambat = 0;
-                                                $denda = 0;
-                                            @endphp
-                                        @endif
+                                                }
+                                            }
+                                        @endphp
                                         <tr>
                                             <td>{{ $d->nik_show ?? $d->nik }}</td>
                                             <td>{{ $d->nama_karyawan }}</td>

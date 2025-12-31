@@ -308,6 +308,21 @@
         }
     }
     
+    // Clear descriptors untuk NIK tertentu (ketika wajah dihapus)
+    async function clearDescriptors(nik) {
+        try {
+            const database = await initDB();
+            const transaction = database.transaction([DESCRIPTORS_STORE], 'readwrite');
+            const store = transaction.objectStore(DESCRIPTORS_STORE);
+            await store.delete(nik);
+            console.log(`[FaceModelCache] Descriptors cleared for ${nik}`);
+            return true;
+        } catch (error) {
+            console.error(`[FaceModelCache] Failed to clear descriptors for ${nik}:`, error);
+            return false;
+        }
+    }
+    
     // Expose ke global scope
     window.FaceModelCache = {
         loadModelWithCache: loadModelWithCache,
@@ -316,7 +331,8 @@
         loadDescriptors: loadDescriptors,
         saveDescriptors: saveDescriptors,
         initDB: initDB,
-        clearCache: clearCache
+        clearCache: clearCache,
+        clearDescriptors: clearDescriptors
     };
     
     console.log('[FaceModelCache] Utility loaded');

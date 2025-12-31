@@ -14,6 +14,13 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('logo.png') }}" />
 
+    <!-- DNS Prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
     @include('layouts.fonts')
 
     @include('layouts.icons')

@@ -211,6 +211,30 @@
                             $jam_masuk = $tanggal_presensi . ' ' . $d[$tanggal_presensi]['jam_masuk'];
                             $terlambat = hitungjamterlambat($d[$tanggal_presensi]['jam_in'], $jam_masuk);
 
+                        // Jika denda sudah dikunci di database, gunakan nilai tersebut
+                        $denda_dari_db = isset($d[$tanggal_presensi]['denda']) && $d[$tanggal_presensi]['denda'] !== null
+                            ? $d[$tanggal_presensi]['denda']
+                            : null;
+
+                        if ($denda_dari_db !== null) {
+                            // Denda sudah dikunci, gunakan dari DB
+                            $denda = $denda_dari_db;
+
+                            // Potongan jam tetap dihitung dengan rumus
+                            if ($terlambat != null) {
+                                if ($terlambat['desimal_terlambat'] < 1) {
+                                    $potongan_jam_terlambat = 0;
+                                } else {
+                                    $potongan_jam_terlambat =
+                                        $terlambat['desimal_terlambat'] > $d[$tanggal_presensi]['total_jam']
+                                            ? $d[$tanggal_presensi]['total_jam']
+                                            : $terlambat['desimal_terlambat'];
+                                }
+                            } else {
+                                $potongan_jam_terlambat = 0;
+                            }
+                        } else {
+                            // Belum dikunci → gunakan rumus hitungdenda seperti biasa
                             if ($terlambat != null) {
                                 if ($terlambat['desimal_terlambat'] < 1) {
                                     $potongan_jam_terlambat = 0;
@@ -225,6 +249,7 @@
                             } else {
                                 $potongan_jam_terlambat = 0;
                                 $denda = 0;
+                            }
                             }
 
                             $pulangcepat = hitungpulangcepat(
@@ -249,10 +274,22 @@
                     @elseif($d[$tanggal_presensi]['status'] == 'i')
                         @php
                             $potongan_jam = $d[$tanggal_presensi]['total_jam'];
+
+                        // Izin: jika denda sudah dikunci, ambil dari DB, jika tidak 0
+                        $denda_dari_db = isset($d[$tanggal_presensi]['denda']) && $d[$tanggal_presensi]['denda'] !== null
+                            ? $d[$tanggal_presensi]['denda']
+                            : null;
+                        $denda = $denda_dari_db !== null ? $denda_dari_db : 0;
                         @endphp
                     @elseif($d[$tanggal_presensi]['status'] == 'a')
                         @php
                             $potongan_jam = $d[$tanggal_presensi]['total_jam'];
+
+                        // Alpa: jika denda sudah dikunci, ambil dari DB, jika tidak 0
+                        $denda_dari_db = isset($d[$tanggal_presensi]['denda']) && $d[$tanggal_presensi]['denda'] !== null
+                            ? $d[$tanggal_presensi]['denda']
+                            : null;
+                        $denda = $denda_dari_db !== null ? $denda_dari_db : 0;
                         @endphp
                     @endif
                 @else

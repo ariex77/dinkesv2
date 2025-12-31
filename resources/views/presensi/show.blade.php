@@ -135,6 +135,7 @@
     @endif
 @endif
 
+@if ($status == 'in')
 <script>
     var lokasi = "{{ $presensi->lokasi_in }}";
     var lok = lokasi.split(",");
@@ -166,10 +167,9 @@
         map.invalidateSize();
     }, 100);
 </script>
-
-
+@else
 <script>
-    var lokasi = "{{ $cabang->lokasi_out }}";
+    var lokasi = "{{ $presensi->lokasi_out }}";
     var lok = lokasi.split(",");
     var latitude = lok[0];
     var longitude = lok[1];
@@ -199,3 +199,4 @@
         map_out.invalidateSize();
     }, 100);
 </script>
+@endif

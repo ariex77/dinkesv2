@@ -482,6 +482,8 @@ Route::middleware('auth')->group(function () {
     Route::controller(LaporanController::class)->group(function () {
         Route::get('/laporan/presensi', 'presensi')->name('laporan.presensi')->can('laporan.presensi');
         Route::post('/laporan/cetakpresensi', 'cetakpresensi')->name('laporan.cetakpresensi')->can('laporan.presensi');
+        Route::post('/laporan/kuncilaporan', 'kunciLaporan')->name('laporan.kuncilaporan')->can('laporan.presensi');
+        Route::post('/laporan/batalkankuncilaporan', 'batalkanKunciLaporan')->name('laporan.batalkankuncilaporan')->can('laporan.presensi');
         Route::get('/laporan/cetakslipgaji', 'cetakpresensi');
     });
 
