@@ -15,40 +15,21 @@ class Bpjstenagakerjapermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Bpjs Tenaga Kerja'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Bpjs Tenaga Kerja']);
 
-        Permission::create([
-            'name' => 'bpjstenagakerja.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjstenagakerja.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjstenagakerja.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
-        Permission::create([
-            'name' => 'bpjstenagakerja.show',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjstenagakerja.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
+        Permission::firstOrCreate(['name' => 'bpjstenagakerja.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjstenagakerja.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjstenagakerja.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjstenagakerja.show'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjstenagakerja.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

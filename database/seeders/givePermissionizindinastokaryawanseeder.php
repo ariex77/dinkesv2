@@ -14,7 +14,13 @@ class givePermissionizindinastokaryawanseeder extends Seeder
     public function run(): void
     {
         $role = Role::where('name', 'karyawan')->first();
-        $role->givePermissionTo('izindinas.create');
-        $role->givePermissionTo('izindinas.delete');
+        if ($role) {
+             if (!$role->hasPermissionTo('izindinas.create')) {
+                $role->givePermissionTo('izindinas.create');
+             }
+             if (!$role->hasPermissionTo('izindinas.delete')) {
+                $role->givePermissionTo('izindinas.delete');
+             }
+        }
     }
 }

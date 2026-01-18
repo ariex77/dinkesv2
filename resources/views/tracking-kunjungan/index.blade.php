@@ -223,10 +223,44 @@
                 // Initialize map
                 var map = L.map('map').setView([-7.3256, 108.2140], 13);
 
-                // Add OpenStreetMap tiles
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                // Define layers
+                var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
+                });
+
+                var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                var googleTerrain = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+                });
+
+                // Add default layer
+                osm.addTo(map);
+
+                // Layer control
+                var baseMaps = {
+                    "OpenStreetMap": osm,
+                    "Google Streets": googleStreets,
+                    "Google Hybrid": googleHybrid,
+                    "Google Satellite": googleSat,
+                    "Google Terrain": googleTerrain
+                };
+
+                L.control.layers(baseMaps).addTo(map);
 
                 // Data kunjungan dari server
                 var kunjunganData = @json($kunjungans);
@@ -308,10 +342,10 @@
                                 <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151; line-height: 1.4;">${item.deskripsi}</p>
                             </div>
                             ${item.foto ? `
-                                                <div style="margin-bottom: 8px;">
-                                                    <img src="/storage/uploads/kunjungan/${item.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                                </div>
-                                                ` : ''}
+                                                    <div style="margin-bottom: 8px;">
+                                                        <img src="/storage/uploads/kunjungan/${item.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                                    </div>
+                                                    ` : ''}
                             <div style="background: #F9FAFB; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
                                 <p style="margin: 0; font-size: 12px; color: #6B7280; display: flex; align-items: center;">
                                     <i class="ti ti-clock" style="margin-right: 6px; color: ${primaryColor};"></i> ${formatDateTime(item.created_at)}
@@ -412,10 +446,10 @@
                                 <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151; line-height: 1.4;">${startKunjungan.deskripsi}</p>
                             </div>
                             ${startKunjungan.foto ? `
-                                            <div style="margin-bottom: 8px;">
-                                                <img src="/storage/uploads/kunjungan/${startKunjungan.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                            </div>
-                                            ` : ''}
+                                                <div style="margin-bottom: 8px;">
+                                                    <img src="/storage/uploads/kunjungan/${startKunjungan.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                                </div>
+                                                ` : ''}
                             <div style="background: #F9FAFB; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
                                 <p style="margin: 0; font-size: 12px; color: #6B7280; display: flex; align-items: center;">
                                     <i class="ti ti-clock" style="margin-right: 6px; color: #10B981;"></i> ${formatDateTime(startKunjungan.created_at)}
@@ -467,10 +501,10 @@
                                 <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151; line-height: 1.4;">${endKunjungan.deskripsi}</p>
                             </div>
                             ${endKunjungan.foto ? `
-                                            <div style="margin-bottom: 8px;">
-                                                <img src="/storage/uploads/kunjungan/${endKunjungan.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                            </div>
-                                            ` : ''}
+                                                <div style="margin-bottom: 8px;">
+                                                    <img src="/storage/uploads/kunjungan/${endKunjungan.foto}" alt="Foto Kunjungan" style="width: 100%; max-width: 200px; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                                </div>
+                                                ` : ''}
                             <div style="background: #F9FAFB; padding: 8px; border-radius: 6px; margin-bottom: 8px;">
                                 <p style="margin: 0; font-size: 12px; color: #6B7280; display: flex; align-items: center;">
                                     <i class="ti ti-clock" style="margin-right: 6px; color: #EF4444;"></i> ${formatDateTime(endKunjungan.created_at)}

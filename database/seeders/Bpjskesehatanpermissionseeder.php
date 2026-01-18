@@ -15,40 +15,21 @@ class Bpjskesehatanpermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Bpjs Kesehatan'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Bpjs Kesehatan']);
 
-        Permission::create([
-            'name' => 'bpjskesehatan.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjskesehatan.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjskesehatan.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
-        Permission::create([
-            'name' => 'bpjskesehatan.show',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bpjskesehatan.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
+        Permission::firstOrCreate(['name' => 'bpjskesehatan.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjskesehatan.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjskesehatan.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjskesehatan.show'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bpjskesehatan.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

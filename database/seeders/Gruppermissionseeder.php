@@ -15,50 +15,23 @@ class Gruppermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Grup'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Grup']);
 
-        Permission::create([
-            'name' => 'grup.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'grup.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'grup.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
-        Permission::create([
-            'name' => 'grup.show',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'grup.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'grup.detail',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'grup.setJamKerja',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
+        Permission::firstOrCreate(['name' => 'grup.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.show'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.delete'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.detail'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'grup.setJamKerja'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

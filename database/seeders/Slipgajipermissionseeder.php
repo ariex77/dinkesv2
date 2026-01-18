@@ -15,36 +15,20 @@ class Slipgajipermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Slip Gaji'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Slip Gaji']);
 
-        Permission::create([
-            'name' => 'slipgaji.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'slipgaji.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'slipgaji.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
-        Permission::create([
-            'name' => 'slipgaji.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
+        Permission::firstOrCreate(['name' => 'slipgaji.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'slipgaji.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'slipgaji.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'slipgaji.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

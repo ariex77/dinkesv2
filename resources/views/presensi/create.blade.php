@@ -11,12 +11,25 @@
         }
     </style> --}}
     <style>
+        /* CSS Variables untuk memudahkan penyesuaian */
+        :root {
+            --header-height: 60px;
+            --info-section-height: 70px;
+            --action-section-height: 65px;
+            --bottomnav-height: 75px;
+            --padding-total: 20px;
+            /* Padding dikurangi agar button hampir menyentuh bottomnav */
+        }
+
         /* Tambahan agar kamera portrait dan rounded di semua device */
         .webcam-capture {
             width: 100%;
             max-width: 98vw;
-            height: 240px;
-            /* Tinggi tetap sesuai simulator */
+            /* Tinggi dinamis: viewport height dikurangi semua elemen lain */
+            /* Formula menggunakan CSS variables untuk fleksibilitas */
+            height: calc(100vh - var(--header-height) - var(--info-section-height) - var(--action-section-height) - var(--bottomnav-height) - var(--padding-total));
+            min-height: 180px;
+            max-height: 400px;
             margin: 0 auto;
             padding: 0;
             border-radius: 24px;
@@ -96,11 +109,12 @@
         #content-section {
             margin-top: 60px !important;
             padding: 0 !important;
-            /* Menghapus padding */
+            padding-bottom: 0 !important;
+            /* Padding dihapus karena tinggi kamera sudah dihitung dengan calc() */
             position: relative;
             z-index: 1;
-
-            overflow: hidden;
+            overflow: visible;
+            /* Ubah ke visible agar konten tidak terpotong */
         }
 
         /* Style untuk tombol scan */
@@ -290,8 +304,11 @@
             background: linear-gradient(135deg, #e0f7fa 0%, #fff 100%);
             border-radius: 18px;
             box-shadow: 0 4px 24px rgba(44, 62, 80, 0.08);
-            padding: 18px 10px 24px 10px;
+            padding: 15px 10px 15px 10px;
+            /* Padding dikurangi agar lebih kompak dan button lebih dekat ke bottomnav */
             margin: 10px 0;
+            margin-bottom: 10px;
+            /* Margin bottom dikurangi agar button hampir menyentuh bottomnav */
         }
 
         .presensi-content-modern,
@@ -307,7 +324,8 @@
         .info-section {
             background: transparent;
             border-radius: 12px;
-            padding: 10px 10px;
+            padding: 8px 10px;
+            /* Padding dikurangi agar lebih kompak */
             backdrop-filter: blur(6px);
             color: #222;
             font-size: 15px;
@@ -444,6 +462,69 @@
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
         }
+
+        /* Responsive untuk berbagai resolusi layar */
+        /* Layar kecil (mobile portrait) - tinggi layar ≤ 667px */
+        @media screen and (max-height: 667px) {
+            .webcam-capture {
+                /* Untuk layar kecil, kurangi padding agar kamera lebih besar */
+                height: calc(100vh - 270px);
+                min-height: 160px;
+                max-height: 300px;
+            }
+
+            .presensi-content-modern {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Layar sedang (mobile landscape / tablet portrait) - tinggi 668px - 900px */
+        @media screen and (min-height: 668px) and (max-height: 900px) {
+            .webcam-capture {
+                /* Untuk layar sedang, tinggi lebih besar dengan padding minimal */
+                height: calc(100vh - 290px);
+                min-height: 200px;
+                max-height: 380px;
+            }
+
+            .presensi-content-modern {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Layar besar (tablet landscape / desktop) - tinggi ≥ 901px */
+        @media screen and (min-height: 901px) {
+            .webcam-capture {
+                /* Untuk layar besar, tinggi maksimal dengan padding minimal */
+                height: calc(100vh - 310px);
+                min-height: 240px;
+                max-height: 480px;
+            }
+
+            .presensi-content-modern {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Landscape orientation - tinggi layar ≤ 500px */
+        @media screen and (orientation: landscape) and (max-height: 500px) {
+            .webcam-capture {
+                /* Untuk landscape, kurangi padding agar kamera lebih besar */
+                height: calc(100vh - 250px);
+                min-height: 140px;
+                max-height: 220px;
+            }
+
+            .presensi-content-modern {
+                margin-bottom: 10px;
+            }
+        }
+
+        /* Pastikan action-section tidak tertutup bottomnav */
+        .action-section {
+            margin-bottom: 5px;
+            padding-bottom: 0;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
     <!-- Import Google Fonts: Poppins -->
@@ -560,17 +641,30 @@
     <script src="{{ asset('assets/external/js/face-model-cache.js') }}"></script>
     <script type="text/javascript">
         // Fungsi yang dijalankan ketika halaman selesai dimuat
-        window.onload = function() {
-            // Memanggil fungsi jam() untuk menampilkan waktu secara real-time
+        // Menggunakan DOMContentLoaded untuk memastikan DOM sudah siap
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                jam();
+            });
+        } else {
+            // DOM sudah dimuat, langsung panggil jam()
             jam();
         }
 
         // Fungsi untuk menampilkan waktu secara real-time
         function jam() {
             // Mengambil elemen HTML dengan id 'jam'
-            var e = document.getElementById('jam'),
-                // Membuat objek Date untuk mendapatkan waktu saat ini
-                d = new Date(),
+            var e = document.getElementById('jam');
+
+            // Cek apakah elemen ada sebelum mengatur innerHTML
+            if (!e) {
+                // Jika elemen belum tersedia, coba lagi setelah 100ms
+                setTimeout(jam, 100);
+                return;
+            }
+
+            // Membuat objek Date untuk mendapatkan waktu saat ini
+            var d = new Date(),
                 // Variabel untuk menampung jam, menit, dan detik
                 h, m, s;
             // Mengambil jam dari objek Date
@@ -584,7 +678,7 @@
             e.innerHTML = h + ':' + m + ':' + s;
 
             // Mengatur waktu untuk memanggil fungsi jam() lagi setelah 1 detik
-            setTimeout('jam()', 1000);
+            setTimeout(jam, 1000);
         }
 
         // Fungsi untuk menambahkan '0' di depan angka jika kurang dari 10
@@ -639,89 +733,12 @@
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             console.log(isMobile);
             // Fungsi untuk inisialisasi webcam
-            function initWebcam() {
-                // Inisialisasi webcam dengan pengaturan yang sesuai
-                Webcam.set({
-                    // Tinggi webcam
-                    height: 480,
-                    // Lebar webcam
-                    width: 640,
-                    // Format gambar
-                    image_format: 'jpeg',
-                    // Kualitas gambar
-                    jpeg_quality: isMobile ? 80 : 95,
-                    // Frame rate
-                    fps: isMobile ? 15 : 30,
-                    // Konstrain untuk video
-                    constraints: {
-                        video: {
-                            // Lebar ideal
-                            width: {
-                                ideal: isMobile ? 240 : 640
-                            },
-                            // Tinggi ideal
-                            height: {
-                                ideal: isMobile ? 180 : 480
-                            },
-                            // Menggunakan kamera depan
-                            facingMode: "user",
-                            // Frame rate ideal
-                            frameRate: {
-                                ideal: isMobile ? 15 : 30
-                            }
-                        }
-                    }
-                });
-
-                // Menghubungkan webcam ke elemen HTML dengan class 'webcam-capture'
-                Webcam.attach('.webcam-capture');
-
-                // Tambahkan event listener untuk memastikan webcam berjalan setelah refresh
-                Webcam.on('load', function() {
-                    cameraPermissionGranted = true;
-                    cameraPermissionDenied = false;
-                    cameraPermissionAlertShown = false;
-                    console.log('Webcam loaded successfully');
-                });
-
-                // Tambahkan event listener untuk menangani error
-                Webcam.on('error', function(err) {
-                    console.error('Webcam error:', err);
-                    cameraPermissionGranted = false;
-
-                    const errName = (err && err.name ? err.name : '').toLowerCase();
-                    const errMessage = (err && err.message ? err.message : '').toLowerCase();
-                    const permissionDenied = errName.includes('notallowed') || errName.includes('permission') ||
-                        errMessage.includes('permission');
-
-                    if (permissionDenied && !cameraPermissionAlertShown) {
-                        cameraPermissionAlertShown = true;
-                        cameraPermissionDenied = true;
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Izin Kamera Dibutuhkan',
-                            text: 'Akses kamera diperlukan untuk proses presensi. Mohon izinkan kamera pada browser Anda.'
-                        });
-                    }
-
-                    // Coba inisialisasi ulang webcam jika terjadi error lainnya
-                    setTimeout(initWebcam, 1000);
-                });
-            }
-
-            // Inisialisasi webcam
-            initWebcam();
-
-            // Tambahkan event listener untuk visibility change
-            document.addEventListener('visibilitychange', function() {
-                if (document.visibilityState === 'visible') {
-                    // Jika halaman menjadi visible, cek apakah webcam perlu diinisialisasi ulang
-                    if (!Webcam.isInitialized()) {
-                        console.log('Reinitializing webcam after visibility change');
-                        initWebcam();
-                    }
-                }
-            });
+                // ===============================================
+                // WEBCAM & FACE RECOGNITION MODERN SYSTEM
+                // ===============================================
+                // Logika webcam dan face recognition telah dipindahkan 
+                // ke blok modular di bagian bawah script ini.
+                // ===============================================
 
 
             // Tampilkan Map
@@ -838,8 +855,755 @@
                 }
             }
 
-            // Jika face recognition diaktifkan
-            if (faceRecognition == 1) {
+            // =========================================================
+            // MODERN FACE RECOGNITION IMPLEMENTATION
+            // =========================================================
+
+            /**
+             * Configuration Module
+             */
+            const FaceConfig = {
+                isEnabled: {{ $general_setting->face_recognition }},
+                modelsUrl: '/models',
+                detection: {
+                    interval: isMobile ? 150 : 80, // Optimized interval
+                    inputSize: isMobile ? 416 : 416, // Increased for better accuracy (was 224)
+                    scoreThreshold: 0.3, // Lowered for better detection (was 0.35)
+                    minConfidence: 0.45,
+                    minStableFrames: isMobile ? 1 : 2, // Quick detection
+                    maxNoFaceFrames: isMobile ? 3 : 4,
+                    mirror: false // Disabled - use raw coordinates
+                },
+                retry: {
+                    maxAttempts: 10,
+                    backoffFactor: 1.5
+                },
+                user: {
+                    nik: "{{ $karyawan->nik }}",
+                    name: "{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}",
+                    fullName: "{{ $karyawan->nama_karyawan }}",
+                    wajahCount: parseInt("{{ $wajah }}") || 0
+                }
+            };
+
+            /**
+             * UI Controller Module
+             */
+            const UI = {
+                els: {
+                    container: document.getElementById('facedetection'),
+                    video: null, // Will be set after camera init
+                    canvas: null,
+                    absenButtons: [document.getElementById('absenmasuk'), document.getElementById('absenpulang')]
+                },
+                
+                showLoading(id, message) {
+                    this.removeLoading(id);
+                    const el = document.getElementById('facedetection');
+                    if(!el) return;
+
+                    const loader = document.createElement('div');
+                    loader.id = id;
+                    loader.className = 'loading-overlay';
+                    loader.innerHTML = `
+                        <div class="spinner-border text-light" role="status"></div>
+                        <div class="mt-2 text-light">${message}</div>
+                    `;
+                    loader.style.position = 'absolute';
+                    loader.style.top = '50%';
+                    loader.style.left = '50%';
+                    loader.style.transform = 'translate(-50%, -50%)';
+                    loader.style.zIndex = '1000';
+                    loader.style.textAlign = 'center';
+                    
+                    el.appendChild(loader);
+                },
+
+                removeLoading(id) {
+                    const el = document.getElementById(id);
+                    if (el) el.remove();
+                },
+
+                showError(message, isFatal = false) {
+                    const el = document.getElementById('facedetection');
+                    if(!el) return;
+
+                    // Remove existing errors
+                    const existing = el.querySelector('.alert-error-message');
+                    if(existing) existing.remove();
+
+                    if(message) {
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'alert-error-message';
+                        errorMsg.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+                        errorMsg.style.position = 'absolute';
+                        errorMsg.style.bottom = '10px';
+                        errorMsg.style.width = '100%';
+                        errorMsg.style.zIndex = '2000';
+                        errorMsg.style.textAlign = 'center';
+                        el.appendChild(errorMsg);
+                    }
+                    
+                    if(isFatal) this.disableButtons();
+                },
+
+                disableButtons() {
+                   if(this.els.absenButtons) {
+                        this.els.absenButtons.forEach(btn => {
+                            if(btn) btn.disabled = true;
+                        });
+                   }
+                },
+
+                enableButtons() {
+                    if(this.els.absenButtons) {
+                        this.els.absenButtons.forEach(btn => {
+                            if(btn) btn.disabled = false;
+                        });
+                    }
+                }
+            };
+
+            /**
+             * Image Processing Helpers
+             */
+            const ImageProcessing = {
+                /**
+                 * Normalize brightness of an image element
+                 * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} img - Image/Video element to normalize
+                 * @param {number} targetMean - Target mean brightness (default: 128)
+                 * @returns {HTMLCanvasElement|HTMLImageElement} - Canvas with normalized image or original if invalid
+                 */
+                normalizeBrightness(img, targetMean = 128) {
+                    try {
+                        // Validate input dimensions
+                        const width = img.width || img.videoWidth || 0;
+                        const height = img.height || img.videoHeight || 0;
+                        
+                        if (width === 0 || height === 0) {
+                            console.warn('Cannot normalize brightness: invalid dimensions', width, 'x', height);
+                            return img; // Return original if dimensions invalid
+                        }
+                        
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        // Draw original image
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Get image data
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        
+                        // Calculate current mean brightness
+                        let sum = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+                        }
+                        const currentMean = sum / (data.length / 4);
+                        
+                        // Skip normalization if mean is already close to target
+                        if (Math.abs(currentMean - targetMean) < 5) {
+                            console.log(`Brightness already optimal: ${currentMean.toFixed(1)}`);
+                            return canvas;
+                        }
+                        
+                        // Calculate adjustment factor
+                        const adjustment = targetMean / currentMean;
+                        
+                        // Apply brightness normalization
+                        for (let i = 0; i < data.length; i += 4) {
+                            data[i] = Math.min(255, data[i] * adjustment);     // R
+                            data[i + 1] = Math.min(255, data[i + 1] * adjustment); // G
+                            data[i + 2] = Math.min(255, data[i + 2] * adjustment); // B
+                            // Alpha channel (i + 3) unchanged
+                        }
+                        
+                        // Put normalized data back
+                        ctx.putImageData(imageData, 0, 0);
+                        
+                        console.log(`Brightness normalized: ${currentMean.toFixed(1)} → ${targetMean}`);
+                        
+                        return canvas;
+                    } catch (error) {
+                        console.error('Error in brightness normalization:', error);
+                        return img; // Return original on error
+                    }
+                }
+            };
+
+            /**
+             * Camera Controller Module
+             */
+            const Camera = {
+                init() {
+                    return new Promise((resolve, reject) => {
+                        Webcam.set({
+                            height: 480,
+                            width: 640,
+                            image_format: 'jpeg',
+                            jpeg_quality: 95, // Standardized to 95% for all devices
+                            fps: isMobile ? 15 : 30,
+                            constraints: {
+                                video: {
+                                    width: { ideal: 640 }, // Standardized to 640 for all
+                                    height: { ideal: 480 }, // Standardized to 480 for all
+                                    facingMode: "user",
+                                    frameRate: { ideal: isMobile ? 15 : 30 }
+                                }
+                            }
+                        });
+
+                        Webcam.attach('.webcam-capture');
+
+                        Webcam.on('load', () => {
+                            console.log('Camera loaded');
+                            cameraPermissionGranted = true;
+                            
+                            // === FIX: Retry mechanism for video element ===
+                            let retryCount = 0;
+                            const maxRetries = 10;
+                            
+                            const findVideo = () => {
+                                const video = document.querySelector('.webcam-capture video');
+                                if(video) {
+                                    console.log('Video element found');
+                                    UI.els.video = video;
+                                    resolve(video);
+                                } else if (retryCount < maxRetries) {
+                                    retryCount++;
+                                    console.log(`Retrying to find video element... (${retryCount}/${maxRetries})`);
+                                    setTimeout(findVideo, 100); // Wait 100ms and retry
+                                } else {
+                                    reject(new Error('Video element not found after retries'));
+                                }
+                            };
+                            
+                            // Start finding video element
+                            setTimeout(findVideo, 100); // Initial slight delay
+                        });
+
+                        Webcam.on('error', (err) => {
+                            console.error('Camera error', err);
+                            const errName = (err?.name || '').toLowerCase();
+                            if (errName.includes('notallowed') || errName.includes('permission')) {
+                                cameraPermissionDenied = true;
+                                UI.showError('Izin kamera ditolak. Mohon izinkan akses kamera.', true);
+                            }
+                            reject(err);
+                        });
+                    });
+                }
+            };
+
+            /**
+             * Face Service Module
+             */
+            const FaceService = {
+                modelsLoaded: false,
+                descriptors: null,
+                matcher: null,
+                isDetecting: false,
+                
+                async loadModels() {
+                    UI.showLoading('model-loading', 'Memuat model wajah...');
+                    
+                    try {
+                        const modelPath = FaceConfig.modelsUrl;
+                        if (isMobile) {
+                            await Promise.all([
+                                faceapi.nets.tinyFaceDetector.loadFromUri(modelPath),
+                                faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+                                faceapi.nets.faceRecognitionNet.loadFromUri(modelPath)
+                            ]);
+                        } else {
+                            await Promise.all([
+                                faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath),
+                                faceapi.nets.faceLandmark68Net.loadFromUri(modelPath),
+                                faceapi.nets.faceRecognitionNet.loadFromUri(modelPath)
+                            ]);
+                        }
+                        this.modelsLoaded = true;
+                        UI.removeLoading('model-loading');
+                        console.log('Models loaded');
+                    } catch (e) {
+                        console.error('Model load failed', e);
+                        UI.showError('Gagal memuat model wajah.');
+                        throw e;
+                    }
+                },
+
+                async loadDescriptors() {
+                    UI.showLoading('data-loading', 'Memuat data wajah...');
+                    
+                    try {
+                        const nik = FaceConfig.user.nik;
+                        let descriptions = [];
+                        
+                        // === FIX: Always fetch from SERVER first to detect changes ===
+                        // Cache is used only as fallback if server fetch fails
+                        let serverFetchSuccess = false;
+                        
+                        try {
+                            const timestamp = new Date().getTime();
+                            const response = await fetch(`/facerecognition/getwajah?t=${timestamp}`);
+                            const data = await response.json();
+                            
+                            if (data && data.length > 0) {
+                                const label = `${FaceConfig.user.nik}-${FaceConfig.user.name}`;
+                                
+                                // Process images parallel
+                                const promises = data.map(async (faceData) => {
+                                    try {
+                                        const imgPath = `/storage/uploads/facerecognition/${label}/${faceData.wajah}`;
+                                        const img = await faceapi.fetchImage(imgPath);
+                                        
+                                        // === BRIGHTNESS NORMALIZATION ===
+                                        // Normalize brightness before generating descriptor
+                                        // This helps match photos with different lighting/exposure
+                                        const normalizedCanvas = ImageProcessing.normalizeBrightness(img, 128);
+                                        
+                                        const options = isMobile 
+                                            ? new faceapi.TinyFaceDetectorOptions({ inputSize: 224 })
+                                            : new faceapi.SsdMobilenetv1Options({ minConfidence: 0.4 });
+
+                                        // Use normalized image for detection
+                                        const detection = await faceapi.detectSingleFace(normalizedCanvas, options)
+                                            .withFaceLandmarks()
+                                            .withFaceDescriptor();
+
+                                        return detection ? detection.descriptor : null;
+                                    } catch (err) {
+                                        console.warn('Error processing face image', err);
+                                        return null;
+                                    }
+                                });
+
+                                const results = await Promise.all(promises);
+                                descriptions = results.filter(d => d !== null);
+
+                                // Update cache with fresh data
+                                if (descriptions.length > 0 && window.FaceModelCache) {
+                                    await window.FaceModelCache.saveDescriptors(nik, descriptions, data.map(d=>d.wajah));
+                                    console.log('Face data loaded from server and cached');
+                                } else if (window.FaceModelCache) {
+                                    // Clear cache if no data from server (user deleted their photos)
+                                    await window.FaceModelCache.clearDescriptors(nik);
+                                    console.log('No face data on server, cache cleared');
+                                }
+                                
+                                serverFetchSuccess = true;
+                            } else {
+                                // No data from server - clear cache
+                                if (window.FaceModelCache) {
+                                    await window.FaceModelCache.clearDescriptors(nik);
+                                }
+                                console.log('No face data from server');
+                            }
+                        } catch (serverError) {
+                            console.warn('Failed to fetch from server, trying cache...', serverError);
+                            
+                            // Fallback to cache only if server fetch fails
+                            if (window.FaceModelCache && window.FaceModelCache.loadDescriptors) {
+                                const cached = await window.FaceModelCache.loadDescriptors(nik);
+                                if (cached && cached.descriptors.length > 0) {
+                                    console.log('Using cached descriptors (server unavailable)');
+                                    descriptions = cached.descriptors;
+                                }
+                            }
+                        }
+
+                        if (descriptions.length === 0) {
+                             console.warn('No face data available');
+                        }
+
+                        if(descriptions.length > 0) {
+                            const labelName = FaceConfig.user.fullName;
+                            const labeledDescriptors = new faceapi.LabeledFaceDescriptors(labelName, descriptions);
+                            // Threshold 0.55: Balanced between security and tolerance
+                            // Lower = stricter, Higher = more tolerant
+                            this.matcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+                        } else {
+                            this.matcher = null; 
+                        }
+                        
+                        UI.removeLoading('data-loading');
+                        console.log('Descriptors loaded');
+                    } catch (e) {
+                        console.error('Descriptor load failed', e);
+                        UI.showError('Gagal memuat data wajah.');
+                        UI.removeLoading('data-loading');
+                        throw e;
+                    }
+                },
+
+                startDetection(video) {
+                    if(this.isDetecting) return;
+                    this.isDetecting = true;
+                    
+                    // === CRITICAL FIX: Match Canvas to DISPLAYED Video Size ===
+                    // The video element is scaled by CSS (object-fit: cover)
+                    // We need to match the canvas to the DISPLAYED size, not intrinsic size
+                    const canvas = faceapi.createCanvasFromMedia(video);
+                    UI.els.container.appendChild(canvas);
+                    UI.els.canvas = canvas;
+                    
+                    // Get displayed dimensions (accounting for CSS scaling)
+                    const rect = video.getBoundingClientRect();
+                    const displaySize = { width: Math.round(rect.width), height: Math.round(rect.height) };
+                    
+                    // Set canvas to match EXACTLY the displayed video size
+                    canvas.width = displaySize.width;
+                    canvas.height = displaySize.height;
+                    canvas.style.width = displaySize.width + 'px';
+                    canvas.style.height = displaySize.height + 'px';
+                    canvas.style.position = 'absolute';
+                    canvas.style.top = '0';
+                    canvas.style.left = '0';
+                    canvas.style.objectFit = 'none'; // Critical: no scaling on canvas
+                    
+                    console.log('Video intrinsic:', video.videoWidth, 'x', video.videoHeight);
+                    console.log('Video displayed:', displaySize.width, 'x', displaySize.height);
+
+                    let stableCount = 0;
+                    let noFaceCount = 0;
+                    let isProcessing = false;
+                    
+                    const loop = async () => {
+                        if(!this.isDetecting) return;
+
+                        if(!isProcessing) {
+                            isProcessing = true;
+                            try {
+                                // === BRIGHTNESS NORMALIZATION FOR LIVE DETECTION ===
+                                // Normalize video frame brightness before detection
+                                const normalizedCanvas = ImageProcessing.normalizeBrightness(video, 128);
+                                
+                                const options = isMobile 
+                                    ? new faceapi.TinyFaceDetectorOptions({ 
+                                        inputSize: FaceConfig.detection.inputSize, 
+                                        scoreThreshold: FaceConfig.detection.scoreThreshold 
+                                    })
+                                    : new faceapi.SsdMobilenetv1Options({ 
+                                        minConfidence: FaceConfig.detection.minConfidence 
+                                    });
+
+                                // Use normalized video for detection
+                                let detection = await faceapi.detectSingleFace(normalizedCanvas, options)
+                                    .withFaceLandmarks()
+                                    .withFaceDescriptor();
+
+                                const ctx = canvas.getContext('2d');
+                                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                                if (detection) {
+                                    noFaceCount = 0;
+                                    stableCount++;
+
+                                    if(stableCount >= FaceConfig.detection.minStableFrames) {
+                                        // === FIX: Scale detection from VIDEO size to DISPLAY size ===
+                                        // Critical for mobile: video intrinsic size != displayed size
+                                        const videoSize = { width: video.videoWidth, height: video.videoHeight };
+                                        const displaySize = { width: canvas.width, height: canvas.height };
+                                        
+                                        // Resize detection results to match displayed canvas
+                                        const resizedDetections = faceapi.resizeResults(detection, displaySize);
+                                        
+                                        let match = null;
+                                        let isRecognized = false;
+                                        let labelText = 'Wajah Tidak Dikenali';
+                                        
+                                        if(this.matcher) {
+                                            // Use ORIGINAL descriptor (not resized) for matching
+                                            match = this.matcher.findBestMatch(detection.descriptor);
+                                            isRecognized = match.label !== 'unknown';
+                                            
+                                            // Add score to label text for easy debugging
+                                            if (isRecognized) {
+                                                labelText = `${match.label} (${match.distance.toFixed(2)})`;
+                                            } else {
+                                                labelText = `Wajah Tidak Dikenali (${match.distance.toFixed(2)})`;
+                                            }
+                                            
+                                            // === LOG SIMILARITY SCORE FOR DEBUGGING ===
+                                            console.log('=== Face Recognition Score ===');
+                                            console.log('Label:', match.label);
+                                            console.log('Distance (Similarity Score):', match.distance.toFixed(4));
+                                            console.log('Threshold:', '0.55 (lower is better match)');
+                                            console.log('Recognized:', isRecognized);
+                                            console.log('Explanation:', match.distance < 0.55 ? 'Match found (distance < 0.55)' : 'No match (distance >= 0.55)');
+                                            console.log('Video size:', videoSize.width, 'x', videoSize.height);
+                                            console.log('Display size:', displaySize.width, 'x', displaySize.height);
+                                            console.log('============================');
+                                        }
+                                        
+                                        // Update Global State
+                                        faceRecognitionDetected = isRecognized ? 1 : 0;
+                                        
+                                        // === MODERN ROUNDED BOX DESIGN ===
+                                        // Use RESIZED detection box for drawing
+                                        let box = resizedDetections.detection.box;
+                                        
+                                        // === MAKE BOX SQUARE ===
+                                        const size = Math.max(box.width, box.height);
+                                        const squareBox = {
+                                            x: box.x + (box.width - size) / 2,
+                                            y: box.y + (box.height - size) / 2,
+                                            width: size,
+                                            height: size
+                                        };
+                                        box = squareBox;
+                                        
+                                        const color = isRecognized ? '#4CAF50' : '#FFC107';
+                                        const ctx = canvas.getContext('2d');
+                                        
+                                        // Draw rounded rectangle with glow
+                                        const cornerRadius = 16;
+                                        const lineWidth = 4;
+                                        
+                                        // Shadow/Glow effect
+                                        ctx.save();
+                                        ctx.shadowColor = color;
+                                        ctx.shadowBlur = 20;
+                                        ctx.shadowOffsetX = 0;
+                                        ctx.shadowOffsetY = 0;
+                                        
+                                        // Draw rounded box
+                                        ctx.strokeStyle = color;
+                                        ctx.lineWidth = lineWidth;
+                                        ctx.lineJoin = 'round';
+                                        ctx.lineCap = 'round';
+                                        
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x + cornerRadius, box.y);
+                                        ctx.lineTo(box.x + box.width - cornerRadius, box.y);
+                                        ctx.quadraticCurveTo(box.x + box.width, box.y, box.x + box.width, box.y + cornerRadius);
+                                        ctx.lineTo(box.x + box.width, box.y + box.height - cornerRadius);
+                                        ctx.quadraticCurveTo(box.x + box.width, box.y + box.height, box.x + box.width - cornerRadius, box.y + box.height);
+                                        ctx.lineTo(box.x + cornerRadius, box.y + box.height);
+                                        ctx.quadraticCurveTo(box.x, box.y + box.height, box.x, box.y + box.height - cornerRadius);
+                                        ctx.lineTo(box.x, box.y + cornerRadius);
+                                        ctx.quadraticCurveTo(box.x, box.y, box.x + cornerRadius, box.y);
+                                        ctx.closePath();
+                                        ctx.stroke();
+                                        ctx.restore();
+                                        
+                                        // === SCANNING ANIMATION ===
+                                        // Animated scanning line that moves up and down
+                                        const scanSpeed = 0.05; // Speed of animation
+                                        const scanProgress = (Date.now() * scanSpeed) % (box.height * 2);
+                                        const scanY = scanProgress < box.height 
+                                            ? box.y + scanProgress 
+                                            : box.y + (box.height * 2 - scanProgress);
+                                        
+                                        ctx.save();
+                                        // Create gradient for scan line
+                                        const scanGradient = ctx.createLinearGradient(box.x, scanY - 15, box.x, scanY + 15);
+                                        scanGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+                                        scanGradient.addColorStop(0.5, `rgba(255, 255, 255, 0.6)`);
+                                        scanGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                                        
+                                        ctx.strokeStyle = scanGradient;
+                                        ctx.lineWidth = 3;
+                                        ctx.shadowColor = '#FFFFFF';
+                                        ctx.shadowBlur = 10;
+                                        
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x + 10, scanY);
+                                        ctx.lineTo(box.x + box.width - 10, scanY);
+                                        ctx.stroke();
+                                        ctx.restore();
+                                        
+                                        // Draw corner brackets for extra tech feel
+                                        ctx.save();
+                                        ctx.strokeStyle = color;
+                                        ctx.lineWidth = 3;
+                                        const bracketSize = 20;
+                                        
+                                        // Top-left
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x + cornerRadius, box.y);
+                                        ctx.lineTo(box.x, box.y);
+                                        ctx.lineTo(box.x, box.y + bracketSize);
+                                        ctx.stroke();
+                                        
+                                        // Top-right
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x + box.width - cornerRadius, box.y);
+                                        ctx.lineTo(box.x + box.width, box.y);
+                                        ctx.lineTo(box.x + box.width, box.y + bracketSize);
+                                        ctx.stroke();
+                                        
+                                        // Bottom-left
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x, box.y + box.height - bracketSize);
+                                        ctx.lineTo(box.x, box.y + box.height);
+                                        ctx.lineTo(box.x + cornerRadius, box.y + box.height);
+                                        ctx.stroke();
+                                        
+                                        // Bottom-right
+                                        ctx.beginPath();
+                                        ctx.moveTo(box.x + box.width, box.y + box.height - bracketSize);
+                                        ctx.lineTo(box.x + box.width, box.y + box.height);
+                                        ctx.lineTo(box.x + box.width - cornerRadius, box.y + box.height);
+                                        ctx.stroke();
+                                        ctx.restore();
+                                        
+                                        // Draw modern label
+                                        ctx.save();
+                                        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'middle';
+                                        
+                                        const labelPadding = 8;
+                                        const textMetrics = ctx.measureText(labelText);
+                                        const labelWidth = textMetrics.width + labelPadding * 2;
+                                        const labelHeight = 28;
+                                        const labelX = box.x + box.width / 2 - labelWidth / 2;
+                                        const labelY = box.y - labelHeight - 8;
+                                        
+                                        // Label background with gradient
+                                        const gradient = ctx.createLinearGradient(labelX, labelY, labelX, labelY + labelHeight);
+                                        gradient.addColorStop(0, color);
+                                        gradient.addColorStop(1, color + 'CC'); // Add transparency
+                                        
+                                        ctx.fillStyle = gradient;
+                                        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                                        ctx.shadowBlur = 8;
+                                        ctx.shadowOffsetY = 2;
+                                        
+                                        // Rounded label background
+                                        const labelRadius = 6;
+                                        ctx.beginPath();
+                                        ctx.moveTo(labelX + labelRadius, labelY);
+                                        ctx.lineTo(labelX + labelWidth - labelRadius, labelY);
+                                        ctx.quadraticCurveTo(labelX + labelWidth, labelY, labelX + labelWidth, labelY + labelRadius);
+                                        ctx.lineTo(labelX + labelWidth, labelY + labelHeight - labelRadius);
+                                        ctx.quadraticCurveTo(labelX + labelWidth, labelY + labelHeight, labelX + labelWidth - labelRadius, labelY + labelHeight);
+                                        ctx.lineTo(labelX + labelRadius, labelY + labelHeight);
+                                        ctx.quadraticCurveTo(labelX, labelY + labelHeight, labelX, labelY + labelHeight - labelRadius);
+                                        ctx.lineTo(labelX, labelY + labelRadius);
+                                        ctx.quadraticCurveTo(labelX, labelY, labelX + labelRadius, labelY);
+                                        ctx.closePath();
+                                        ctx.fill();
+                                        
+                                        // Label text
+                                        ctx.shadowBlur = 0;
+                                        ctx.fillStyle = '#FFFFFF';
+                                        ctx.fillText(labelText, labelX + labelWidth / 2, labelY + labelHeight / 2);
+                                        ctx.restore();
+
+                                        if (isRecognized) {
+                                            UI.enableButtons();
+                                        } else {
+                                            UI.disableButtons();
+                                        }
+                                    }
+                                } else {
+                                    noFaceCount++;
+                                    if(noFaceCount > FaceConfig.detection.maxNoFaceFrames) {
+                                        stableCount = 0;
+                                        faceRecognitionDetected = 0;
+                                        UI.disableButtons();
+                                        
+                                        // === DRAW NO FACE DETECTED ALERT ===
+                                        const ctx = canvas.getContext('2d');
+                                        
+                                        // Alert box dimensions
+                                        const alertWidth = 280;
+                                        const alertHeight = 80;
+                                        const alertX = (canvas.width - alertWidth) / 2;
+                                        const alertY = (canvas.height - alertHeight) / 2;
+                                        const alertRadius = 12;
+                                        
+                                        // Draw alert background with gradient
+                                        ctx.save();
+                                        const gradient = ctx.createLinearGradient(alertX, alertY, alertX, alertY + alertHeight);
+                                        gradient.addColorStop(0, 'rgba(244, 67, 54, 0.95)'); // Red
+                                        gradient.addColorStop(1, 'rgba(244, 67, 54, 0.85)');
+                                        
+                                        ctx.fillStyle = gradient;
+                                        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                                        ctx.shadowBlur = 20;
+                                        ctx.shadowOffsetY = 4;
+                                        
+                                        // Rounded rectangle
+                                        ctx.beginPath();
+                                        ctx.moveTo(alertX + alertRadius, alertY);
+                                        ctx.lineTo(alertX + alertWidth - alertRadius, alertY);
+                                        ctx.quadraticCurveTo(alertX + alertWidth, alertY, alertX + alertWidth, alertY + alertRadius);
+                                        ctx.lineTo(alertX + alertWidth, alertY + alertHeight - alertRadius);
+                                        ctx.quadraticCurveTo(alertX + alertWidth, alertY + alertHeight, alertX + alertWidth - alertRadius, alertY + alertHeight);
+                                        ctx.lineTo(alertX + alertRadius, alertY + alertHeight);
+                                        ctx.quadraticCurveTo(alertX, alertY + alertHeight, alertX, alertY + alertHeight - alertRadius);
+                                        ctx.lineTo(alertX, alertY + alertRadius);
+                                        ctx.quadraticCurveTo(alertX, alertY, alertX + alertRadius, alertY);
+                                        ctx.closePath();
+                                        ctx.fill();
+                                        
+                                        // Draw icon (!) 
+                                        ctx.shadowBlur = 0;
+                                        ctx.fillStyle = '#FFFFFF';
+                                        ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                                        ctx.textAlign = 'center';
+                                        ctx.textBaseline = 'middle';
+                                        ctx.fillText('⚠️', alertX + alertWidth / 2, alertY + 28);
+                                        
+                                        // Draw text
+                                        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+                                        ctx.fillText('Wajah Tidak Terdeteksi', alertX + alertWidth / 2, alertY + 58);
+                                        
+                                        ctx.restore();
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Detection loop error', e);
+                            }
+                            isProcessing = false;
+                        }
+
+                        // Throttle with requestAnimationFrame
+                        setTimeout(() => requestAnimationFrame(loop), FaceConfig.detection.interval);
+                    };
+
+                    loop();
+                }
+            };
+
+            /**
+             * Main Application Orchestrator
+             */
+            const App = {
+                async init() {
+                    console.log('Initializing Modern Face Recognition...');
+                    
+                    try {
+                        const video = await Camera.init();
+                        
+                        if (FaceConfig.isEnabled == 1) {
+                            UI.disableButtons(); 
+                            await FaceService.loadModels();
+                            await FaceService.loadDescriptors();
+                            FaceService.startDetection(video);
+                        } else {
+                            UI.enableButtons();
+                        }
+
+                    } catch (e) {
+                        console.error('App Init Error', e);
+                    }
+                }
+            };
+
+            // Start App
+            App.init();
+
+            // [REFRACTOR] LEGACY CODE DISABLED
+            // This block is replaced by App.init() above
+            if (false) {
                 // Preload descriptors di background (non-blocking)
                 const nik = "{{ $karyawan->nik }}";
                 const label = "{{ $karyawan->nik }}-{{ getNamaDepan(strtolower($karyawan->nama_karyawan)) }}";
@@ -887,7 +1651,13 @@
                 loadingIndicator.style.transform = 'translate(-50%, -50%)';
                 loadingIndicator.style.zIndex = '1000';
                 loadingIndicator.style.textAlign = 'center';
-                document.getElementById('facedetection').appendChild(loadingIndicator);
+                
+                const faceDetectionEl = document.getElementById('facedetection');
+                if (faceDetectionEl) {
+                    faceDetectionEl.appendChild(loadingIndicator);
+                } else {
+                    console.warn('Element #facedetection not found, cannot append loading indicator');
+                }
 
                 // Load model dengan caching (menggunakan utility dari dashboard jika ada)
                 let modelLoadingPromise;
@@ -930,7 +1700,8 @@
 
                 // Mulai pengenalan wajah setelah model dimuat
                 modelLoadingPromise.then(() => {
-                    document.getElementById('face-recognition-loading').remove();
+                    const loadingEl = document.getElementById('face-recognition-loading');
+                    if (loadingEl) loadingEl.remove();
 
                     // Debugging: Periksa video stream sebelum memulai face recognition
                     const video = document.querySelector('.webcam-capture video');
@@ -962,7 +1733,8 @@
                     startFaceRecognition();
                 }).catch(err => {
                     console.error("Error loading models:", err);
-                    document.getElementById('face-recognition-loading').remove();
+                    const loadingEl = document.getElementById('face-recognition-loading');
+                    if (loadingEl) loadingEl.remove();
                     // Coba muat ulang model jika terjadi error
                     setTimeout(() => {
                         console.log('Retrying to load face recognition models');
@@ -998,7 +1770,13 @@
                     faceDataLoading.style.transform = 'translate(-50%, -50%)';
                     faceDataLoading.style.zIndex = '1000';
                     faceDataLoading.style.textAlign = 'center';
-                    document.getElementById('facedetection').appendChild(faceDataLoading);
+                    
+                    const faceDetectionEl = document.getElementById('facedetection');
+                    if (faceDetectionEl) {
+                        faceDetectionEl.appendChild(faceDataLoading);
+                    } else {
+                         console.warn('Element #facedetection not found, cannot append face data loading');
+                    }
 
                     try {
                         // Cek apakah descriptors sudah di-cache
@@ -1040,7 +1818,8 @@
                                         console.log(
                                             `[Presensi] Using cached descriptors for ${nik} (${cachedDescriptors.descriptors.length} descriptors)`
                                         );
-                                        document.getElementById('face-data-loading').remove();
+                                        const faceDataLoadingEl = document.getElementById('face-data-loading');
+                                        if (faceDataLoadingEl) faceDataLoadingEl.remove();
 
                                         const result = labels.map(label => {
                                             return new faceapi.LabeledFaceDescriptors(label, cachedDescriptors.descriptors);
@@ -1198,11 +1977,13 @@
                         );
 
                         // Hapus indikator loading setelah data wajah dimuat
-                        document.getElementById('face-data-loading').remove();
+                        const faceDataLoadingEl = document.getElementById('face-data-loading');
+                        if (faceDataLoadingEl) faceDataLoadingEl.remove();
                         return result;
                     } catch (error) {
                         console.error('Error dalam getLabeledFaceDescriptions:', error);
-                        document.getElementById('face-data-loading').remove();
+                        const faceDataLoadingEl = document.getElementById('face-data-loading');
+                        if (faceDataLoadingEl) faceDataLoadingEl.remove();
                         throw error;
                     }
                 }
@@ -1244,8 +2025,35 @@
                     return true; // Proceed anyway, let face-api handle errors
                 }
 
+                // Variable untuk tracking retry
+                let faceRecognitionRetries = 0;
+                const maxFaceRecognitionRetries = 10; // Stop after 10 attempts (approx 10-20 seconds)
+
                 async function startFaceRecognition() {
                     try {
+                        // Stop if permission denied or retries exceeded
+                        if (cameraPermissionDenied) {
+                            console.warn('Camera permission denied, stopping face recognition');
+                            return;
+                        }
+
+                        if (faceRecognitionRetries >= maxFaceRecognitionRetries) {
+                            console.error('Max face recognition retries reached. Stopping.');
+                            // Show user friendly error
+                            const faceDetectionEl = document.getElementById('facedetection');
+                            if (faceDetectionEl) {
+                                const errorMsg = document.createElement('div');
+                                errorMsg.innerHTML = '<div class="alert alert-danger">Gagal memulai kamera. Silakan refresh halaman.</div>';
+                                errorMsg.style.position = 'absolute';
+                                errorMsg.style.bottom = '10px';
+                                errorMsg.style.width = '100%';
+                                errorMsg.style.zIndex = '2000';
+                                errorMsg.style.textAlign = 'center';
+                                faceDetectionEl.appendChild(errorMsg);
+                            }
+                            return;
+                        }
+
                         // Pastikan model benar-benar sudah dimuat sebelum digunakan
                         await ensureModelsLoaded();
 
@@ -1258,9 +2066,16 @@
 
                         if (!video) {
                             console.error('Video element tidak ditemukan');
-                            setTimeout(startFaceRecognition, 1000);
+                            faceRecognitionRetries++;
+                            // Exponential backoff for retry
+                            const delay = Math.min(1000 * Math.pow(1.5, faceRecognitionRetries), 5000);
+                            console.log(`Retrying in ${delay}ms (Attempt ${faceRecognitionRetries}/${maxFaceRecognitionRetries})`);
+                            setTimeout(startFaceRecognition, delay);
                             return;
                         }
+
+                        // Reset retries on success
+                        faceRecognitionRetries = 0;
 
                         // Tunggu video benar-benar ready dengan lebih patient
                         if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
@@ -1334,28 +2149,27 @@
 
                         console.log('Face recognition setup completed, starting detection...');
 
-                        // PERBAIKAN UTAMA: Variable untuk anti-flicker yang lebih stabil
+                        // OPTIMASI: Variable untuk deteksi yang lebih cepat dan responsif
                         let lastDetectionTime = 0;
-                        let detectionInterval = isMobile ? 400 : 100; // Interval lebih stabil untuk mobile
+                        let detectionInterval = isMobile ? 150 : 80; // Interval lebih cepat untuk responsivitas
                         let isProcessing = false;
                         let consecutiveMatches = 0;
-                        // Diturunkan untuk lebih mudah terdeteksi (dari 2/4 menjadi 1/2)
-                        const requiredConsecutiveMatches = isMobile ? 1 : 2;
+                        let requiredConsecutiveMatches = isMobile ? 1 : 1; // Langsung terdeteksi
 
-                        // PERBAIKAN: Anti-flicker system yang lebih reliable
+                        // OPTIMASI: Sistem anti-flicker yang lebih ringan
                         let stableDetectionCount = 0;
                         let noFaceCount = 0;
-                        const minStableFrames = isMobile ? 2 : 3; // Minimum frame untuk stabilitas
-                        const maxNoFaceFrames = isMobile ? 4 : 5; // Maximum frame tanpa wajah sebelum reset
+                        const minStableFrames = isMobile ? 1 : 2; // Lebih cepat untuk stabilitas
+                        const maxNoFaceFrames = isMobile ? 3 : 4; // Lebih cepat reset
 
-                        // State tracking untuk smoothing
+                        // State tracking untuk smoothing (dikurangi untuk performa)
                         let lastValidDetection = null;
                         let detectionHistory = [];
-                        const historySize = isMobile ? 3 : 5;
+                        const historySize = isMobile ? 2 : 3; // Dikurangi untuk performa
 
-                        // Smoothing untuk match distance (mencegah kedap-kedip)
+                        // Smoothing untuk match distance (dikurangi untuk performa)
                         let matchDistanceHistory = [];
-                        const matchDistanceHistorySize = isMobile ? 3 : 5;
+                        const matchDistanceHistorySize = isMobile ? 2 : 3; // Dikurangi untuk performa
                         let lastMatchResult = null; // true = dikenali, false = tidak dikenali
 
                         async function detectFaces() {
@@ -1367,17 +2181,17 @@
                                 }
 
                                 if (isMobile) {
-                                    // Naikkan inputSize dari 160 ke 224 untuk akurasi lebih baik
+                                    // OPTIMASI: Gunakan inputSize 160 untuk processing lebih cepat
                                     const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-                                            inputSize: 224, // Dinaikkan dari 160 untuk akurasi lebih baik
-                                            scoreThreshold: 0.3 // Diturunkan sedikit agar lebih sensitif
+                                            inputSize: 160, // Lebih kecil = lebih cepat
+                                            scoreThreshold: 0.4 // Threshold optimal untuk akurasi vs kecepatan
                                         }))
                                         .withFaceLandmarks()
                                         .withFaceDescriptor();
                                     return detection ? [detection] : [];
                                 } else {
                                     const detection = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({
-                                            minConfidence: 0.4 // Diturunkan sedikit untuk lebih sensitif
+                                            minConfidence: 0.5 // Threshold optimal
                                         }))
                                         .withFaceLandmarks()
                                         .withFaceDescriptor();
@@ -1424,8 +2238,8 @@
                                             const positiveDetections = detectionHistory.filter(d => d).length;
                                             const detectionRatio = positiveDetections / detectionHistory.length;
 
-                                            // PERBAIKAN: Stabilitas berdasarkan history
-                                            if (hasFace && detectionRatio >= 0.6) { // 60% dari history harus positif
+                                            // OPTIMASI: Stabilitas lebih cepat dengan threshold lebih rendah
+                                            if (hasFace && detectionRatio >= 0.5) { // 50% dari history (lebih cepat)
                                                 stableDetectionCount++;
                                                 noFaceCount = 0;
                                                 lastValidDetection = resizedDetections[0];
@@ -1454,34 +2268,25 @@
                                                     const box = detection.detection.box;
                                                     const isUnknown = match.toString().includes("unknown");
 
-                                                    // Smoothing match distance untuk menghindari kedap-kedip
+                                                    // OPTIMASI: Smoothing lebih sederhana untuk performa
                                                     matchDistanceHistory.push(match.distance);
                                                     if (matchDistanceHistory.length > matchDistanceHistorySize) {
                                                         matchDistanceHistory.shift();
                                                     }
 
-                                                    // Hitung rata-rata distance dari history
-                                                    const avgDistance = matchDistanceHistory.reduce((a, b) => a + b, 0) /
-                                                        matchDistanceHistory.length;
+                                                    // Gunakan distance terbaru jika history masih sedikit, rata-rata jika sudah cukup
+                                                    const avgDistance = matchDistanceHistory.length >= matchDistanceHistorySize ?
+                                                        matchDistanceHistory.reduce((a, b) => a + b, 0) / matchDistanceHistory.length :
+                                                        match.distance; // Langsung gunakan distance terbaru
 
-                                                    // Threshold 0.5 untuk keseimbangan (tengah-tengah)
-                                                    // Gunakan average distance untuk stabilitas
-                                                    // Distance < 0.5 = dikenali, > 0.5 = tidak dikenali
+                                                    // Threshold 0.5 untuk keseimbangan
                                                     const isNotRecognized = avgDistance > 0.5;
 
                                                     // Menentukan warna berdasarkan kondisi
                                                     let boxColor, labelColor, labelText;
 
-                                                    // Smoothing: Hanya ubah status jika konsisten dalam beberapa frame
+                                                    // OPTIMASI: Langsung gunakan hasil terbaru tanpa smoothing berlebihan
                                                     let currentMatchResult = !isUnknown && !isNotRecognized;
-
-                                                    // Smoothing: Jika status berubah drastis, tunggu beberapa frame sebelum ubah status
-                                                    if (lastMatchResult !== null && lastMatchResult !== currentMatchResult) {
-                                                        // Jika masih mengumpulkan data history, gunakan status lama untuk stabilitas
-                                                        if (matchDistanceHistory.length < matchDistanceHistorySize) {
-                                                            currentMatchResult = lastMatchResult; // Tetap gunakan status lama
-                                                        }
-                                                    }
 
                                                     if (isUnknown || !currentMatchResult) {
                                                         // Wajah tidak dikenali - warna kuning
@@ -1664,12 +2469,8 @@
                                 }
                             }
 
-                            // PERBAIKAN: Gunakan setTimeout untuk mobile agar lebih stabil
-                            if (isMobile) {
-                                setTimeout(updateCanvas, detectionInterval);
-                            } else {
-                                requestAnimationFrame(updateCanvas);
-                            }
+                            // OPTIMASI: Gunakan requestAnimationFrame untuk semua device (lebih smooth)
+                            requestAnimationFrame(updateCanvas);
                         }
 
                         // Mulai loop animasi
@@ -1677,11 +2478,17 @@
 
                     } catch (error) {
                         console.error("Error starting face recognition:", error);
-                        // Coba inisialisasi ulang face recognition jika terjadi error
-                        setTimeout(() => {
-                            console.log('Retrying face recognition initialization');
-                            startFaceRecognition();
-                        }, 2000);
+                        
+                        faceRecognitionRetries++;
+                        if (faceRecognitionRetries < maxFaceRecognitionRetries) {
+                            // Coba inisialisasi ulang face recognition jika terjadi error
+                            setTimeout(() => {
+                                console.log('Retrying face recognition initialization after error');
+                                startFaceRecognition();
+                            }, 2000);
+                        } else {
+                            console.error('Max retries reached after error. Stopping.');
+                        }
                     }
                 }
             }

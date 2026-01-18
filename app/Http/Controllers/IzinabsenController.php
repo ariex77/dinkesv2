@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Jenssegers\Agent\Agent;
+use App\Services\ApprovalService;
+use App\Models\Approval;
+use App\Models\ApprovalLayer;
+
 
 class IzinabsenController extends Controller
 {
@@ -244,15 +248,16 @@ class IzinabsenController extends Controller
             $last_kode_izin = $lastizin != null ? $lastizin->kode_izin : '';
             $kode_izin  = buatkode($last_kode_izin, "IA"  . date('ym', strtotime($request->dari)), 4);
 
-            Izinabsen::create([
-                'kode_izin' => $kode_izin,
-                'nik' => $nik,
-                'tanggal' => $request->dari,
-                'dari' => $request->dari,
-                'sampai' => $request->sampai,
-                'keterangan' => $request->keterangan,
-                'status' => 0,
-            ]);
+            $izin = new Izinabsen();
+            $izin->kode_izin = $kode_izin;
+            $izin->nik = $nik;
+            $izin->tanggal = $request->dari;
+            $izin->dari = $request->dari;
+            $izin->sampai = $request->sampai;
+            $izin->keterangan = $request->keterangan;
+            $izin->status = 0;
+            $izin->approval_step = 1;
+            $izin->save();
             DB::commit();
 
             if ($role == 'karyawan') {
@@ -293,7 +298,7 @@ class IzinabsenController extends Controller
         return view('izinabsen.approve', $data);
     }
 
-    public function storeapprove(Request $request, $kode_izin)
+    public function storeapprove(Request $request, $kode_izin, ApprovalService $approvalService)
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
@@ -301,6 +306,7 @@ class IzinabsenController extends Controller
         $kode_izin = Crypt::decrypt($kode_izin);
         $izinabsen = Izinabsen::where('kode_izin', $kode_izin)
             ->join('karyawan', 'presensi_izinabsen.nik', '=', 'karyawan.nik')
+            ->select('presensi_izinabsen.*', 'karyawan.kode_cabang', 'karyawan.kode_dept')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -317,12 +323,52 @@ class IzinabsenController extends Controller
         $nik = $izinabsen->nik;
         $kode_dept = $izinabsen->kode_dept;
         $error = '';
+        
+        // Dynamic Approval Logic
+        $userRole = $user->getRoleNames()->first();
+        $currentStep = $izinabsen->approval_step;
+
+        // Check Authorization using Service
+        if (!$approvalService->canApprove('IZIN', $currentStep, $userRole, $kode_dept)) {
+             if (!$user->isSuperAdmin()) {
+                 return Redirect::back()->with(messageError('Anda tidak memiliki wewenang untuk approval tahap ke-' . $currentStep));
+             }
+        }
+
         DB::beginTransaction();
         try {
             if (isset($request->approve)) {
-                // echo 'test';
+                
+                // 1. Record Approval
+                Approval::create([
+                    'approvable_type' => Izinabsen::class,
+                    'approvable_id' => $kode_izin,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'approved',
+                    'keterangan' => 'Approved by ' . $user->name,
+                ]);
+                
+                // 2. Check for Next Level rule
+                $nextLevel = $currentStep + 1;
+                 $nextRule = ApprovalLayer::where('feature', 'IZIN')
+                    ->where('level', $nextLevel)
+                     ->where(function ($q) use ($kode_dept) {
+                        $q->where('kode_dept', $kode_dept)
+                          ->orWhereNull('kode_dept');
+                    })
+                    ->first();
+                
+                if ($nextRule) {
+                    // Move to next step
+                     Izinabsen::where('kode_izin', $kode_izin)->update([
+                        'approval_step' => $nextLevel
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Berhasil disetujui (Tahap ' . $currentStep . '). Menunggu approval tahap selanjutnya.'));
+                }
 
-
+                // If No Next Rule -> FINAL APPROVAL (Legacy Logic)
                 Izinabsen::where('kode_izin', $kode_izin)->update([
                     'status' => 1
                 ]);
@@ -353,8 +399,6 @@ class IzinabsenController extends Controller
                     if ($jamkerja == null) {
                         $error .= 'Jam Kerja pada Tanggal ' . $dari . ' Belum Di Set! <br>';
                     } else {
-                        // dd($request->all());
-                        // dd(isset($request->approve));
                         $presensi = Presensi::create([
                             'nik' => $nik,
                             'tanggal' => $dari,
@@ -372,6 +416,16 @@ class IzinabsenController extends Controller
                     $dari = date('Y-m-d', strtotime($dari . ' +1 day'));
                 }
             } else {
+                // REJECTION
+                Approval::create([
+                    'approvable_type' => Izinabsen::class,
+                    'approvable_id' => $kode_izin,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'rejected',
+                    'keterangan' => 'Rejected by ' . $user->name,
+                ]);
+                
                 Izinabsen::where('kode_izin', $kode_izin)->update([
                     'status' => 2
                 ]);
@@ -396,6 +450,7 @@ class IzinabsenController extends Controller
         $kode_izin = Crypt::decrypt($kode_izin);
         $izinabsen = Izinabsen::where('kode_izin', $kode_izin)
             ->join('karyawan', 'presensi_izinabsen.nik', '=', 'karyawan.nik')
+            ->select('presensi_izinabsen.*', 'karyawan.kode_cabang', 'karyawan.kode_dept')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -408,15 +463,72 @@ class IzinabsenController extends Controller
             }
         }
         
-        $presensi = Approveizinabsen::where('kode_izin', $kode_izin)->get();
+        DB::beginTransaction();
         try {
-            Izinabsen::where('kode_izin', $kode_izin)->update([
-                'status' => 0
-            ]);
-            Approveizinabsen::where('kode_izin', $kode_izin)->delete();
-            Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
-            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+             // Case 1: Status is Pending (0) but moved steps (Intermediate Cancellation)
+             if ($izinabsen->status == 0) {
+                 // Logic: Find the approval for the *previous* step (current_step - 1)
+                 $lastStep = $izinabsen->approval_step - 1;
+                 
+                $lastApproval = Approval::where('approvable_type', Izinabsen::class)
+                    ->where('approvable_id', $kode_izin)
+                    ->where('level', $lastStep)
+                    ->where('user_id', $user->id) // Must be the one who approved it
+                    ->first();
+
+                if ($lastApproval) {
+                    $lastApproval->delete();
+                    Izinabsen::where('kode_izin', $kode_izin)->update([
+                        'approval_step' => $lastStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval dibatalkan. Kembali ke tahap sebelumnya.'));
+                } else {
+                     return Redirect::back()->with(messageError('Anda tidak dapat membatalkan approval ini (Bukan approver terakhir atau sudah diproses lanjut).'));
+                }
+            }
+            // Case 2: Status is Final Approved (1) 
+            else if ($izinabsen->status == 1) {
+                 // Find final approval record (highest level)
+                 $lastApproval = Approval::where('approvable_type', Izinabsen::class)
+                    ->where('approvable_id', $kode_izin)
+                    ->where('user_id', $user->id)
+                    ->orderBy('level', 'desc')
+                    ->first();
+
+                if($lastApproval){
+                     // Revert step to this level (so it becomes pending at this level again)
+                     $revertStep = $lastApproval->level;
+                     $lastApproval->delete();
+                     
+                     // Delete Presensi Data
+                     $presensi = Approveizinabsen::where('kode_izin', $kode_izin)->get();
+                     Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                     Approveizinabsen::where('kode_izin', $kode_izin)->delete();
+
+                     Izinabsen::where('kode_izin', $kode_izin)->update([
+                        'status' => 0,
+                        'approval_step' => $revertStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval final dibatalkan. Kembali ke tahap sebelumnya.'));
+
+                } else {
+                     // Fallback/Legacy
+                     $presensi = Approveizinabsen::where('kode_izin', $kode_izin)->get();
+                     Izinabsen::where('kode_izin', $kode_izin)->update([
+                        'status' => 0
+                    ]);
+                    Approveizinabsen::where('kode_izin', $kode_izin)->delete();
+                    Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+                }
+            }
+             return Redirect::back()->with(messageError('Status tidak valid untuk pembatalan.'));
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return Redirect::back()->with(messageError($e->getMessage()));
         }
     }

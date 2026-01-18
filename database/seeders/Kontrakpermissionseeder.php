@@ -35,8 +35,13 @@ class Kontrakpermissionseeder extends Seeder
         }
 
         $role = Role::findById(1);
+        $permissionsList = Permission::whereIn('name', $permissions)->get();
         if ($role) {
-            $role->givePermissionTo(Permission::whereIn('name', $permissions)->get());
+            foreach($permissionsList as $p) {
+                if (!$role->hasPermissionTo($p)) {
+                    $role->givePermissionTo($p);
+                }
+            }
         }
     }
 }

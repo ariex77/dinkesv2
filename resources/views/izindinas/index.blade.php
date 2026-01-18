@@ -120,21 +120,58 @@
                                                 </td>
                                                 <td class="text-center">
                                                     @if ($d->status == 0)
-                                                        <i class="ti ti-hourglass-high text-warning"></i>
+                                                         @php
+                                                            $nextLayer = $d->getNextApprovalLayer();
+                                                        @endphp
+                                                        <span class="badge bg-label-warning">Pending</span>
+                                                        @if ($nextLayer)
+                                                            <br><small class="text-muted">Menunggu: {{ $nextLayer->role_name }}</small>
+                                                        @endif
                                                     @elseif ($d->status == 1)
-                                                        <i class="ti ti-checks text-success"></i>
+                                                        <span class="badge bg-label-success">Disetujui</span>
                                                     @elseif ($d->status == 2)
-                                                        <i class="ti ti-square-x text-danger"></i>
+                                                        <span class="badge bg-label-danger">Ditolak</span>
                                                     @endif
                                                 </td>
                                                 <td>
                                                     <div class="d-flex">
                                                         @can('izindinas.approve')
                                                             @if ($d->status == 0)
-                                                                <a href="#" class="btnApprove me-1"
-                                                                    kode_izin_dinas="{{ Crypt::encrypt($d->kode_izin_dinas) }}">
-                                                                    <i class="ti ti-external-link text-primary"></i>
-                                                                </a>
+                                                                @php
+                                                                    $nextLayer = $d->getNextApprovalLayer();
+                                                                    $userRole = auth()->user()->getRoleNames()->first();
+                                                                    $canApprove = false;
+                                                                    if($nextLayer && ($nextLayer->role_name == $userRole || auth()->user()->hasRole('super admin'))){
+                                                                        $canApprove = true;
+                                                                    }
+                                                                     // Check for Cancellation (Rollback) capability
+                                                                    $canCancel = false;
+                                                                    if($d->approval_step > 1) {
+                                                                         $lastStep = $d->approval_step - 1;
+                                                                         $lastApproval = $d->approvals->where('level', $lastStep)->where('user_id', auth()->id())->first();
+                                                                         if($lastApproval) {
+                                                                             $canCancel = true;
+                                                                         }
+                                                                    }
+                                                                @endphp
+
+                                                                @if($canApprove)
+                                                                    <a href="#" class="btnApprove me-1"
+                                                                        kode_izin_dinas="{{ Crypt::encrypt($d->kode_izin_dinas) }}">
+                                                                        <i class="ti ti-external-link text-primary"></i>
+                                                                    </a>
+                                                                @endif
+                                                                
+                                                                @if($canCancel)
+                                                                    <form method="POST" name="deleteform" class="deleteform me-1"
+                                                                        action="{{ route('izindinas.cancelapprove', Crypt::encrypt($d->kode_izin_dinas)) }}">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <a href="#" class="cancel-confirm me-1" title="Batalkan Approval Sebelumnya">
+                                                                            <i class="ti ti-arrow-back-up text-warning"></i>
+                                                                        </a>
+                                                                    </form>
+                                                                @endif
                                                             @elseif($d->status == 1)
                                                                 <form method="POST" name="deleteform" class="deleteform me-1"
                                                                     action="{{ route('izindinas.cancelapprove', Crypt::encrypt($d->kode_izin_dinas)) }}">

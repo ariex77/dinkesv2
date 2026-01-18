@@ -27,6 +27,7 @@ use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\LemburController;
 use App\Http\Controllers\PengajuanizinController;
+use App\Http\Controllers\PelanggaranController;
 use App\Http\Controllers\PenyesuaiangajiController;
 use App\Http\Controllers\Permission_groupController;
 use App\Http\Controllers\PermissionController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\PresensiistirahatController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SlipgajiController;
+use App\Http\Controllers\ShortcutController;
 use App\Http\Controllers\TunjanganController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WagatewayController;
@@ -96,6 +98,10 @@ Route::middleware('auth')->group(function () {
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'index')->name('dashboard.index');
         Route::post('/dashboard/kirim-ucapan-birthday', 'kirimUcapanBirthday')->name('dashboard.kirim.ucapan.birthday');
+    });
+
+    Route::controller(ShortcutController::class)->group(function () {
+        Route::get('/shortcut', 'index')->name('shortcut.index');
     });
     Route::middleware('role:super admin')->controller(RoleController::class)->group(function () {
         Route::get('/roles', 'index')->name('roles.index');
@@ -175,6 +181,7 @@ Route::middleware('auth')->group(function () {
 
     Route::controller(KontrakController::class)->group(function () {
         Route::get('/kontrak', 'index')->name('kontrak.index')->can('kontrak.index');
+        Route::get('/kontrak/{id}/show', 'show')->name('kontrak.show')->can('kontrak.index');
         Route::get('/kontrak/create', 'create')->name('kontrak.create')->can('kontrak.create');
         Route::post('/kontrak', 'store')->name('kontrak.store')->can('kontrak.create');
         Route::get('/kontrak/karyawan/{nik}/latest', 'getEmployeeLatest')->name('kontrak.karyawan.latest')->can('kontrak.create');
@@ -452,6 +459,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/pengajuanizin', 'index')->name('pengajuanizin.index');
     });
 
+    Route::controller(PelanggaranController::class)->group(function () {
+        Route::get('/pelanggaran', 'index')->name('pelanggaran.index')->can('pelanggaran.index');
+        Route::get('/pelanggaran/create', 'create')->name('pelanggaran.create')->can('pelanggaran.create');
+        Route::post('/pelanggaran', 'store')->name('pelanggaran.store')->can('pelanggaran.create');
+        Route::get('/pelanggaran/{no_sp}/show', 'show')->name('pelanggaran.show')->can('pelanggaran.index');
+        Route::get('/pelanggaran/{no_sp}/edit', 'edit')->name('pelanggaran.edit')->can('pelanggaran.edit');
+        Route::put('/pelanggaran/{no_sp}', 'update')->name('pelanggaran.update')->can('pelanggaran.edit');
+        Route::delete('/pelanggaran/{no_sp}/delete', 'destroy')->name('pelanggaran.delete')->can('pelanggaran.delete');
+        Route::get('/pelanggaran/{no_sp}/print', 'print')->name('pelanggaran.print')->can('pelanggaran.index');
+    });
+
     Route::controller(PresensiistirahatController::class)->group(function () {
         Route::get('/presensiistirahat/create', 'create')->name('presensiistirahat.create');
         Route::post('/presensiistirahat', 'store')->name('presensiistirahat.store');
@@ -582,6 +600,22 @@ Route::middleware('auth')->group(function () {
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::post('/{id}/toggle-active', 'toggleActive')->name('toggle-active');
     });
+
+    // Pengumuman Routes
+    Route::controller(App\Http\Controllers\PengumumanController::class)->group(function () {
+        Route::get('/pengumuman', 'index')->name('pengumuman.index');
+        Route::get('/pengumuman/create', 'create')->name('pengumuman.create');
+        Route::post('/pengumuman', 'store')->name('pengumuman.store');
+        Route::get('/pengumuman/{id}/show', 'show')->name('pengumuman.show');
+        Route::delete('/pengumuman/{id}', 'delete')->name('pengumuman.delete');
+    });
+
+    // Approval Layer
+    Route::resource('approvallayer', App\Http\Controllers\ApprovalLayerController::class);
+    // Approval Feature
+    Route::resource('approvalfeature', App\Http\Controllers\ApprovalFeatureController::class);
+    Route::get('/approvalfeature/{id}/config', [App\Http\Controllers\ApprovalFeatureController::class, 'showConfig'])->name('approvalfeature.showConfig');
+    Route::post('/approvalfeature/{id}/config', [App\Http\Controllers\ApprovalFeatureController::class, 'updateConfig'])->name('approvalfeature.updateConfig');
 });
 
 

@@ -13,8 +13,7 @@ class Departemenseeder extends Seeder
      */
     public function run(): void
     {
-        Departemen::create([
-            'kode_dept' => 'IT',
+        Departemen::firstOrCreate(['kode_dept' => 'IT'], [
             'nama_dept' => 'Information Technology',
         ]);
     }

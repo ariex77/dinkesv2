@@ -42,12 +42,21 @@ class KunjunganPermissionSeeder extends Seeder
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
 
         // Assign only index and create permissions to karyawan role
         $karyawanRole = Role::where('name', 'karyawan')->first();
         if ($karyawanRole) {
-            $karyawanRole->givePermissionTo(['kunjungan.index', 'kunjungan.create']);
+            $karyawanPermissions = ['kunjungan.index', 'kunjungan.create'];
+            foreach($karyawanPermissions as $pname) {
+                if (!$karyawanRole->hasPermissionTo($pname)) {
+                   $karyawanRole->givePermissionTo($pname);
+                }
+            }
         }
     }
 }

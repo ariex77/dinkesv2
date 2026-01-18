@@ -15,25 +15,17 @@ class Laporanpermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Laporan'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Laporan']);
 
-        if (!Permission::where('name', 'laporan.presensi')->exists()) {
-            Permission::create([
-                'name' => 'laporan.presensi',
-                'id_permission_group' => $permissiongroup->id
-            ]);
-        }
-
-
-
-
-
+        Permission::firstOrCreate(['name' => 'laporan.presensi'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

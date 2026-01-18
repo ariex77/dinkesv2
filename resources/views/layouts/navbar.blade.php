@@ -111,7 +111,7 @@
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                     aria-expanded="false">
                     <i class="ti ti-bell ti-md"></i>
-                    <span class="badge bg-danger rounded-pill badge-notifications">{{ $notifikasi_ajuan_absen }}</span>
+                    <span class="badge bg-danger rounded-pill badge-notifications">{{ $notifikasi_ajuan_absen + auth()->user()->unreadNotifications->count() }}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
                     <li class="dropdown-menu-header border-bottom">
@@ -123,6 +123,25 @@
                     </li>
                     <li class="dropdown-notifications-list scrollable-container">
                         <ul class="list-group list-group-flush">
+                            @foreach (auth()->user()->unreadNotifications as $notification)
+                                <li class="list-group-item list-group-item-action dropdown-notifications-item">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="avatar">
+                                                <span class="avatar-initial rounded-circle bg-label-primary"><i class="ti {{ $notification->data['icon'] ?? 'ti-bell' }}"></i></span>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">{{ $notification->data['title'] ?? 'Notification' }}</h6>
+                                            <p class="mb-0">{{ $notification->data['message'] ?? '' }}</p>
+                                            <small class="text-muted">{{ $notification->created_at->diffForHumans() }}</small>
+                                        </div>
+                                        <div class="flex-shrink-0 dropdown-notifications-actions">
+                                            <a href="{{ $notification->data['url'] ?? '#' }}" class="dropdown-notifications-read"><span class="badge badge-dot"></span></a>
+                                        </div>
+                                    </div>
+                                </li>
+                            @endforeach
                             @php
                                 $bgcolor = '';
                             @endphp

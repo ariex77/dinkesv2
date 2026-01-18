@@ -16,6 +16,8 @@ class Slipgajikaryawanpermissionseeder extends Seeder
         $permissions = 'slipgaji.index';
 
         $role = Role::find(3);
-        $role->givePermissionTo($permissions);
+        if ($role && !$role->hasPermissionTo($permissions)) {
+             $role->givePermissionTo($permissions);
+        }
     }
 }

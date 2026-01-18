@@ -19,8 +19,8 @@
                         <label for="tanggal" class="form-label">Tanggal</label>
                         <div class="input-group input-group-merge">
                             <span class="input-group-text"><i class="ti ti-calendar"></i></span>
-                            <input type="text" class="form-control flatpickr-date" id="tanggal" name="tanggal" value="{{ $tanggal }}"
-                                placeholder="Pilih tanggal">
+                            <input type="text" class="form-control flatpickr-date" id="tanggal" name="tanggal"
+                                value="{{ $tanggal }}" placeholder="Pilih tanggal">
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -60,7 +60,8 @@
                     <div class="col-12">
                         <div class="alert alert-info">
                             <i class="ti ti-info-circle me-2"></i>
-                            <strong>Info:</strong> Peta menampilkan lokasi presensi karyawan berdasarkan koordinat dari field lokasi_in.
+                            <strong>Info:</strong> Peta menampilkan lokasi presensi karyawan berdasarkan koordinat dari
+                            field lokasi_in.
                             <ul class="mb-0 mt-2">
                                 <li><strong>Klik marker</strong> untuk melihat detail presensi dan foto</li>
                                 <li><strong>Klik area kosong di peta</strong> untuk melihat koordinat lokasi</li>
@@ -133,7 +134,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <img id="modalImage" src="" alt="Foto Presensi" class="img-fluid" style="max-height: 70vh; border-radius: 8px;">
+                <img id="modalImage" src="" alt="Foto Presensi" class="img-fluid"
+                    style="max-height: 70vh; border-radius: 8px;">
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
@@ -194,10 +196,44 @@
         // Initialize map
         var map = L.map('map').setView([-6.2088, 106.8456], 10); // Default Jakarta
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Define layers
+        var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        });
+
+        var googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        var googleHybrid = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        var googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        var googleTerrain = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+
+        // Add default layer
+        osm.addTo(map);
+
+        // Layer control
+        var baseMaps = {
+            "OpenStreetMap": osm,
+            "Google Streets": googleStreets,
+            "Google Hybrid": googleHybrid,
+            "Google Satellite": googleSat,
+            "Google Terrain": googleTerrain
+        };
+
+        L.control.layers(baseMaps).addTo(map);
 
         // Add click event to map to show coordinates
         map.on('click', function(e) {

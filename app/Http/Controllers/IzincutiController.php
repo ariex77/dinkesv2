@@ -20,6 +20,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\Approval;
+use App\Models\ApprovalLayer;
+use App\Services\ApprovalService;
 
 class IzincutiController extends Controller
 {
@@ -67,6 +70,8 @@ class IzincutiController extends Controller
         if (!empty($request->kode_dept)) {
             $qcuti->where('karyawan.kode_dept', $request->kode_dept);
         }
+        
+        $qcuti->addSelect('karyawan.kode_dept');
 
         if (!empty($request->status) || $request->status === '0') {
             $qcuti->where('presensi_izincuti.status', $request->status);
@@ -188,6 +193,7 @@ class IzincutiController extends Controller
                 'kode_cuti' => $request->kode_cuti,
                 'keterangan' => $request->keterangan,
                 'status' => 0,
+                'approval_step' => 1,
                 'id_user' => $user->id,
             ];
 
@@ -414,6 +420,7 @@ class IzincutiController extends Controller
         $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
         $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
             ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
+            ->select('presensi_izincuti.*', 'karyawan.kode_cabang', 'karyawan.kode_dept')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -426,15 +433,72 @@ class IzincutiController extends Controller
             }
         }
         
-        $presensi = Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->get();
+        DB::beginTransaction();
         try {
-            Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->update([
-                'status' => 0
-            ]);
-            Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->delete();
-            Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
-            return Redirect::back()->with(messageSuccess('Data Berhasil Dibatalkan'));
+            // Case 1: Status is Pending (0) but moved steps (Intermediate Cancellation)
+             if ($izincuti->status == 0) {
+                 // Logic: Find the approval for the *previous* step (current_step - 1)
+                 $lastStep = $izincuti->approval_step - 1;
+                 
+                $lastApproval = Approval::where('approvable_type', Izincuti::class)
+                    ->where('approvable_id', $kode_izin_cuti)
+                    ->where('level', $lastStep)
+                    ->where('user_id', $user->id) // Must be the one who approved it
+                    ->first();
+
+                if ($lastApproval) {
+                    $lastApproval->delete();
+                    Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->update([
+                        'approval_step' => $lastStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval dibatalkan. Kembali ke tahap sebelumnya.'));
+                } else {
+                     return Redirect::back()->with(messageError('Anda tidak dapat membatalkan approval ini (Bukan approver terakhir atau sudah diproses lanjut).'));
+                }
+            }
+            // Case 2: Status is Final Approved (1)
+            else if ($izincuti->status == 1) {
+                  // Find final approval record (highest level)
+                 $lastApproval = Approval::where('approvable_type', Izincuti::class)
+                    ->where('approvable_id', $kode_izin_cuti)
+                    ->where('user_id', $user->id)
+                    ->orderBy('level', 'desc')
+                    ->first();
+
+                if($lastApproval){
+                     // Revert step to this level (so it becomes pending at this level again)
+                     $revertStep = $lastApproval->level;
+                     $lastApproval->delete();
+                     
+                     // Delete Presensi Data & Approveizincuti
+                     $presensi = Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->get();
+                     Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                     Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->delete();
+
+                     Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->update([
+                        'status' => 0,
+                        'approval_step' => $revertStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval final dibatalkan. Kembali ke tahap sebelumnya.'));
+
+                } else {
+                    // Fallback/Legacy
+                    $presensi = Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->get();
+                    Izincuti::where('kode_izin_cuti', $kode_izin_cuti)->update([
+                        'status' => 0
+                    ]);
+                    Approveizincuti::where('kode_izin_cuti', $kode_izin_cuti)->delete();
+                    Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Data Berhasil Dibatalkan'));
+                }
+            }
+            return Redirect::back()->with(messageError('Status tidak valid untuk pembatalan.'));
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return Redirect::back()->with(messageError($e->getMessage()));
         }
     }

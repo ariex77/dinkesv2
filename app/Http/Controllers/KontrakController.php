@@ -26,6 +26,16 @@ class KontrakController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
+        // Check if user is Karyawan
+        if ($user->hasRole('karyawan')) {
+            $userkaryawan = \App\Models\Userkaryawan::where('id_user', $user->id)->first();
+            $kontraks = Kontrak::where('nik', $userkaryawan->nik)
+                ->orderByDesc('tanggal')
+                ->get();
+            
+            return view('datamaster.kontrak.index_mobile', compact('kontraks'));
+        }
+
         $query = Kontrak::select(
             'kontrak.*',
             'karyawan.nama_karyawan',
@@ -232,6 +242,67 @@ class KontrakController extends Controller
         }
     }
 
+    public function show(string $encryptedId)
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $id = Crypt::decrypt($encryptedId);
+
+        $kontrak = Kontrak::select(
+            'kontrak.*',
+            'karyawan.nama_karyawan',
+            'karyawan.tempat_lahir',
+            'karyawan.tanggal_lahir',
+            'karyawan.jenis_kelamin',
+            'karyawan.alamat',
+            'karyawan.no_ktp',
+            'jabatan.nama_jabatan',
+            'cabang.nama_cabang',
+            'departemen.nama_dept',
+            'gaji.jumlah as jumlah_gaji'
+        )
+            ->leftJoin('karyawan', 'kontrak.nik', '=', 'karyawan.nik')
+            ->leftJoin('jabatan', 'kontrak.kode_jabatan', '=', 'jabatan.kode_jabatan')
+            ->leftJoin('cabang', 'kontrak.kode_cabang', '=', 'cabang.kode_cabang')
+            ->leftJoin('departemen', 'kontrak.kode_dept', '=', 'departemen.kode_dept')
+            ->leftJoin('karyawan_gaji_pokok as gaji', 'kontrak.kode_gaji', '=', 'gaji.kode_gaji')
+            ->where('kontrak.id', $id)
+            ->firstOrFail();
+
+        // Cek akses
+        if ($user->hasRole('karyawan')) {
+            $userkaryawan = \App\Models\Userkaryawan::where('id_user', $user->id)->first();
+            if (!$userkaryawan || $kontrak->nik !== $userkaryawan->nik) {
+                abort(403, 'Anda tidak memiliki akses ke kontrak ini.');
+            }
+        } elseif (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+
+            if (!in_array($kontrak->kode_cabang, $userCabangs) || !in_array($kontrak->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke kontrak ini.');
+            }
+        }
+
+        $tunjanganItems = Detailtunjangan::select(
+            'jenis_tunjangan.jenis_tunjangan as jenis',
+            'karyawan_tunjangan_detail.jumlah'
+        )
+            ->join('jenis_tunjangan', 'karyawan_tunjangan_detail.kode_jenis_tunjangan', '=', 'jenis_tunjangan.kode_jenis_tunjangan')
+            ->where('karyawan_tunjangan_detail.kode_tunjangan', $kontrak->kode_tunjangan)
+            ->get();
+            
+        $pengaturan = \App\Models\Pengaturanumum::first();
+
+        if ($user->hasRole('karyawan')) {
+            return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan'));
+        }
+        
+        // For now, admin also uses the same view or we can create a desktop view later
+        // return view('datamaster.kontrak.show', compact('kontrak', 'tunjanganItems'));
+        return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan'));
+    }
+
     public function print(string $encryptedId)
     {
         /** @var \App\Models\User $user */
@@ -262,12 +333,15 @@ class KontrakController extends Controller
 
         // Cek akses jika bukan super admin
         if (!$user->isSuperAdmin()) {
-            $userCabangs = $user->getCabangCodes();
-            $userDepartemens = $user->getDepartemenCodes();
+            if (!$user->hasRole('karyawan')) {
+                $userCabangs = $user->getCabangCodes();
+                $userDepartemens = $user->getDepartemenCodes();
 
-            if (!in_array($kontrak->kode_cabang, $userCabangs) || !in_array($kontrak->kode_dept, $userDepartemens)) {
-                abort(403, 'Anda tidak memiliki akses ke kontrak ini.');
+                if (!in_array($kontrak->kode_cabang, $userCabangs) || !in_array($kontrak->kode_dept, $userDepartemens)) {
+                    abort(403, 'Anda tidak memiliki akses ke kontrak ini.');
+                }
             }
+            
         }
 
         $tunjanganItems = Detailtunjangan::select(

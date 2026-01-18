@@ -118,7 +118,8 @@ class SendWaMessage implements ShouldQueue
             return;
         }
 
-        // Susun URL seperti pada WagatewayController (prefer http:// jika tidak ada skema)
+        // Susun URL seperti pada WagatewayController
+        // Gunakan protokol yang sudah ada di domain_wa_gateway, jika tidak ada default ke http://
         $domain = (string) $domainWaGateway;
         if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
             $domain = 'http://' . $domain;
@@ -137,8 +138,11 @@ class SendWaMessage implements ShouldQueue
             'message' => $this->message,
         ];
 
-        // Gunakan Laravel HTTP client dengan form-encoded seperti di WagatewayController
-        $response = Http::timeout(30)->asForm()->post($url, $payload);
+        // Gunakan JSON format untuk konsistensi dengan endpoint lain (info-device, generate-qr)
+        // Beberapa gateway seperti asfimedia.id membutuhkan JSON format
+        $response = Http::timeout(30)
+            ->asJson()
+            ->post($url, $payload);
 
         Log::info('SendWaMessage: Gateway response', [
             'http' => $response->status(),

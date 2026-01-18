@@ -13,8 +13,7 @@ class Defaultsettingseeder extends Seeder
      */
     public function run(): void
     {
-        Pengaturanumum::create([
-            'id' => 1,
+        Pengaturanumum::updateOrInsert(['id' => 1], [
             'nama_perusahaan' => 'PT. ADAM ADIFA',
             'alamat' => 'Jl. Pemuda No. 1, Surabaya',
             'telepon' => '031-1234567',

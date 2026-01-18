@@ -108,6 +108,22 @@
                  </a>
              </li>
          @endcan
+         @can('pelanggaran.index')
+             <li class="menu-item {{ request()->is(['pelanggaran', 'pelanggaran/*']) ? 'active' : '' }}">
+                 <a href="{{ route('pelanggaran.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-alert-triangle"></i>
+                     <div>Pelanggaran</div>
+                 </a>
+             </li>
+         @endcan
+        @can('pengumuman.index')
+            <li class="menu-item {{ request()->is(['pengumuman', 'pengumuman/*']) ? 'active' : '' }}">
+                <a href="{{ route('pengumuman.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons ti ti-bell"></i>
+                    <div>Pengumuman</div>
+                </a>
+            </li>
+        @endcan
 
          @can('kunjungan.index')
              <li class="menu-item {{ request()->is(['tracking-kunjungan', 'tracking-kunjungan/*']) ? 'active' : '' }}">
@@ -295,7 +311,7 @@
          @endif
         @if (auth()->user()->hasRole(['super admin']))
             <li
-                class="menu-item {{ request()->is(['harilibur', 'harilibur/*', 'jamkerjabydept', 'jamkerjabydept/*', 'generalsetting', 'denda', 'jamkerja', 'jamkerja/*']) ? 'open' : '' }}">
+                class="menu-item {{ request()->is(['harilibur', 'harilibur/*', 'jamkerjabydept', 'jamkerjabydept/*', 'generalsetting', 'denda', 'jamkerja', 'jamkerja/*','approvalfeature','approvalfeature/*']) ? 'open' : '' }}">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons ti ti-settings"></i>
                     <div>Konfigurasi</div>
@@ -327,6 +343,11 @@
                     <li class="menu-item {{ request()->is(['jamkerja', 'jamkerja/*']) ? 'active' : '' }}">
                         <a href="{{ route('jamkerja.index') }}" class="menu-link">
                             <div>Jam Kerja</div>
+                        </a>
+                    </li>
+                    <li class="menu-item {{ request()->is(['approvalfeature', 'approvalfeature/*']) ? 'active' : '' }}">
+                        <a href="{{ route('approvalfeature.index') }}" class="menu-link">
+                            <div>Approval Features</div>
                         </a>
                     </li>
                 </ul>

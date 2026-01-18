@@ -63,9 +63,11 @@ class WagatewayController extends Controller
                 ], 400);
             }
 
-            // Bersihkan domain dari protokol jika ada
-            $domain = str_replace(['http://', 'https://'], '', $domain);
-            $apiUrl = 'http://' . $domain . '/create-device';
+            // Gunakan protokol yang sudah ada di domain_wa_gateway, jika tidak ada default ke http://
+            if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
+                $domain = 'http://' . $domain;
+            }
+            $apiUrl = rtrim($domain, '/') . '/create-device';
 
             // Kirim request ke API
             $response = Http::timeout(30)->post($apiUrl, $apiData);
@@ -173,12 +175,16 @@ class WagatewayController extends Controller
                 ], 400);
             }
 
-            // Bersihkan domain dari protokol jika ada
-            $domain = str_replace(['http://', 'https://'], '', $domain);
-            $apiUrl = 'http://' . $domain . '/generate-qr';
+            // Gunakan protokol yang sudah ada di domain_wa_gateway, jika tidak ada default ke http://
+            if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
+                $domain = 'http://' . $domain;
+            }
+            $apiUrl = rtrim($domain, '/') . '/generate-qr';
 
-            // Kirim request ke API
-            $response = Http::timeout(60)->post($apiUrl, $apiData);
+            // Kirim request ke API dengan JSON body (seperti di Postman)
+            $response = Http::timeout(60)
+                ->asJson()
+                ->post($apiUrl, $apiData);
 
             if ($response->successful()) {
                 $responseData = $response->json();
@@ -295,8 +301,11 @@ class WagatewayController extends Controller
         try {
             // Ambil domain dari general setting
             $domain = $generalsetting->domain_wa_gateway;
-            $domain = str_replace(['http://', 'https://'], '', $domain);
-            $apiUrl = 'http://' . $domain . '/info-device';
+            // Gunakan protokol yang sudah ada di domain_wa_gateway, jika tidak ada default ke http://
+            if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
+                $domain = 'http://' . $domain;
+            }
+            $apiUrl = rtrim($domain, '/') . '/info-device';
 
             // Siapkan data untuk API
             $apiData = [
@@ -304,8 +313,11 @@ class WagatewayController extends Controller
                 'number' => $deviceNumber
             ];
 
-            // Kirim request ke API
-            $response = Http::timeout(30)->post($apiUrl, $apiData);
+            // Kirim request ke API menggunakan POST dengan JSON body (seperti di Postman)
+            // Semua gateway seharusnya support POST dengan JSON
+            $response = Http::timeout(30)
+                ->asJson()
+                ->post($apiUrl, $apiData);
 
             if ($response->successful()) {
                 $responseData = $response->json();
@@ -315,9 +327,25 @@ class WagatewayController extends Controller
                     'data' => $responseData
                 ];
             } else {
+                // Jika POST dengan JSON gagal, coba dengan GET method (untuk kompatibilitas)
+                if ($response->status() == 400) {
+                    $errorResponse = $response->json();
+                    if (isset($errorResponse['msg']) && strpos(strtolower($errorResponse['msg']), 'invalid') !== false) {
+                        // Fallback ke GET method
+                        $response = Http::timeout(30)->get($apiUrl, $apiData);
+                        if ($response->successful()) {
+                            $responseData = $response->json();
+                            return [
+                                'success' => true,
+                                'data' => $responseData
+                            ];
+                        }
+                    }
+                }
+
                 return [
                     'success' => false,
-                    'message' => 'Gagal mengambil informasi device'
+                    'message' => 'Gagal mengambil informasi device: ' . ($response->json()['msg'] ?? $response->body())
                 ];
             }
         } catch (\Exception $e) {
@@ -348,11 +376,12 @@ class WagatewayController extends Controller
             }
 
             // Buat URL API
+            // Gunakan protokol yang sudah ada di domain_wa_gateway, jika tidak ada default ke http://
             $domain = $generalsetting->domain_wa_gateway;
             if (!str_starts_with($domain, 'http://') && !str_starts_with($domain, 'https://')) {
                 $domain = 'http://' . $domain;
             }
-            $apiUrl = $domain . '/send-message';
+            $apiUrl = rtrim($domain, '/') . '/send-message';
 
             // Data untuk API
             $apiData = [
@@ -362,8 +391,10 @@ class WagatewayController extends Controller
                 'message' => $request->message
             ];
 
-            // Kirim request ke API
-            $response = Http::timeout(30)->post($apiUrl, $apiData);
+            // Kirim request ke API dengan JSON format untuk konsistensi dengan endpoint lain
+            $response = Http::timeout(30)
+                ->asJson()
+                ->post($apiUrl, $apiData);
 
             // Debug logging
             Log::info('Test Send Message API Request', [

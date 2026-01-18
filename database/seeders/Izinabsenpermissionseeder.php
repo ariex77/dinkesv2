@@ -15,34 +15,20 @@ class Izinabsenpermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Izin Absen'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Izin Absen']);
 
-        Permission::create([
-            'name' => 'izinabsen.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'izinabsen.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'izinabsen.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'izinabsen.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
+        Permission::firstOrCreate(['name' => 'izinabsen.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'izinabsen.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'izinabsen.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'izinabsen.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

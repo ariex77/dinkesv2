@@ -15,40 +15,21 @@ class Gajipokokpermissionsseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Gaji Pokok'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Gaji Pokok']);
 
-        Permission::create([
-            'name' => 'gajipokok.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'gajipokok.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'gajipokok.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-
-        Permission::create([
-            'name' => 'gajipokok.show',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'gajipokok.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
+        Permission::firstOrCreate(['name' => 'gajipokok.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'gajipokok.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'gajipokok.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'gajipokok.show'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'gajipokok.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

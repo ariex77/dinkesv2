@@ -10,6 +10,7 @@ use App\Models\Departemen;
 use App\Models\Karyawan;
 use App\Models\Lembur;
 use App\Models\Presensi;
+use App\Models\Pengumuman;
 use App\Models\User;
 use App\Models\Userkaryawan;
 use App\Jobs\SendWaMessage;
@@ -98,6 +99,42 @@ class DashboardController extends Controller
             }
             $data['is_birthday'] = $isBirthday;
             $data['umur'] = $umur;
+
+            // Cek Notifikasi Kontrak Berakhir (H-30)
+            $kontrak = DB::table('kontrak')
+                ->where('nik', $userkaryawan->nik)
+                ->where('status_kontrak', '1')
+                ->orderBy('sampai', 'desc')
+                ->first();
+
+            $notif_kontrak = null;
+            if ($kontrak) {
+                $tgl_akhir = Carbon::parse($kontrak->sampai);
+                $today = Carbon::now(config('app.timezone'));
+                $sisa_hari = $today->diffInDays($tgl_akhir, false); // false agar negatif jika lewat
+
+                // Jika sisa hari <= 30 hari dan belum lewat (atau lewat hari ini)
+                // Kita anggap sisa_hari < 0 berarti sudah expired
+                if ($sisa_hari >= 0 && $sisa_hari <= 30) {
+                     $notif_kontrak = [
+                        'sisa_hari' => $sisa_hari,
+                        'tanggal_akhir' => $tgl_akhir->translatedFormat('d F Y')
+                    ];
+                }
+            }
+            $data['notif_kontrak'] = $notif_kontrak;
+
+            // Cek Notifikasi SP Aktif
+            $notif_sp = DB::table('pelanggaran')
+                ->where('nik', $userkaryawan->nik)
+                ->where('dari', '<=', $today->toDateString())
+                ->where('sampai', '>=', $today->toDateString())
+                ->first();
+            
+            $data['notif_sp'] = $notif_sp;
+
+            // Cek Pengumuman Aktif (Ambil yang terakhir dibuat)
+            $data['pengumuman'] = Pengumuman::orderBy('created_at', 'desc')->first();
 
             return view('dashboard.karyawan', $data);
         } else {

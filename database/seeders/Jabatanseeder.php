@@ -13,8 +13,7 @@ class Jabatanseeder extends Seeder
      */
     public function run(): void
     {
-        Jabatan::create([
-            'kode_jabatan' => 'J01',
+        Jabatan::firstOrCreate(['kode_jabatan' => 'J01'], [
             'nama_jabatan' => 'Kepala IT'
         ]);
     }

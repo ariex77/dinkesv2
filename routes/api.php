@@ -27,6 +27,10 @@ Route::post('/presensi/log', [App\Http\Controllers\Api\PresensiController::class
 Route::post('/presensi/receive-data', [App\Http\Controllers\Api\PresensiController::class, 'receiveRevoData'])
     ->withoutMiddleware('throttle:api');
 
+// Endpoint untuk capture data mentah ADMS
+Route::any('/adms/capture', [App\Http\Controllers\Api\AdmsController::class, 'capture'])
+    ->withoutMiddleware('throttle:api');
+
 // Endpoint untuk menerima data dari mesin Fingerspot REVO melalui ADMS
 // Route::post('/presensi/revo', [App\Http\Controllers\Api\PresensiController::class, 'receiveRevoData'])
 //     ->withoutMiddleware('throttle:api');

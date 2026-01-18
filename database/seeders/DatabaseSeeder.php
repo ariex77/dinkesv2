@@ -22,11 +22,60 @@ class DatabaseSeeder extends Seeder
         // ]);
 
         $this->call([
-            Cabangseeder::class,
-            Departemenseeder::class,
-            Jabatanseeder::class,
-            Statuskawinseeder::class,
-            Cutiseeder::class
+            
+            
+           
+            
+            // Settings & Features
+            //Defaultsettingseeder::class,
+            //ApprovalFeatureSeeder::class,
+            //ApprovalLayerSeeder::class,
+
+            // Permissions - Groups & Roles Base
+            Gruppermissionseeder::class,
+            GrupDetailPermissionSeeder::class,
+            GrupSetJamKerjaPermissionSeeder::class,
+
+            // Permissions - Alphabetical
+            AktivitasKaryawanPermissionSeeder::class,
+            AktivitasKaryawanKaryawanPermissionSeeder::class,
+            ApprovalLayerPermissionSeeder::class,
+            Bersihkanfotopermissionseeder::class,
+            Bpjskesehatanpermissionseeder::class,
+            Bpjstenagakerjapermissionseeder::class,
+            Gajipokokpermissionsseeder::class,
+            Hariliburpermissionseeder::class,
+            Izinabsenpermissionseeder::class,
+            Izincutipermissionseeder::class,
+            Izindinaspermissionseeder::class,
+            Izinsakitpermissionseeder::class,
+            Jabatanpermissionseeder::class,
+            Jamkerjabydeptpermissionseeder::class,
+            Jamkerjapermissionseeder::class,
+            Jenistunjanganpermissionseeder::class,
+            KaryawanSetCabangPermissionSeeder::class,
+            KontrakKaryawanPermissionSeeder::class,
+            Kontrakpermissionseeder::class,
+            KunjunganPermissionSeeder::class,
+            Laporanpermissionseeder::class,
+            Lemburpermissionseeder::class,
+            PelanggaranPermissionSeeder::class,
+            Pengaturanumumpermissionseeder::class,
+            PengumumanPermissionSeeder::class,
+            Penyesuaiangajipermissionseeder::class,
+            Presensipermissionseeder::class,
+            Slipgajipermissionseeder::class,
+            Slipgajikaryawanpermissionseeder::class,
+            Trackingpresensipermissionseeder::class,
+            Tunjanganpermissionseeder::class,
+            Wagatewaypermissionseeder::class,
+            
+            // Specific Assignments
+            givePermissionizindinastokaryawanseeder::class,
+
+            // Dummy & Transactional Data
+            //DummyDataSeeder::class,
+            //KunjunganSeeder::class,
         ]);
     }
 }

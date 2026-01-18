@@ -66,6 +66,7 @@ class ResetDataController extends Controller
             $this->deleteTable('users_karyawan', $deletedTables, $errors);
             $this->deleteTable('presensi_jamkerja_byday', $deletedTables, $errors);
             $this->deleteTable('presensi_jamkerja_bydate', $deletedTables, $errors);
+            $this->deleteTable('pelanggaran', $deletedTables, $errors);
 
             // Tahap 6: Tabel payroll yang memiliki foreign key ke karyawan
             $this->deleteTable('karyawan_tunjangan', $deletedTables, $errors);

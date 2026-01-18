@@ -13,8 +13,7 @@ class Cabangseeder extends Seeder
      */
     public function run(): void
     {
-        Cabang::create([
-            'kode_cabang' => 'TSM',
+        Cabang::firstOrCreate(['kode_cabang' => 'TSM'], [
             'nama_cabang' => 'TASIKMALAYA',
             'alamat_cabang' => 'Jln. Perintis Kemerdekaan No. 80 Kawalu Tasikmalaya',
             'telepon_cabang' => '0265311766',

@@ -53,6 +53,32 @@
             }
         }
     </style>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      console.log("OneSignal Debug: Loading SDK...");
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        var appId = "{{ config('services.onesignal.app_id') }}";
+        console.log("OneSignal Debug: App ID from Config:", appId);
+
+        if (!appId) {
+            console.error("OneSignal Debug: CRITICAL - App ID is empty! Check config/services.php and .env");
+        }
+
+        OneSignal.init({
+          appId: appId,
+          serviceWorker: {
+              path: "/sw.js",
+          }
+        }).then(function() {
+             var perm = String(Notification.permission);
+             if (perm === 'default') {
+                 OneSignal.Slidedown.promptPush();
+             }
+        });
+      });
+    </script>
 </head>
 
 <body>
@@ -64,7 +90,7 @@
                         @csrf
                         <div class="logo">
                             <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
-                            <h4>E-Presensi v2.0</h4>
+                            <h4>GAWE V3</h4>
                         </div>
 
                         <div class="heading">
@@ -121,10 +147,11 @@
 
                 <div class="carousel">
                     <div class="images-wrapper">
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-2" alt="Presensi illustration 2" />
-                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-3" alt="Presensi illustration 3" />
+                        <img src="{{ asset('assets/login/images/image1.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
+                        <img src="{{ asset('assets/login/images/image2.png') }}" class="image img-2" alt="Presensi illustration 2" />
+                        <img src="{{ asset('assets/login/images/image3.png') }}" class="image img-3" alt="Presensi illustration 3" />
                     </div>
+
                     <div class="text-slider">
                         <div class="text-wrap">
                             <div class="text-group">

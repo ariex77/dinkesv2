@@ -126,27 +126,45 @@
         </table>
     </div>
     <div class="content">
-        <table class="datatable3" style="width: 250%">
+        <table class="datatable3" style="width: 250%; table-layout: fixed">
+            <colgroup>
+                <col style="width: 1%">
+                
+                <col style="width: 5%">
+                
+                @php
+                    $tgl_col = $periode_dari;
+                @endphp
+                @while (strtotime($tgl_col) <= strtotime($periode_sampai))
+                    <col style="width: 100px">
+                    @php
+                        $tgl_col = date('Y-m-d', strtotime('+1 day', strtotime($tgl_col)));
+                    @endphp
+                @endwhile
+                
+                {{-- Rekap Columns (9 columns) --}}
+                <col style="width: 2%">
+                <col style="width: 2%">
+                <col style="width: 2%">
+                <col style="width: 2%">
+                
+            </colgroup>
             <thead>
                 <tr>
                     <th rowspan="3">No</th>
-                    <th rowspan="3">Nik</th>
+                   
                     <th rowspan="3">Nama Karyawan</th>
-                    <th rowspan="3">Jabatan</th>
-                    <th rowspan="3">Dept</th>
-                    <th rowspan="3">Cabang</th>
-                    <th colspan="{{ $jmlhari }}">Tanggal</th>
-                    <th rowspan="3">Denda</th>
-                    <th rowspan="3">Pot. Jam</th>
-                    <th rowspan="3">Lembur</th>
-                    <th colspan="9">Rekap</th>
+                    
+                    
+                    
+                    <th colspan="4">Rekap</th>
                 </tr>
                 <tr>
                     @php
                         $tanggal_presensi = $periode_dari;
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
-                        <th style="width: 100px">{{ getHari(date('Y-m-d', strtotime($tanggal_presensi))) }}</th>
+                        
                         @php
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
@@ -155,18 +173,14 @@
                     <th rowspan="2">Izin</th>
                     <th rowspan="2">Sakit</th>
                     <th rowspan="2">Alfa</th>
-                    <th rowspan="2">Libur</th>
-                    <th rowspan="2">Terlambat</th>
-                    <th rowspan="2">Tidak Scan Masuk</th>
-                    <th rowspan="2">Tidak Scan Pulang</th>
-                    <th rowspan="2">Pulang Cepat</th>
+                    
                 </tr>
                 <tr>
                     @php
                         $tanggal_presensi = $periode_dari;
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
-                        <th>{{ date('d', strtotime($tanggal_presensi)) }}</th>
+                        
                         @php
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
@@ -184,11 +198,9 @@
                     @endphp
                     <tr>
                         <td style="width:1%">{{ $loop->iteration }}</td>
-                        <td style="width:2%">'{{ $d['nik_show'] ?? $d['nik'] }}</td>
+                        
                         <td style="width:5%">{{ $d['nama_karyawan'] }}</td>
-                        <td style="width:3%">{{ $d['nama_jabatan'] }}</td>
-                        <td style="width:2%">{{ $d['kode_dept'] }}</td>
-                        <td style="width:2%">{{ $d['kode_cabang'] }}</td>
+                        
                         @php
                             $total_denda = 0;
                             $total_potongan_jam = 0;
@@ -543,26 +555,17 @@
 
                                 $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
                             @endphp
-                            <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}">
-                                {!! $ket !!}
-
-                            </td>
+                            
                             @php
                                 $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                             @endphp
                         @endwhile
-                        <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
-                        <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
-                        <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
+                        
                         <td style="text-align:center">{{ $jml_hadir }}</td>
                         <td style="text-align:center">{{ $jml_izin }}</td>
                         <td style="text-align:center">{{ $jml_sakit }}</td>
                         <td style="text-align:center">{{ $jml_alfa }}</td>
-                        <td style="text-align:center">{{ $jml_libur }}</td>
-                        <td style="text-align:center">{{ $jml_terlambat }}</td>
-                        <td style="text-align:center">{{ $jml_tidakscanmasuk }}</td>
-                        <td style="text-align:center">{{ $jml_tidakscanpulang }}</td>
-                        <td style="text-align:center">{{ $jml_pulangcepat }}</td>
+                        
                     </tr>
                 @endforeach
             </tbody>

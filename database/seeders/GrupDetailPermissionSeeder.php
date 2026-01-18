@@ -16,24 +16,20 @@ class GrupDetailPermissionSeeder extends Seeder
     public function run(): void
     {
         // Cari permission group Grup
-        $permissiongroup = Permission_group::where('name', 'Grup')->first();
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Grup']);
 
-        if ($permissiongroup) {
-            // Cek apakah permission sudah ada
-            $existingPermission = Permission::where('name', 'grup.detail')->first();
+        // Pastikan permission grup.detail ada
+        $permission = Permission::firstOrCreate([
+            'name' => 'grup.detail'
+        ], [
+            'id_permission_group' => $permissiongroup->id
+        ]);
 
-            if (!$existingPermission) {
-                Permission::create([
-                    'name' => 'grup.detail',
-                    'id_permission_group' => $permissiongroup->id
-                ]);
-
-                // Berikan permission ke role admin (ID 1)
-                $roleID = 1;
-                $role = Role::findById($roleID);
-                $permission = Permission::where('name', 'grup.detail')->first();
-                $role->givePermissionTo($permission);
-            }
+        // Berikan permission ke role admin (ID 1)
+        $roleID = 1;
+        $role = Role::findById($roleID);
+        if ($role && !$role->hasPermissionTo($permission)) {
+            $role->givePermissionTo($permission);
         }
     }
 }

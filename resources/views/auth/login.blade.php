@@ -61,7 +61,7 @@
                         {{-- <img src="{{ asset('assets/img/logo/hibah.png') }}" alt="" width="160"> --}}
                     </div>
                     <!-- /Logo -->
-                    <h4 class="mb-1 pt-2">E-PRESENSI V2.0! 👋</h4>
+                    <h4 class="mb-1 pt-2">E-PRESENSI! 👋</h4>
                     <p class="mb-4">Silahkan Login !</p>
                     <x-alert-error :messages="$errors->get('id_user')" class="mt-2" />
                     <form id="formAuthentication" class="mb-3" action="{{ route('login') }}" method="POST">

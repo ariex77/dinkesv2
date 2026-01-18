@@ -16,33 +16,24 @@ class GrupSetJamKerjaPermissionSeeder extends Seeder
     public function run(): void
     {
         // Cari permission group Grup
-        $permissiongroup = Permission_group::where('name', 'Grup')->first();
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Grup']);
 
-        if (!$permissiongroup) {
-            $this->command->error('Permission group "Grup" tidak ditemukan');
-            return;
-        }
+        $permission = Permission::firstOrCreate([
+            'name' => 'grup.setJamKerja'
+        ], [
+            'id_permission_group' => $permissiongroup->id
+        ]);
 
-        // Cek apakah permission sudah ada
-        $existingPermission = Permission::where('name', 'grup.setJamKerja')->first();
+        $this->command->info('Permission grup.setJamKerja ensured.');
 
-        if (!$existingPermission) {
-            Permission::create([
-                'name' => 'grup.setJamKerja',
-                'id_permission_group' => $permissiongroup->id
-            ]);
-
-            $this->command->info('Permission grup.setJamKerja berhasil ditambahkan');
-
-            // Berikan permission ke role ID 1 (admin)
-            $roleID = 1;
-            $role = Role::findById($roleID);
-            if ($role) {
-                $role->givePermissionTo('grup.setJamKerja');
-                $this->command->info('Permission grup.setJamKerja diberikan ke role admin');
-            }
+        // Berikan permission ke role ID 1 (admin)
+        $roleID = 1;
+        $role = Role::findById($roleID);
+        if ($role && !$role->hasPermissionTo($permission)) {
+            $role->givePermissionTo($permission);
+            $this->command->info('Permission grup.setJamKerja diberikan ke role admin');
         } else {
-            $this->command->info('Permission grup.setJamKerja sudah ada');
+             $this->command->info('Permission grup.setJamKerja sudah ada atau role tidak ditemukan');
         }
     }
 }

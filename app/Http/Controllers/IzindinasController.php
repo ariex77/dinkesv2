@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use App\Models\Approval;
+use App\Models\ApprovalLayer;
+use App\Services\ApprovalService;
 
 class IzindinasController extends Controller
 {
@@ -44,7 +47,7 @@ class IzindinasController extends Controller
             }
         }
 
-        $qizin->select('presensi_izindinas.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang');
+        $qizin->select('presensi_izindinas.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'karyawan.kode_dept');
         if (!empty($request->dari) && !empty($request->sampai)) {
             $qizin->whereBetween('presensi_izindinas.tanggal', [$request->dari, $request->sampai]);
         }
@@ -215,6 +218,7 @@ class IzindinasController extends Controller
                 'sampai' => $request->sampai,
                 'keterangan' => $request->keterangan,
                 'status' => 0,
+                'approval_step' => 1,
             ]);
             DB::commit();
 
@@ -260,10 +264,12 @@ class IzindinasController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
+        $approvalService = app(ApprovalService::class);
         
         $kode_izin_dinas = Crypt::decrypt($kode_izin_dinas);
         $izindinas = Izindinas::where('kode_izin_dinas', $kode_izin_dinas)
             ->join('karyawan', 'presensi_izindinas.nik', '=', 'karyawan.nik')
+            ->select('presensi_izindinas.*', 'karyawan.kode_dept', 'karyawan.kode_cabang')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -276,13 +282,59 @@ class IzindinasController extends Controller
             }
         }
         
+        $kode_dept = $izindinas->kode_dept;
+        $currentStep = $izindinas->approval_step;
+        $userRole = $user->getRoleNames()->first();
+
+         // Check Authorization using Service
+        if (!$approvalService->canApprove('IZIN', $currentStep, $userRole, $kode_dept)) {
+             return Redirect::back()->with(messageError('Anda tidak memiliki wewenang untuk menyetujui tahap ini.'));
+        }
+        
         DB::beginTransaction();
         try {
             if (isset($request->approve)) {
-                Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
-                    'status' => 1
+                 // 1. Record Approval
+                Approval::create([
+                    'approvable_type' => Izindinas::class,
+                    'approvable_id' => $kode_izin_dinas,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'approved',
+                    'keterangan' => 'Approved by ' . $user->name,
                 ]);
+
+                // 2. Check for Next Level rule
+                $nextLevel = $currentStep + 1;
+                $nextRule = ApprovalLayer::where('feature', 'IZIN')
+                    ->where('level', $nextLevel)
+                    ->where(function ($q) use ($kode_dept) {
+                        $q->where('kode_dept', $kode_dept)
+                          ->orWhereNull('kode_dept');
+                    })
+                    ->first();
+                
+                 if ($nextRule) {
+                    // Update to next step
+                    Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update(['approval_step' => $nextLevel]);
+                } else {
+                     // Final Approval
+                    Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
+                        'status' => 1
+                    ]);
+                }
+
             } else {
+                 // REJECTION Logic
+                Approval::create([
+                    'approvable_type' => Izindinas::class,
+                    'approvable_id' => $kode_izin_dinas,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'rejected',
+                    'keterangan' => 'Rejected by ' . $user->name,
+                ]);
+
                 Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
                     'status' => 2
                 ]);
@@ -303,6 +355,7 @@ class IzindinasController extends Controller
         $kode_izin_dinas = Crypt::decrypt($kode_izin_dinas);
         $izindinas = Izindinas::where('kode_izin_dinas', $kode_izin_dinas)
             ->join('karyawan', 'presensi_izindinas.nik', '=', 'karyawan.nik')
+            ->select('presensi_izindinas.*', 'karyawan.kode_dept', 'karyawan.kode_cabang')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -315,12 +368,63 @@ class IzindinasController extends Controller
             }
         }
         
+        DB::beginTransaction();
         try {
-            Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
-                'status' => 0
-            ]);
-            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+             // Case 1: Status is Pending (0) but moved steps (Intermediate Cancellation)
+             if ($izindinas->status == 0) {
+                 // Logic: Find the approval for the *previous* step (current_step - 1)
+                 $lastStep = $izindinas->approval_step - 1;
+                 
+                 $lastApproval = Approval::where('approvable_type', Izindinas::class)
+                    ->where('approvable_id', $kode_izin_dinas)
+                    ->where('level', $lastStep)
+                    ->where('user_id', $user->id) // Must be the one who approved it
+                    ->first();
+
+                if ($lastApproval) {
+                    $lastApproval->delete();
+                    Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
+                        'approval_step' => $lastStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval dibatalkan. Kembali ke tahap sebelumnya.'));
+                } else {
+                     return Redirect::back()->with(messageError('Anda tidak dapat membatalkan approval ini (Bukan approver terakhir atau sudah diproses lanjut).'));
+                }
+             }
+            // Case 2: Status is Final Approved (1)
+            else if ($izindinas->status == 1) {
+                  // Find final approval record (highest level)
+                 $lastApproval = Approval::where('approvable_type', Izindinas::class)
+                    ->where('approvable_id', $kode_izin_dinas)
+                    ->where('user_id', $user->id)
+                    ->orderBy('level', 'desc')
+                    ->first();
+                    
+                if($lastApproval){
+                     // Revert step to this level (so it becomes pending at this level again)
+                     $revertStep = $lastApproval->level;
+                     $lastApproval->delete();
+                     
+                     Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
+                        'status' => 0,
+                        'approval_step' => $revertStep
+                    ]);
+                    DB::commit();
+                     return Redirect::back()->with(messageSuccess('Approval final dibatalkan. Kembali ke tahap sebelumnya.'));
+                } else {
+                    // Fallback
+                    Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update([
+                        'status' => 0
+                    ]);
+                     DB::commit();
+                    return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+                }
+            }
+             return Redirect::back()->with(messageError('Status tidak valid untuk pembatalan.'));
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return Redirect::back()->with(messageError($e->getMessage()));
         }
     }

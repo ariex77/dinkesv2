@@ -75,8 +75,8 @@ class KunjunganSeeder extends Seeder
             'Koordinasi dengan tim QC',
         ];
 
-        // Cari karyawan dengan NIK 22.22.224
-        $karyawan = Karyawan::where('nik', '22.22.224')->first();
+        // Cari karyawan dengan NIK 250100001 (dari DummyDataSeeder)
+        $karyawan = Karyawan::where('nik', '250100001')->first();
 
         if (!$karyawan) {
             $this->command->warn('Karyawan dengan NIK 22.22.224 tidak ditemukan.');
@@ -90,6 +90,16 @@ class KunjunganSeeder extends Seeder
         for ($i = 0; $i < min(10, count($locations)); $i++) {
             // Gunakan lokasi secara berurutan (sudah diurutkan dari dekat ke jauh)
             $location = $locations[$i];
+            
+            // Check idempotency
+             $exists = Kunjungan::where('nik', $karyawan->nik)
+                ->where('tanggal_kunjungan', $today->format('Y-m-d'))
+                ->where('lokasi', $location['lat'] . ',' . $location['lng'])
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
 
             // Random deskripsi
             $description = $descriptions[array_rand($descriptions)];

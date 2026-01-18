@@ -15,23 +15,18 @@ class Bersihkanfotopermissionseeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Bersihkan Foto'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Bersihkan Foto']);
 
-        Permission::create([
-            'name' => 'bersihkanfoto.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'bersihkanfoto.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
+        Permission::firstOrCreate(['name' => 'bersihkanfoto.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'bersihkanfoto.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1; // Super Admin
         $role = Role::findById($roleID);
-        $role->givePermissionTo($permissions);
+        foreach ($permissions as $permission) {
+             if ($role && !$role->hasPermissionTo($permission)) {
+                 $role->givePermissionTo($permission);
+             }
+        }
     }
 }

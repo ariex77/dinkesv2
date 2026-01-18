@@ -35,6 +35,22 @@
 
         }
 
+        #section-notification {
+            position: absolute;
+            left: 15px;
+            top: 15px;
+        }
+
+        .notification-btn {
+            color: var(--bg-indicator);
+            font-size: 30px;
+            text-decoration: none;
+        }
+
+        .notification-btn:hover {
+            color: var(--color-nav-hover);
+        }
+
 
 
         #section-user {
@@ -125,6 +141,11 @@
         }
     </style>
     <div id="header-section">
+        <div id="section-notification">
+            <a href="#" class="notification-btn">
+                <ion-icon name="notifications-outline"></ion-icon>
+            </a>
+        </div>
         <div id="section-logout">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -166,6 +187,156 @@
             <h2 id="jam" class="mb-2" style="text-shadow: 0px 0px 2px #04ab86b7; line-height: 1rem"></h2>
             <span class="">Hari ini : {{ getNamaHari(date('D')) }}, {{ DateToIndo(date('Y-m-d')) }}</span>
         </div>
+        
+        <!-- ALERT SECTION (CAROUSEL / SINGLE) -->
+        @php
+            $activeAlerts = [];
+            // Prioritas urutan: Pengumuman, Kontrak, SP
+            if (!empty($pengumuman)) $activeAlerts[] = 'pengumuman';
+            if (!empty($notif_kontrak)) $activeAlerts[] = 'kontrak';
+            if (!empty($notif_sp)) $activeAlerts[] = 'sp';
+        @endphp
+
+        @if (count($activeAlerts) > 0)
+            @if (count($activeAlerts) > 1)
+                <!-- Styles for Carousel -->
+                <style>
+                    .carousel-indicators {
+                        bottom: -35px; /* Adjust position further down */
+                    }
+                    .carousel-indicators li {
+                        width: 10px;
+                        height: 10px;
+                        border-radius: 100%;
+                        background-color: #cbd5e0;
+                        border: none;
+                        opacity: 1;
+                        margin: 0 4px;
+                        transition: all 0.3s ease;
+                    }
+                    .carousel-indicators li.active {
+                        width: 25px; /* Pill shape for active */
+                        border-radius: 5px;
+                        background-color: #32745e; /* Theme color */
+                    }
+                </style>
+                <div id="alertCarousel" class="carousel slide" data-ride="carousel" style="margin-top: 10px; margin-bottom: 45px;">
+                    <ol class="carousel-indicators">
+                        @foreach($activeAlerts as $index => $type)
+                            <li data-target="#alertCarousel" data-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"></li>
+                        @endforeach
+                    </ol>
+                    <div class="carousel-inner" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        @foreach($activeAlerts as $index => $type)
+                            <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                                @if($type == 'kontrak')
+                                    <div class="alert alert-warning fade show mb-0" role="alert" style="border: 1px solid #ffeeba; background-color: #fff3cd; color: #856404; border-radius: 15px;">
+                                        <div style="display: flex; align-items: start;">
+                                            <div style="background: rgba(255, 193, 7, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                                <ion-icon name="alert-circle" style="font-size: 24px; color: #ffc107;"></ion-icon>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0 0 5px 0; font-weight: 700; color: #856404; font-size: 15px;">Masa Kontrak Segera Berakhir</h4>
+                                                <p style="font-size: 12px; margin-bottom: 0; line-height: 1.4; opacity: 0.9;">
+                                                    Kontrak kerja Anda tersisa <strong>{{ $notif_kontrak['sisa_hari'] }} hari</strong> lagi (Berakhir: {{ $notif_kontrak['tanggal_akhir'] }}).
+                                                    <br><span style="font-size: 11px; margin-top: 4px; display: inline-block; opacity: 0.8;">Silakan hubungi HRD / Personalia.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($type == 'sp')
+                                    <div class="alert alert-danger fade show mb-0" role="alert" style="border: 1px solid #f5c6cb; background-color: #f8d7da; color: #721c24; border-radius: 15px;">
+                                        <div style="display: flex; align-items: start;">
+                                            <div style="background: rgba(220, 53, 69, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                                <ion-icon name="warning" style="font-size: 24px; color: #dc3545;"></ion-icon>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0 0 5px 0; font-weight: 700; color: #721c24; font-size: 15px;">Status Dalam Masa SP</h4>
+                                                <p style="font-size: 12px; margin-bottom: 0; line-height: 1.4; opacity: 0.9;">
+                                                    Anda sedang dalam masa <strong>{{ $notif_sp->jenis_sp }}</strong><br>
+                                                    Berlaku hingga: <strong>{{ \Carbon\Carbon::parse($notif_sp->sampai)->translatedFormat('d F Y') }}</strong>
+                                                    <br><span style="font-size: 11px; margin-top: 4px; display: inline-block; opacity: 0.8;">Harap tingkatkan kinerja & kedisiplinan Anda.</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @elseif($type == 'pengumuman')
+                                    <div class="alert alert-info fade show mb-0" role="alert" style="border: 1px solid #b8daff; background-color: #e3f2fd; color: #0c5460; border-radius: 15px;">
+                                        <div style="display: flex; align-items: start;">
+                                            <div style="background: rgba(12, 84, 96, 0.15); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                                <ion-icon name="megaphone" style="font-size: 24px; color: #0c5460;"></ion-icon>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0 0 0 0; font-weight: 700; color: #0c5460; font-size: 15px;">{{ $pengumuman->judul }}</h4>
+                                                <span style="font-size: 10px;">{{ \Carbon\Carbon::parse($pengumuman->created_at)->translatedFormat('d F Y') }}</span>
+                                                <div style="font-size: 12px; margin-top: 5px; line-height: 1.4; opacity: 0.9;">
+                                                    {{ $pengumuman->isi }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @else
+                <!-- Single Alert -->
+                <div class="row" style="margin-top: 10px; margin-bottom: 10px;">
+                    <div class="col-12">
+                        @php $type = $activeAlerts[0]; @endphp
+                        @if($type == 'kontrak')
+                            <div class="alert alert-warning fade show mb-0" role="alert" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #ffeeba; background-color: #fff3cd; color: #856404;">
+                                <div style="display: flex; align-items: start;">
+                                    <div style="background: rgba(255, 193, 7, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                        <ion-icon name="alert-circle" style="font-size: 24px; color: #ffc107;"></ion-icon>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 5px 0; font-weight: 700; color: #856404; font-size: 15px;">Masa Kontrak Segera Berakhir</h4>
+                                        <p style="font-size: 12px; margin-bottom: 0; line-height: 1.4; opacity: 0.9;">
+                                            Kontrak kerja Anda tersisa <strong>{{ $notif_kontrak['sisa_hari'] }} hari</strong> lagi (Berakhir: {{ $notif_kontrak['tanggal_akhir'] }}).
+                                            <br><span style="font-size: 11px; margin-top: 4px; display: inline-block; opacity: 0.8;">Silakan hubungi HRD / Personalia.</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($type == 'sp')
+                            <div class="alert alert-danger fade show mb-0" role="alert" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #f5c6cb; background-color: #f8d7da; color: #721c24;">
+                                <div style="display: flex; align-items: start;">
+                                    <div style="background: rgba(220, 53, 69, 0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                        <ion-icon name="warning" style="font-size: 24px; color: #dc3545;"></ion-icon>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 5px 0; font-weight: 700; color: #721c24; font-size: 15px;">Status Dalam Masa SP</h4>
+                                        <p style="font-size: 12px; margin-bottom: 0; line-height: 1.4; opacity: 0.9;">
+                                            Anda sedang dalam masa <strong>{{ $notif_sp->jenis_sp }}</strong><br>
+                                            Berlaku hingga: <strong>{{ \Carbon\Carbon::parse($notif_sp->sampai)->translatedFormat('d F Y') }}</strong>
+                                            <br><span style="font-size: 11px; margin-top: 4px; display: inline-block; opacity: 0.8;">Harap tingkatkan kinerja & kedisiplinan Anda.</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($type == 'pengumuman')
+                            <div class="alert alert-info fade show mb-0" role="alert" style="border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #b8daff; background-color: #e3f2fd; color: #0c5460;">
+                                <div style="display: flex; align-items: start;">
+                                    <div style="background: rgba(12, 84, 96, 0.15); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+                                        <ion-icon name="megaphone" style="font-size: 24px; color: #0c5460;"></ion-icon>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 0 0; font-weight: 700; color: #0c5460; font-size: 15px;">{{ $pengumuman->judul }}</h4>
+                                        <span style="font-size: 10px;">{{ \Carbon\Carbon::parse($pengumuman->created_at)->translatedFormat('d F Y') }}</span>
+                                        <div style="font-size: 12px; margin-top: 5px; line-height: 1.4; opacity: 0.9;">
+                                            {{ $pengumuman->isi }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+        @endif
+
         <div id="section-presensi">
             <div class="card">
                 <div class="card-body" id="presensi-today">
@@ -309,20 +480,6 @@
                     </div>
                 </a>
             </div>
-            
-            <div class="col-3">
-                <a href="{{ route('slipgaji.index') }}">
-                    <div class="card">
-                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 50px" class="mb-0">
-                            <br>
-                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                Slip Gaji
-                            </span>
-                        </div>
-                    </div>
-                </a>
-            </div>
             <div class="col-3">
                 <a href="javascript:void(0)" id="btnDaftarkanWajah">
                     <div class="card">
@@ -336,8 +493,21 @@
                     </div>
                 </a>
             </div>
+
+            <div class="col-3">
+                <a href="{{ route('slipgaji.index') }}">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 50px" class="mb-0">
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Slip Gaji
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
-        
         <div class="row mt-2">
             @can('aktivitaskaryawan.index')
                 <div class="col-3">
@@ -369,6 +539,8 @@
                     </a>
                 </div>
             @endcan
+            
+
             
         </div>
     </div>

@@ -16,33 +16,25 @@ class KaryawanSetCabangPermissionSeeder extends Seeder
     public function run(): void
     {
         // Cari permission group Karyawan
-        $permissiongroup = Permission_group::where('name', 'Karyawan')->first();
-
-        if (!$permissiongroup) {
-            $this->command->error('Permission group "Karyawan" tidak ditemukan');
-            return;
-        }
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Karyawan']);
 
         // Cek apakah permission sudah ada
-        $existingPermission = Permission::where('name', 'karyawan.setcabang')->first();
+        $permission = Permission::firstOrCreate([
+            'name' => 'karyawan.setcabang',
+        ], [
+            'id_permission_group' => $permissiongroup->id
+        ]);
 
-        if (!$existingPermission) {
-            Permission::create([
-                'name' => 'karyawan.setcabang',
-                'id_permission_group' => $permissiongroup->id
-            ]);
+        $this->command->info('Permission karyawan.setcabang ensured.');
 
-            $this->command->info('Permission karyawan.setcabang berhasil ditambahkan');
-
-            // Berikan permission ke role ID 1 (admin)
-            $roleID = 1;
-            $role = Role::findById($roleID);
-            if ($role) {
-                $role->givePermissionTo('karyawan.setcabang');
-                $this->command->info('Permission karyawan.setcabang diberikan ke role admin');
-            }
+        // Berikan permission ke role ID 1 (admin)
+        $roleID = 1;
+        $role = Role::findById($roleID);
+        if ($role && !$role->hasPermissionTo($permission)) {
+            $role->givePermissionTo($permission);
+            $this->command->info('Permission karyawan.setcabang diberikan ke role admin');
         } else {
-            $this->command->info('Permission karyawan.setcabang sudah ada');
+             $this->command->info('Permission karyawan.setcabang sudah ada atau role tidak ditemukan');
         }
     }
 }

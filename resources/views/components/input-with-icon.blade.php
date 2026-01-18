@@ -16,10 +16,11 @@
     'max' => null,
     'required' => false,
     'hideLabel' => false,
+    'id' => null,
 ])
 <div class="form-group mb-3">
     @if ($label && !$hideLabel)
-        <label for="{{ $name }}" class="form-label" style="font-weight: 600;">
+        <label for="{{ $id ?? $name }}" class="form-label" style="font-weight: 600;">
             {{ $label }}
             @if ($required && !$readonly && !$disabled)
                 <span class="text-danger">*</span>
@@ -30,7 +31,7 @@
         <span class="input-group-text" id="basic-addon-search31"><i class="{{ $icon }}"></i></span>
         <input type="{{ $type }}"
             class="form-control {{ $money ? 'money' : '' }} {{ $numberFormat ? 'number-separator' : '' }} {{ $datepicker }}"
-            id="{{ $name }}" name="{{ $name }}" placeholder="{{ $placeholder ?? $label }}" {{ $readonly ? 'readonly' : '' }}
+            id="{{ $id ?? $name }}" name="{{ $name }}" placeholder="{{ $placeholder ?? $label }}" {{ $readonly ? 'readonly' : '' }}
             {{ $disabled ? 'disabled' : '' }} autocomplete="off" aria-autocomplete="none" value="{{ $value }}"
             style="text-align: {{ $align }}" {{ $maxlength ? 'maxlength=' . $maxlength : '' }} {{ $min !== null ? 'min=' . $min : '' }}
             {{ $max !== null ? 'max=' . $max : '' }} {{ $required && !$readonly && !$disabled ? 'required' : '' }}>

@@ -37,7 +37,7 @@ class GrupSeeder extends Seeder
         ];
 
         foreach ($grup as $data) {
-            Grup::create($data);
+            Grup::firstOrCreate(['kode_grup' => $data['kode_grup']], $data);
         }
     }
 }

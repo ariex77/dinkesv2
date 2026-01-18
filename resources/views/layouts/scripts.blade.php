@@ -17,7 +17,7 @@
  <!-- Vendors JS -->
  <!-- Vendors JS -->
 <!-- Non-jQuery dependencies - can use defer -->
-<script src="{{ asset('assets/vendor/libs/moment/moment.js') }}" defer></script>
+<script src="{{ asset('assets/vendor/libs/moment/moment.js') }}"></script>
 <script src="{{ asset('assets/vendor/libs/pickr/pickr.js') }}" defer></script>
 <script src="{{ asset('assets/external/js/polyfill.js') }}" defer></script>
 <script src="{{ asset('assets/vendor/js/feather.min.js') }}" defer></script>

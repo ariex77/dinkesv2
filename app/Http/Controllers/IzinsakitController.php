@@ -20,6 +20,9 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
+use App\Services\ApprovalService;
+use App\Models\Approval;
+use App\Models\ApprovalLayer;
 
 class IzinsakitController extends Controller
 {
@@ -52,7 +55,7 @@ class IzinsakitController extends Controller
             }
         }
 
-        $qizin->select('presensi_izinsakit.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang');
+        $qizin->select('presensi_izinsakit.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'karyawan.kode_dept');
         if (!empty($request->dari) && !empty($request->sampai)) {
             $qizin->whereBetween('presensi_izinsakit.tanggal', [$request->dari, $request->sampai]);
         }
@@ -243,6 +246,7 @@ class IzinsakitController extends Controller
                 'sampai' => $request->sampai,
                 'keterangan' => $request->keterangan,
                 'status' => 0,
+                'approval_step' => 1,
                 'id_user' => $user->id,
             ];
 
@@ -307,6 +311,19 @@ class IzinsakitController extends Controller
                 abort(403, 'Anda tidak memiliki akses ke izin sakit ini.');
             }
         }
+
+        // Dynamic Approval Logic
+        $userRole = $user->getRoleNames()->first();
+        $currentStep = $izinsakit->approval_step;
+
+        // Check Authorization using Service
+        $approvalService = app(ApprovalService::class); // Instantiate service if not injected, or better inject it
+        if (!$approvalService->canApprove('IZIN', $currentStep, $userRole, $izinsakit->kode_dept)) {
+             if (!$user->isSuperAdmin()) {
+                 return Redirect::back()->with(messageError('Anda tidak memiliki wewenang untuk approval tahap ke-' . $currentStep));
+             }
+        }
+        
         $dari = $izinsakit->dari;
         $sampai = $izinsakit->sampai;
         $nik = $izinsakit->nik;
@@ -315,9 +332,37 @@ class IzinsakitController extends Controller
         DB::beginTransaction();
         try {
             if (isset($request->approve)) {
-                // echo 'test';
+                
+                // 1. Record Approval
+                Approval::create([
+                    'approvable_type' => Izinsakit::class,
+                    'approvable_id' => $kode_izin_sakit,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'approved',
+                    'keterangan' => 'Approved by ' . $user->name,
+                ]);
 
+                // 2. Check for Next Level rule
+                $nextLevel = $currentStep + 1;
+                 $nextRule = ApprovalLayer::where('feature', 'IZIN')
+                    ->where('level', $nextLevel)
+                     ->where(function ($q) use ($kode_dept) {
+                        $q->where('kode_dept', $kode_dept)
+                          ->orWhereNull('kode_dept');
+                    })
+                    ->first();
+                
+                 if ($nextRule) {
+                    // Move to next step
+                     Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
+                        'approval_step' => $nextLevel
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Berhasil disetujui (Tahap ' . $currentStep . '). Menunggu approval tahap selanjutnya.'));
+                }
 
+                // If No Next Rule -> FINAL APPROVAL
                 Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
                     'status' => 1
                 ]);
@@ -366,6 +411,16 @@ class IzinsakitController extends Controller
                     $dari = date('Y-m-d', strtotime($dari . ' +1 day'));
                 }
             } else {
+                 // REJECTION
+                 Approval::create([
+                    'approvable_type' => Izinsakit::class,
+                    'approvable_id' => $kode_izin_sakit,
+                    'user_id' => $user->id,
+                    'level' => $currentStep,
+                    'status' => 'rejected',
+                    'keterangan' => 'Rejected by ' . $user->name,
+                ]);
+
                 Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
                     'status' => 2
                 ]);
@@ -391,6 +446,7 @@ class IzinsakitController extends Controller
         $kode_izin_sakit = Crypt::decrypt($kode_izin_sakit);
         $izinsakit = Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)
             ->join('karyawan', 'presensi_izinsakit.nik', '=', 'karyawan.nik')
+            ->select('presensi_izinsakit.*', 'karyawan.kode_cabang', 'karyawan.kode_dept')
             ->first();
         
         // Cek akses jika bukan super admin
@@ -403,15 +459,82 @@ class IzinsakitController extends Controller
             }
         }
         
-        $presensi = Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->get();
+        DB::beginTransaction();
         try {
-            Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
-                'status' => 0
-            ]);
-            Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->delete();
-            Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
-            return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+            // Case 1: Status is Pending (0) but moved steps (Intermediate Cancellation)
+            if ($izinsakit->status == 0) {
+                 // Logic: Find the approval for the *previous* step (current_step - 1)
+                 // NOTE: Since approval_step points to the *requirement* (waiting for X), 
+                 // the *last done* approval was at level (approval_step - 1).
+                 $lastStep = $izinsakit->approval_step - 1;
+                 
+                $lastApproval = Approval::where('approvable_type', Izinsakit::class)
+                    ->where('approvable_id', $kode_izin_sakit)
+                    ->where('level', $lastStep)
+                    ->where('user_id', $user->id) // Must be the one who approved it
+                    ->first();
+
+                if ($lastApproval) {
+                    $lastApproval->delete();
+                    Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
+                        'approval_step' => $lastStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval dibatalkan. Kembali ke tahap sebelumnya.'));
+                } else {
+                     return Redirect::back()->with(messageError('Anda tidak dapat membatalkan approval ini (Bukan approver terakhir atau sudah diproses lanjut).'));
+                }
+            } 
+            // Case 2: Status is Final Approved (1)
+            else if ($izinsakit->status == 1) {
+                // This is the "Final Cancellation" - undo the final approval
+                // Current code logic deletes presensi and resets status to 0. 
+                // We should also delete the Final Approval record.
+                
+                // Find final approval record (highest level)
+                $lastApproval = Approval::where('approvable_type', Izinsakit::class)
+                    ->where('approvable_id', $kode_izin_sakit)
+                    ->where('user_id', $user->id)
+                    ->orderBy('level', 'desc')
+                    ->first();
+
+                if($lastApproval){
+                     // Revert step to this level (so it becomes pending at this level again)
+                     $revertStep = $lastApproval->level;
+                     $lastApproval->delete();
+                     
+                     // Delete Presensi Data
+                     $presensi = Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->get();
+                     Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                     Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->delete();
+
+                     Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
+                        'status' => 0,
+                        'approval_step' => $revertStep
+                    ]);
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Approval final dibatalkan. Kembali ke tahap sebelumnya.'));
+
+                } else {
+                    // Fallback for Super Admin or legacy cleanup 
+                    $presensi = Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->get();
+                    Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
+                        'status' => 0
+                        // approval_step stays same?? or reset? 
+                        // Safer to not touch approval_step if we don't know, but ideally we should knows.
+                        // Im assuming legacy manual reset sets status 0.
+                    ]);
+                    Approveizinsakit::where('kode_izin_sakit', $kode_izin_sakit)->delete();
+                    Presensi::whereIn('id', $presensi->pluck('id_presensi'))->delete();
+                    DB::commit();
+                    return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
+                }
+            }
+            
+            return Redirect::back()->with(messageError('Status tidak valid untuk pembatalan.'));
+
         } catch (\Exception $e) {
+            DB::rollBack();
             return Redirect::back()->with(messageError($e->getMessage()));
         }
     }

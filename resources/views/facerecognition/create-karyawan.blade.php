@@ -1245,7 +1245,7 @@
                 width: videoConfig.width,
                 height: videoConfig.height,
                 image_format: 'jpeg',
-                jpeg_quality: isAndroid ? 85 : 95, // Kurangi kualitas untuk Android
+                jpeg_quality: 95, // Standardized to 95% for all devices (was 85 for Android)
                 fps: videoConfig.idealFrameRate,
                 constraints: {
                     video: {
@@ -1844,6 +1844,132 @@
         const FACE_CONSISTENCY_THRESHOLD = 0.6; // Distance threshold (semakin kecil = lebih strict)
 
         // ============================================
+        // IMAGE PREPROCESSING (Phase 3)
+        // ============================================
+
+        /**
+         * Normalize brightness of an image element
+         * @param {HTMLImageElement|HTMLVideoElement|HTMLCanvasElement} img - Image/Video element to normalize
+         * @param {number} targetMean - Target mean brightness (default: 128)
+         * @returns {HTMLCanvasElement|HTMLImageElement} - Canvas with normalized image or original if invalid
+         */
+        function normalizeBrightness(img, targetMean = 128) {
+            try {
+                // Validate input dimensions
+                const width = img.width || img.videoWidth || 0;
+                const height = img.height || img.videoHeight || 0;
+                
+                if (width === 0 || height === 0) {
+                    console.warn('Cannot normalize brightness: invalid dimensions', width, 'x', height);
+                    return img; // Return original if dimensions invalid
+                }
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw original image
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Get image data
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Calculate current mean brightness
+                let sum = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    sum += (data[i] + data[i + 1] + data[i + 2]) / 3;
+                }
+                const currentMean = sum / (data.length / 4);
+                
+                // Skip normalization if mean is already close to target
+                if (Math.abs(currentMean - targetMean) < 5) {
+                    console.log(`Brightness already optimal: ${currentMean.toFixed(1)}`);
+                    return canvas;
+                }
+                
+                // Calculate adjustment factor
+                const adjustment = targetMean / currentMean;
+                
+                // Apply brightness normalization
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, data[i] * adjustment);     // R
+                    data[i + 1] = Math.min(255, data[i + 1] * adjustment); // G
+                    data[i + 2] = Math.min(255, data[i + 2] * adjustment); // B
+                    // Alpha channel (i + 3) unchanged
+                }
+                
+                // Put normalized data back
+                ctx.putImageData(imageData, 0, 0);
+                
+                console.log(`Brightness normalized: ${currentMean.toFixed(1)} → ${targetMean}`);
+                
+                return canvas;
+            } catch (error) {
+                console.error('Error in brightness normalization:', error);
+                return img; // Return original on error
+            }
+        }
+
+        /**
+         * Resize image to consistent resolution
+         * @param {string} imageUri - Base64 image URI
+         * @param {number} targetWidth - Target width (default: 640)
+         * @param {number} targetHeight - Target height (default: 480)
+         * @param {number} quality - JPEG quality (default: 0.95)
+         * @returns {Promise<string>} - Base64 resized image URI
+         */
+        async function resizeImage(imageUri, targetWidth = 640, targetHeight = 480, quality = 0.95) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        // Set canvas to target size
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+
+                        // Draw image resized to fit canvas (maintain aspect ratio)
+                        const sourceAspect = img.width / img.height;
+                        const targetAspect = targetWidth / targetHeight;
+
+                        let drawWidth, drawHeight, offsetX = 0, offsetY = 0;
+
+                        if (sourceAspect > targetAspect) {
+                            // Image is wider - fit to height
+                            drawHeight = targetHeight;
+                            drawWidth = targetHeight * sourceAspect;
+                            offsetX = -(drawWidth - targetWidth) / 2;
+                        } else {
+                            // Image is taller - fit to width
+                            drawWidth = targetWidth;
+                            drawHeight = targetWidth / sourceAspect;
+                            offsetY = -(drawHeight - targetHeight) / 2;
+                        }
+
+                        // Draw image
+                        ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+
+                        // Convert to base64 with specified quality
+                        const resizedUri = canvas.toDataURL('image/jpeg', quality);
+                        resolve(resizedUri);
+                    } catch (error) {
+                        console.error('Error resizing image:', error);
+                        reject(error);
+                    }
+                };
+                img.onerror = function() {
+                    reject(new Error('Failed to load image for resizing'));
+                };
+                img.src = imageUri;
+            });
+        }
+
+        // ============================================
         // FACE CROPPING (Phase 3 - Preprocessing)
         // ============================================
 
@@ -2248,30 +2374,62 @@
                 console.log('Skipping descriptor save (user chose to skip validation)');
             }
 
-            // Crop wajah dari gambar (Phase 3 - Preprocessing)
+            // === IMAGE PREPROCESSING PIPELINE ===
             let finalImageUri = uri;
             try {
+                // Step 0: BRIGHTNESS NORMALIZATION (NEW - Critical for HP photos!)
+                captureText.textContent = `Normalizing brightness ${capturedImages.length + 1}/${TOTAL_IMAGES}...`;
+                
+                // Convert base64 to image element for normalization
+                const tempImg = await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = uri;
+                });
+                
+                // Normalize brightness to mean 128
+                const normalizedCanvas = normalizeBrightness(tempImg, 128);
+                finalImageUri = normalizedCanvas.toDataURL('image/jpeg', 0.95);
+                console.log('Brightness normalized before processing');
+                
+                // Step 1: Resize to consistent resolution (640x480)
+                captureText.textContent = `Preprocessing foto ${capturedImages.length + 1}/${TOTAL_IMAGES}...`;
+                finalImageUri = await resizeImage(finalImageUri, 640, 480, 0.95);
+                console.log('Image resized to 640x480');
+
+                // Step 2: Crop wajah dari gambar (with padding)
                 captureText.textContent = `Memotong area wajah ${capturedImages.length + 1}/${TOTAL_IMAGES}...`;
-                const faceBox = await getFaceBoxFromImage(uri);
+                const faceBox = await getFaceBoxFromImage(finalImageUri);
 
                 if (faceBox) {
                     // Crop wajah dengan padding 20%
-                    finalImageUri = await cropFaceFromImage(uri, faceBox, 20, 224);
-                    console.log('Face cropped successfully');
+                    finalImageUri = await cropFaceFromImage(finalImageUri, faceBox, 20, 224);
+                    console.log('Face cropped successfully with padding');
+                    
+                    // Step 3: Resize cropped face back to consistent size
+                    finalImageUri = await resizeImage(finalImageUri, 640, 480, 0.95);
+                    console.log('Cropped face resized to 640x480');
                 } else {
-                    console.warn('Tidak bisa detect wajah untuk crop, menggunakan gambar asli');
+                    console.warn('Tidak bisa detect wajah untuk crop, menggunakan gambar yang sudah di-resize');
                 }
             } catch (error) {
-                console.error('Error cropping face:', error);
-                // Jika error, gunakan gambar asli
-                finalImageUri = uri;
+                console.error('Error preprocessing image:', error);
+                // Jika error, minimal resize gambar
+                try {
+                    finalImageUri = await resizeImage(uri, 640, 480, 0.95);
+                    console.log('Fallback: Image resized to 640x480');
+                } catch (resizeError) {
+                    console.error('Error resizing image:', resizeError);
+                    finalImageUri = uri; // Use original if all fails
+                }
             }
 
             captureText.textContent = `Foto ${capturedImages.length + 1}/${TOTAL_IMAGES} berhasil!`;
 
             capturedImages.push({
                 direction: DIRECTIONS[currentDirectionIndex].key,
-                image: finalImageUri, // Simpan cropped image
+                image: finalImageUri, // Simpan preprocessed image (resized + cropped + standardized)
                 quality: qualityScores // Simpan quality scores untuk reference
             });
             currentImageInDirection++;
@@ -2660,13 +2818,26 @@
                 initRetryCount = 0;
                 console.log('Webcam element found, initializing...');
 
-                await loadFaceApiScript();
-                isModelsLoaded = await loadFaceApiModels();
+                // === OPTIMIZATION: Start camera FIRST, load models in BACKGROUND ===
+                // This improves perceived performance - user sees camera immediately
+                console.log('Starting camera...');
+                startVideo(); // Start camera immediately (non-blocking)
 
-                if (isModelsLoaded) {
-                    // Tunggu sebentar sebelum start video untuk memastikan elemen siap
-                    setTimeout(() => {
-                        startVideo();
+                // Load face API script and models in background (async)
+                console.log('Loading face API models in background...');
+                const loadModelsPromise = (async () => {
+                    await loadFaceApiScript();
+                    return await loadFaceApiModels();
+                })();
+
+                // Continue with model loading in background
+                loadModelsPromise.then((modelsLoaded) => {
+                    isModelsLoaded = modelsLoaded;
+                    
+                    if (isModelsLoaded) {
+                        console.log('Face API models loaded successfully. Face detection ready.');
+                        
+                        // Start face detection loop after models are ready
                         // Optimasi untuk Android: gunakan requestAnimationFrame dan throttle
                         const isAndroid = /Android/i.test(navigator.userAgent);
                         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -2698,20 +2869,31 @@
                             });
                         }
                         scheduleDetection();
-                    }, 500); // Increase delay untuk memastikan elemen siap
-
-                    $("#btnMulaiRekam").click(function() {
-                        $("#btnMulaiRekam").prop("disabled", true);
-                        startMultiCapture();
-                    });
-                } else {
+                    } else {
+                        console.error('Failed to load face API models');
+                        swal.fire({
+                            icon: 'warning',
+                            title: 'Peringatan',
+                            text: 'Model pengenalan wajah gagal dimuat. Deteksi wajah otomatis tidak tersedia.',
+                            showConfirmButton: true
+                        });
+                    }
+                }).catch(error => {
+                    console.error('Error loading face API:', error);
                     swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Gagal memuat model pengenalan wajah. Silakan muat ulang halaman.',
+                        icon: 'warning',
+                        title: 'Peringatan',
+                        text: 'Model pengenalan wajah gagal dimuat. Deteksi wajah otomatis tidak tersedia.',
                         showConfirmButton: true
                     });
-                }
+                });
+
+                // Setup button handler (camera is already visible)
+                $("#btnMulaiRekam").click(function() {
+                    $("#btnMulaiRekam").prop("disabled", true);
+                    startMultiCapture();
+                });
+
             } catch (error) {
                 console.error('Error initializing face recognition:', error);
                 swal.fire({

@@ -20,7 +20,7 @@ class GrupDetailSeeder extends Seeder
         if ($karyawan->count() > 0) {
             // Tambahkan karyawan ke grup GR1 (Grup Administrasi)
             foreach ($karyawan->take(3) as $k) {
-                GrupDetail::create([
+                GrupDetail::firstOrCreate([
                     'kode_grup' => 'GR1',
                     'nik' => $k->nik
                 ]);
@@ -28,7 +28,7 @@ class GrupDetailSeeder extends Seeder
 
             // Tambahkan karyawan ke grup GR2 (Grup Produksi)
             foreach ($karyawan->skip(3)->take(3) as $k) {
-                GrupDetail::create([
+                GrupDetail::firstOrCreate([
                     'kode_grup' => 'GR2',
                     'nik' => $k->nik
                 ]);
@@ -36,7 +36,7 @@ class GrupDetailSeeder extends Seeder
 
             // Tambahkan karyawan ke grup GR3 (Grup Marketing)
             foreach ($karyawan->skip(6)->take(2) as $k) {
-                GrupDetail::create([
+                GrupDetail::firstOrCreate([
                     'kode_grup' => 'GR3',
                     'nik' => $k->nik
                 ]);

@@ -15,34 +15,19 @@ class AktivitasKaryawanPermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissiongroup = Permission_group::create([
-            'name' => 'Aktivitas Karyawan'
-        ]);
+        $permissiongroup = Permission_group::firstOrCreate(['name' => 'Aktivitas Karyawan']);
 
-        Permission::create([
-            'name' => 'aktivitaskaryawan.index',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'aktivitaskaryawan.create',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'aktivitaskaryawan.edit',
-            'id_permission_group' => $permissiongroup->id
-        ]);
-
-        Permission::create([
-            'name' => 'aktivitaskaryawan.delete',
-            'id_permission_group' => $permissiongroup->id
-        ]);
+        Permission::firstOrCreate(['name' => 'aktivitaskaryawan.index'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'aktivitaskaryawan.create'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'aktivitaskaryawan.edit'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'aktivitaskaryawan.delete'], ['id_permission_group' => $permissiongroup->id]);
 
         // Only give index permission to super admin
         $indexPermission = Permission::where('name', 'aktivitaskaryawan.index')->first();
         $roleID = 1; // Super Admin
         $role = Role::findById($roleID);
-        $role->givePermissionTo($indexPermission);
+        if ($role && $indexPermission && !$role->hasPermissionTo($indexPermission)) {
+            $role->givePermissionTo($indexPermission);
+        }
     }
 }

@@ -20,7 +20,7 @@
         </small>
     </div>
     
-    <x-input-with-icon icon="ti ti-map-pin" label="Lokasi Cabang (Latitude, Longitude)" name="lokasi_cabang" placeholder="Contoh: -7.317623,108.199358 (Koordinat GPS)" readonly required />
+    <x-input-with-icon icon="ti ti-map-pin" label="Lokasi Cabang (Latitude, Longitude)" name="lokasi_cabang" placeholder="Contoh: -7.317623,108.199358 (Koordinat GPS)"  required />
     <x-input-with-icon icon="ti ti-access-point" label="Radius Cabang" name="radius_cabang" type="number" placeholder="Contoh: 30 (dalam meter, minimal 1)" min="1" max="9999" required />
     
     <div class="form-group mb-3">

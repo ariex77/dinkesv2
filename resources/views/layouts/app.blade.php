@@ -70,6 +70,19 @@
             });
         }
     </script>
+    <!-- OneSignal SDK -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.init({
+          appId: "{{ config('services.onesignal.app_id') }}",
+          serviceWorker: {
+              path: "/sw.js",
+          }
+        });
+      });
+    </script>
 </head>
 
 <body>
