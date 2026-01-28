@@ -371,7 +371,7 @@
 
         /* Tambahan style jadwal kerja modern */
         .jadwalkerja-row {
-            background: linear-gradient(90deg, #35796A 0%, #24584C 100%);
+            background: linear-gradient(90deg, var(--color-nav) 0%, var(--color-nav-active) 100%);
             border-radius: 16px;
             box-shadow: 0 4px 18px rgba(44, 62, 80, 0.13);
             margin-bottom: 6px;
@@ -2505,6 +2505,21 @@
                 });
             }
 
+
+            // Helper function to convert dataURI to Blob
+            function dataURItoBlob(dataURI) {
+                var byteString = atob(dataURI.split(',')[1]);
+                var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                var ab = new ArrayBuffer(byteString.length);
+                var ia = new Uint8Array(ab);
+                for (var i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([ab], {
+                    type: mimeString
+                });
+            }
+
             $("#absenmasuk").click(function() {
                 if (cameraPermissionDenied) {
                     showPermissionWarning('camera');
@@ -2514,6 +2529,9 @@
                     showPermissionWarning('location');
                     return;
                 }
+
+
+
                 // alert(lokasi);
                 $("#absenmasuk").prop('disabled', true);
                 $("#absenpulang").prop('disabled', true);
@@ -2546,17 +2564,22 @@
                     })
                     return false;
                 } else {
+                    var blob = dataURItoBlob(image);
+                    var formData = new FormData();
+                    formData.append('image', blob, 'image.png'); // Send as file
+                    formData.append('_token', "{{ csrf_token() }}");
+                    formData.append('status', status);
+                    formData.append('lokasi', lokasi);
+                    formData.append('lokasi_cabang', lokasi_cabang);
+                    formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
+
                     $.ajax({
                         type: 'POST',
                         url: "{{ route('presensi.store') }}",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                            image: image,
-                            status: status,
-                            lokasi: lokasi,
-                            lokasi_cabang: lokasi_cabang,
-                            kode_jam_kerja: "{{ $jam_kerja->kode_jam_kerja }}"
-                        },
+                        data: formData, // Use FormData
+                        processData: false, // Prevent jQuery from processing the data
+                        contentType: false, // Prevent jQuery from setting contentType
+                        cache: false,
                         success: function(data) {
                             if (data.status == true) {
                                 notifikasi_absenmasuk.play();
@@ -2638,17 +2661,22 @@
                     })
                     return false;
                 } else {
+                    var blob = dataURItoBlob(image);
+                    var formData = new FormData();
+                    formData.append('image', blob, 'image.png');
+                    formData.append('_token', "{{ csrf_token() }}");
+                    formData.append('status', status);
+                    formData.append('lokasi', lokasi);
+                    formData.append('lokasi_cabang', lokasi_cabang);
+                    formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
+
                     $.ajax({
                         type: 'POST',
                         url: "{{ route('presensi.store') }}",
-                        data: {
-                            _token: "{{ csrf_token() }}",
-                            image: image,
-                            status: status,
-                            lokasi: lokasi,
-                            lokasi_cabang: lokasi_cabang,
-                            kode_jam_kerja: "{{ $jam_kerja->kode_jam_kerja }}"
-                        },
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        cache: false,
                         success: function(data) {
                             if (data.status == true) {
                                 notifikasi_absenpulang.play();
@@ -2679,7 +2707,7 @@
                                 text: xhr.responseJSON.message,
                                 didClose: function() {
                                     $("#absenmasuk").prop('disabled', false);
-                                    $("#absenpulang").prop('disabled', true);
+                                    $("#absenpulang").prop('disabled', false);
                                     $("#absenpulang").html(
                                         '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
                                     );

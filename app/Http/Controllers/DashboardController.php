@@ -7,12 +7,14 @@ use App\Charts\PendidikankaryawanChart;
 use App\Charts\StatusKaryawanChart;
 use App\Models\Cabang;
 use App\Models\Departemen;
+use App\Models\Denda;
 use App\Models\Karyawan;
 use App\Models\Lembur;
 use App\Models\Presensi;
 use App\Models\Pengumuman;
 use App\Models\User;
 use App\Models\Userkaryawan;
+use App\Models\Pengaturanumum;
 use App\Jobs\SendWaMessage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -135,6 +137,8 @@ class DashboardController extends Controller
 
             // Cek Pengumuman Aktif (Ambil yang terakhir dibuat)
             $data['pengumuman'] = Pengumuman::orderBy('created_at', 'desc')->first();
+            $data['namasettings'] = Pengaturanumum::first();
+            $data['denda_list'] = Denda::orderBy('dari')->get()->toArray();
 
             return view('dashboard.karyawan', $data);
         } else {

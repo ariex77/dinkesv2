@@ -4,12 +4,12 @@
      <div class="app-brand demo" style="height: 85px !important">
          <a href="{{ route('dashboard.index') }}" class="app-brand-link">
              <span class="app-brand-logo rounded-circle demo d-flex align-items-center justify-content-center"
-                 style="background: linear-gradient(145deg, #ffd60a, #ffc300); width: 46px; height: 46px; !important">
-                 <span class="badge d-flex align-items-center justify-content-center shadow-sm"
-                     style=" font-size: 22px; color: #1a1a1a; font-weight: 700;
-                    ">
-                     G
-                 </span>
+                 style="background: var(--theme-color-2); width: 46px; height: 46px !important; overflow: hidden;">
+                 @if (!empty($general_setting->logo) && Storage::disk('public')->exists('logo/' . $general_setting->logo))
+                     <img src="{{ asset('storage/logo/' . $general_setting->logo) }}" alt="Logo" class="w-100 h-100" style="object-fit: cover;">
+                 @else
+                    <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="Logo" class="w-100 h-100" style="object-fit: cover;">
+                 @endif
              </span>
              <span class="app-brand-text demo menu-text fw-bold d-flex flex-column ms-2" style="letter-spacing: 1px; color: #fff;">
                  <span style="font-size: 18px;">GAWE</span>
@@ -49,7 +49,7 @@
 
      <div class="px-3 pb-3 py-3">
          <div class="d-flex align-items-center rounded-3 p-3 shadow-sm"
-             style="background: linear-gradient(135deg, #ffd60a 0%, #ffc300 100%); border: 1px solid rgba(0,0,0,0.05);">
+             style="background: var(--theme-color-2); border: 1px solid rgba(0,0,0,0.05);">
              <div class="flex-shrink-0 position-relative">
                  @if ($userPhoto)
                      <div class="rounded-circle border border-3 shadow"
@@ -57,18 +57,18 @@
                      </div>
                  @else
                      <div class="rounded-circle d-flex align-items-center justify-content-center shadow"
-                         style="width: 48px; height: 48px; font-size: 22px; background: #fff; color: #ffc300;">
+                         style="width: 48px; height: 48px; font-size: 22px; background: #fff; color: var(--theme-color-2) !important;">
                          <i class="ti ti-user"></i>
                      </div>
                  @endif
              </div>
              <div class="flex-grow-1 ms-3">
-                 <div class="fw-bold mb-0" style="font-size: 14px; color: #1a1a1a;">{{ $userName }}</div>
+                 <div class="fw-bold mb-0" style="font-size: 14px; color: #fff;">{{ $userName }}</div>
                  <small class="text-uppercase"
-                     style="letter-spacing: 0.5px; font-size: 11px; color: rgba(0,0,0,0.6); font-weight: 500;">{{ $userRoleText }}</small>
+                     style="letter-spacing: 0.5px; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500;">{{ $userRoleText }}</small>
              </div>
              <a href="#" class="btn btn-sm rounded-2 shadow-sm"
-                 style="background: rgba(0,0,0,0.08); border: none; color: #1a1a1a; padding: 6px 12px;" data-bs-toggle="tooltip" title="Edit Profile">
+                 style="background: {{ $general_setting->theme_color_1 }}; border: none; color: #fff; padding: 6px 12px;" data-bs-toggle="tooltip" title="Edit Profile">
                  <i class="ti ti-settings" style="font-size: 16px;"></i>
              </a>
          </div>

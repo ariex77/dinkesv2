@@ -353,7 +353,7 @@ class IzinsakitController extends Controller
                     })
                     ->first();
                 
-                 if ($nextRule) {
+                 if ($nextRule && !$user->hasRole('super admin')) {
                     // Move to next step
                      Izinsakit::where('kode_izin_sakit', $kode_izin_sakit)->update([
                         'approval_step' => $nextLevel

@@ -146,8 +146,33 @@ class FacerecognitionController extends Controller
 
         try {
             $saved = [];
-            // Jika multi-capture (images array)
-            if ($request->has('images')) {
+            // Jika multi-capture dengan file upload (metode baru)
+            if ($request->hasFile('files')) {
+                $metadata = json_decode($request->metadata, true);
+                $files = $request->file('files');
+                $cekWajah = Facerecognition::where('nik', $request->nik)->count();
+                $urutan = $cekWajah + 1;
+
+                foreach ($files as $index => $file) {
+                    $direction = isset($metadata[$index]['direction']) ? $metadata[$index]['direction'] : 'front';
+                    
+                    $fileName = $urutan . "_" . $direction . ".png";
+                    $file->storeAs($folderPath, $fileName); // Simpan file langsung
+                    // Tidak perlu file_get_contents + Storage::put karena storeAs lebih efisien
+
+                    // Simpan ke database
+                    Facerecognition::create([
+                        'nik' => $request->nik,
+                        'wajah' => $fileName
+                    ]);
+
+                    $saved[] = $fileName;
+                    $urutan++;
+                }
+                 return response()->json(['success' => true, 'message' => count($saved) . ' gambar berhasil disimpan', 'files' => $saved]);
+
+            } else if ($request->has('images')) {
+                // Legacy: JSON Base64 string
                 $images = json_decode($request->images, true);
                 $cekWajah = Facerecognition::where('nik', $request->nik)->count();
                 $urutan = $cekWajah + 1;

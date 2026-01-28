@@ -29,11 +29,17 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="row" style="margin-top: 80px">
+        <div class="row" style="margin-top: 50px">
             <div class="col pl-3 pr-3">
                 <form action="{{ route('users.updatepassword', Crypt::encrypt($user->id)) }}" method="POST" id="formIzin" autocomplete="off">
                     @csrf
                     @method('PUT')
+                    <input type="text" class="feedback-input" name="username" placeholder="Username" value="{{ $user->username }}" required />
+                    @error('username')
+                        <div class="text-danger small" style="margin-top: -10px; margin-bottom: 10px;">
+                            {{ $message }}
+                        </div>
+                    @enderror
                     <input type="password" class="feedback-input passwordbaru" name="passwordbaru" placeholder="Password Baru" id="passwordbaru" />
                     <input type="password" class="feedback-input konfirmasipassword" name="konfirmasipassword" placeholder="Konfirmasi Password"
                         id="konfirmasipassword" />

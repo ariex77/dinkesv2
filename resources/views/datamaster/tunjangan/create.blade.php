@@ -78,7 +78,7 @@
             
             jumlah.each(function(index) {
                 const val = $(this).val().trim();
-                if (val == "" || val == "0") {
+                if (val == "") {
                     cekJumlahkosong = true;
                     jumlahKosongIndex = index;
                     return false;

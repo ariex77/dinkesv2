@@ -464,10 +464,20 @@ class LemburController extends Controller
         $image = $request->image;
         $folderPath = "public/uploads/lembur/";
         $formatName = $lembur->nik . "-" . $tanggal_sekarang . "-" . $in_out;
-        $image_parts = explode(";base64", $image);
-        $image_base64 = base64_decode($image_parts[1]);
-        $fileName = $formatName . ".png";
-        $file = $folderPath . $fileName;
+        $formatName = $lembur->nik . "-" . $tanggal_sekarang . "-" . $in_out;
+
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, file_get_contents($image));
+        } else {
+            $image_parts = explode(";base64", $image);
+            $image_base64 = base64_decode($image_parts[1]);
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, $image_base64);
+        }
 
         $tanggal_presensi = $tanggal_sekarang;
         $jam_presensi = $tanggal_presensi . " " . $jam_sekarang;
@@ -502,7 +512,7 @@ class LemburController extends Controller
                             'lokasi_lembur_in' => $lokasi,
                             'foto_lembur_in' => $fileName
                         ]);
-                        Storage::put($file, $image_base64);
+                        // Storage::put($file, $image_base64);
                         return response()->json(['status' => true, 'message' => 'Berhasil Memulai Lembur', 'notifikasi' => 'notifikasi_absenmasuk'], 200);
                     } catch (\Exception $e) {
                         return response()->json(['status' => false, 'message' => $e->getMessage()], 400);
@@ -522,7 +532,7 @@ class LemburController extends Controller
                             'lokasi_lembur_out' => $lokasi,
                             'foto_lembur_out' => $fileName
                         ]);
-                        Storage::put($file, $image_base64);
+                        // Storage::put($file, $image_base64);
                         return response()->json(['status' => true, 'message' => 'Berhasil Absen Pulang', 'notifikasi' => 'notifikasi_absenpulang'], 200);
                     } catch (\Exception $e) {
                         return response()->json(['status' => false, 'message' => $e->getMessage()], 400);

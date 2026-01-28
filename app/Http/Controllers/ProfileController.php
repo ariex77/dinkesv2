@@ -51,6 +51,11 @@ class ProfileController extends Controller
             $data = array_merge($data_karyawan, $data_foto);
             Karyawan::where('nik', $karyawan->nik)->update($data);
             if ($request->hasfile('foto')) {
+                if (!Storage::exists($destination_foto_path)) {
+                    Storage::makeDirectory($destination_foto_path, 0775, true);
+                    $path = Storage::path($destination_foto_path);
+                    chmod($path, 0775);
+                }
                 Storage::delete($destination_foto_path . "/" . $karyawan->foto);
                 $request->file('foto')->storeAs($destination_foto_path, $foto_name);
             }

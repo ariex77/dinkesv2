@@ -111,16 +111,16 @@
             <tr>
                 <td class="label">Nama</td>
                 <td class="colon">:</td>
-                <td>Dian Eka Suphintia</td>
+                <td>{{ $setting->nama_hrd ?? 'Pihak Pertama' }}</td>
             </tr>
             <tr>
                 <td class="label">Jabatan</td>
                 <td class="colon">:</td>
-                <td>HRD PT. Sentral Multi Indontama</td>
+                <td>HRD {{ $setting->nama_perusahaan ?? 'Perusahaan' }}</td>
             </tr>
             <tr>
                 <td colspan="3">
-                    Dalam hal ini bertindak untuk dan atas nama PT Sentral Multi Indontama yang berkedudukan di Jakarta Utara,
+                    Dalam hal ini bertindak untuk dan atas nama {{ $setting->nama_perusahaan ?? 'Perusahaan' }} yang berkedudukan di {{ $setting->alamat ?? 'Lokasi Perusahaan' }},
                     yang selanjutnya dalam perjanjian ini disebut <strong>PIHAK PERTAMA</strong>.
                 </td>
             </tr>
@@ -261,7 +261,7 @@
         <div class="pasal-title">Pasal 7<br>Tata Tertib Dan Disiplin Kerja</div>
         <p class="paragraph">
             Pihak Kedua wajib mengikuti dan mentaati keseluruhan peraturan dan tata tertib serta disiplin kerja yang berlaku di
-            PT. Sentral Multi Indontama. Pelanggaran terhadap tata tertib dan disiplin kerja akan mendapatkan sanksi sebagaimana
+            {{ $setting->nama_perusahaan ?? 'Perusahaan' }}. Pelanggaran terhadap tata tertib dan disiplin kerja akan mendapatkan sanksi sebagaimana
             yang telah diatur dalam Perjanjian Kerja Bersama dan Peraturan Ketenagakerjaan yang berlaku.
         </p>
 
@@ -323,7 +323,7 @@
                 <td width="50%" align="center">
                     Pihak Pertama,
                     <br><br><br><br>
-                    <strong><u>Dian Eka S.</u></strong><br>
+                    <strong><u>{{ $setting->nama_hrd ?? '________________' }}</u></strong><br>
                     HRD
                 </td>
                 <td width="50%" align="center">

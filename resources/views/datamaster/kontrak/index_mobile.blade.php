@@ -28,25 +28,27 @@
             border: 1px solid #e0e0e0;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             background-color: white;
+            text-decoration: none; /* remove underline if anchor */
+            display: block;
         }
 
         .historicontent {
             display: flex;
-            padding: 15px;
+            padding: 10px 15px; /* Compact padding */
             align-items: center;
         }
 
         .iconpresence {
             flex-shrink: 0;
-            margin-right: 15px;
+            margin-right: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 50px;
-            height: 50px;
-            background-color: #e2f3f9; /* Blue tint */
+            width: 40px; /* Smaller icon */
+            height: 40px;
+            background-color: #e2f3f9;
             border-radius: 50%;
             color: #0d6efd;
         }
@@ -60,6 +62,7 @@
             font-size: 14px;
             font-weight: 600;
             color: #333;
+            line-height: 1.2;
         }
 
         .timepresence {
@@ -67,23 +70,26 @@
             color: #666;
             margin-top: 2px;
             display: block;
+            line-height: 1.2;
         }
 
         .historidetail2 {
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            min-width: 80px;
+            justify-content: center;
+            min-width: 70px;
         }
 
-        .historidetail2 h4 {
-            margin: 0;
-            font-size: 14px;
-            font-weight: 700;
+        .status-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
         }
         
-        .status-active { color: #198754; font-weight: bold; } /* Green */
-        .status-inactive { color: #dc3545; font-weight: bold; } /* Red */
+        .status-active-badge { background-color: rgba(25, 135, 84, 0.1); color: #198754; } 
+        .status-inactive-badge { background-color: rgba(220, 53, 69, 0.1); color: #dc3545; } 
     </style>
 
     <div id="header-section">
@@ -109,32 +115,29 @@
                 @else
                     @foreach ($kontraks as $d)
                         @php
-                            $statusClass = $d->status_kontrak == 1 ? 'status-active' : 'status-inactive';
+                            $statusClass = $d->status_kontrak == 1 ? 'status-active-badge' : 'status-inactive-badge';
                             $statusText = $d->status_kontrak == 1 ? 'Aktif' : 'Non-Aktif';
                         @endphp
-                        <div class="card historicard mb-2 mx-2">
+                        {{-- Wrap in anchor for full clickable area --}}
+                        <a href="{{ route('kontrak.show', Crypt::encrypt($d->id)) }}" class="card historicard mx-2">
                             <div class="historicontent">
                                 <div class="iconpresence">
-                                    <ion-icon name="document-text-outline" style="font-size: 32px; color: #0d6efd"></ion-icon>
+                                    <ion-icon name="document-text-outline" style="font-size: 24px; color: #0d6efd"></ion-icon>
                                 </div>
                                 <div class="historidetail1">
                                     <div class="datepresence">
                                         <h4>No. {{ $d->no_kontrak }}</h4>
                                         <span class="timepresence">
-                                            Masa Kerja: <br>
-                                            <strong>{{ \Carbon\Carbon::parse($d->dari)->translatedFormat('d M Y') }}</strong> s/d 
-                                            <strong>{{ \Carbon\Carbon::parse($d->sampai)->translatedFormat('d M Y') }}</strong>
+                                            {{ \Carbon\Carbon::parse($d->dari)->translatedFormat('d M Y') }} - {{ \Carbon\Carbon::parse($d->sampai)->translatedFormat('d M Y') }}
                                         </span>
                                     </div>
                                 </div>
                                 <div class="historidetail2">
-                                    <span class="{{ $statusClass }}" style="font-size: 12px; margin-bottom: 5px;">{{ $statusText }}</span>
-                                    <a href="{{ route('kontrak.show', Crypt::encrypt($d->id)) }}" class="btn btn-sm btn-primary mt-1" style="padding: 2px 8px; font-size: 10px; color: white;">
-                                        <ion-icon name="eye-outline"></ion-icon> Lihat
-                                    </a>
+                                    <span class="status-badge {{ $statusClass }}">{{ $statusText }}</span>
+                                    <ion-icon name="chevron-forward-outline" class="mt-2 text-muted" style="font-size: 18px;"></ion-icon>
                                 </div>
                             </div>
-                        </div>
+                        </a>
                     @endforeach
                 @endif
             </div>

@@ -87,7 +87,7 @@ class ResetDataController extends Controller
             $this->deleteTable('departemen', $deletedTables, $errors);
             $this->deleteTable('cabang', $deletedTables, $errors);
             $this->deleteTable('jabatan', $deletedTables, $errors);
-            $this->deleteTable('cuti', $deletedTables, $errors);
+            // $this->deleteTable('cuti', $deletedTables, $errors);
             $this->deleteTable('presensi_jamkerja', $deletedTables, $errors);
             $this->deleteTable('jenis_tunjangan', $deletedTables, $errors);
             $this->deleteTable('hari_libur', $deletedTables, $errors);

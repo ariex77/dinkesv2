@@ -18,7 +18,7 @@
                 <a href="{{ route('karyawan.idcard', Crypt::encrypt($karyawan->nik)) }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="id-card-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 ID Card
@@ -31,7 +31,7 @@
                 <a href="{{ route('presensiistirahat.create') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/alarm.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="cafe-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Istirahat
@@ -44,7 +44,7 @@
                 <a href="{{ route('lembur.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="time-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Lembur
@@ -58,7 +58,7 @@
                 <a href="{{ route('slipgaji.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="cash-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Slip Gaji
@@ -74,7 +74,7 @@
                     <a href="{{ route('aktivitaskaryawan.index') }}">
                         <div class="card">
                             <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                                <img src="{{ asset('assets/template/img/3d/activity.png') }}" alt="" style="width: 50px" class="mb-0">
+                                 <ion-icon name="pulse-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                                 <br>
                                 <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                     Aktivitas
@@ -89,7 +89,7 @@
                     <a href="{{ route('kunjungan.index') }}">
                         <div class="card">
                             <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                                <img src="{{ asset('assets/template/img/3d/maps.png') }}" alt="" style="width: 50px" class="mb-0">
+                                 <ion-icon name="map-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                                 <br>
                                 <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                     Visit
@@ -104,7 +104,7 @@
                 <a href="{{route('facerecognition.karyawan.create')}}"> 
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="scan-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Wajah
@@ -119,7 +119,7 @@
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
                             <div style="position: relative; display: inline-block;">
-                                <img src="{{ asset('assets/template/img/3d/pelanggaran.png') }}" alt="" style="width: 50px" class="mb-0">
+                                 <ion-icon name="warning-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                                 @if(isset($total_pelanggaran) && $total_pelanggaran > 0)
                                     <span class="badge badge-danger" style="position: absolute; top: 0; right: 0; border-radius: 50%;">{{ $total_pelanggaran }}</span>
                                 @endif
@@ -138,7 +138,7 @@
                 <a href="{{ route('kontrak.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/kontrak.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="document-attach-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Kontrak
@@ -151,7 +151,7 @@
                 <a href="{{ route('pengumuman.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/pengumuman.png') }}" alt="" style="width: 50px" class="mb-0">
+                             <ion-icon name="megaphone-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Informasi

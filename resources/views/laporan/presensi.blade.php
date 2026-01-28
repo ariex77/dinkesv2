@@ -37,7 +37,22 @@
                             <option value="">Periode Laporan</option>
                             <option value="1" selected>Periode Gaji</option>
                             <option value="2">Bulan Berjalan</option>
+                            <option value="3">Range Tanggal</option>
                         </select>
+                    </div>
+                    <div class="row" id="baris_tanggal">
+                        <div class="col-6">
+                            <div class="form-group mb-3">
+                                <input type="text" name="dari" id="dari" class="form-control flatpickr-date"
+                                    placeholder="Dari">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group mb-3">
+                                <input type="text" name="sampai" id="sampai" class="form-control flatpickr-date"
+                                    placeholder="Sampai">
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group mb-3">
                         <select name="format_laporan" id="format_laporan" class="form-select">
@@ -55,7 +70,7 @@
                         </select>
                     </div> --}}
 
-                    <div class="row">
+                    <div class="row" id="baris_bulan">
                         <div class="col">
                             <div class="form-group mb-3">
                                 <select name="bulan" id="bulan" class="form-select">
@@ -69,7 +84,7 @@
                         </div>
 
                     </div>
-                    <div class="row">
+                    <div class="row" id="baris_tahun">
                         <div class="co">
                             <div class="form-group mb-3">
                                 <select name="tahun" id="tahun" class="form-select">
@@ -82,14 +97,14 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-10 col-md-12 col-sm-12">
+                        <div class="col-lg-6 col-md-12 col-sm-12">
                             <button type="submit" name="submitButton" class="btn btn-primary w-100" id="submitButton">
                                 <i class="ti ti-printer me-1"></i> Cetak
                             </button>
                         </div>
-                        <div class="col-lg-2 col-md-12 col-sm-12">
+                        <div class="col-lg-6 col-md-12 col-sm-12">
                             <button type="submit" name="exportButton" class="btn btn-success w-100" id="exportButton">
-                                <i class="ti ti-download"></i>
+                                <i class="ti ti-download me-1"></i> Export Excel
                             </button>
                         </div>
                     </div>
@@ -209,7 +224,52 @@
                     }
                 });
                 return false;
+            } else if (periode_laporan == "3") {
+                const dari = $("#dari").val();
+                const sampai = $("#sampai").val();
+                if (dari == "") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Oops...',
+                        text: 'Tanggal Dari harus diisi!',
+                        showConfirmButton: true,
+                        didClose: () => {
+                            $("#dari").focus();
+                        }
+                    });
+                    return false;
+                } else if (sampai == "") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Oops...',
+                        text: 'Tanggal Sampai harus diisi!',
+                        showConfirmButton: true,
+                        didClose: () => {
+                            $("#sampai").focus();
+                        }
+                    });
+                    return false;
+                }
             }
+        });
+
+        function togglePeriodeLaporan() {
+            const periode_laporan = $("#periode_laporan").val();
+            if (periode_laporan == "3") {
+                $("#baris_tanggal").show();
+                $("#baris_bulan").hide();
+                $("#baris_tahun").hide();
+            } else {
+                $("#baris_tanggal").hide();
+                $("#baris_bulan").show();
+                $("#baris_tahun").show();
+            }
+        }
+
+        togglePeriodeLaporan();
+
+        $("#periode_laporan").change(function() {
+            togglePeriodeLaporan();
         });
     });
 </script>

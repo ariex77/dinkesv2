@@ -10,7 +10,7 @@
     <div class="col-12">
         <div class="card mb-4">
             <div class="user-profile-header-banner">
-                <img src="{{ asset('assets/img/pages/profile-bg.jpg') }}" alt="Banner image" class="rounded-top">
+                <div class="rounded-top" style="height: 250px; background-color: {{ $general_setting->theme_color_1 }};"></div>
             </div>
             <div class="user-profile-header d-flex flex-column flex-sm-row text-sm-start text-center mb-4">
                 <div class="flex-shrink-0 mt-n2 mx-sm-0 mx-auto">
@@ -41,6 +41,16 @@
                                 <li class="list-inline-item d-flex gap-1">
                                     <i class="ti ti-user"></i> {{ textCamelCase($karyawan->nama_jabatan) }}
                                 </li>
+                                <li class="list-inline-item d-flex gap-1">
+                                    <i class="ti ti-calendar-event"></i>
+                                    {{ !empty($karyawan->tanggal_masuk) ? DateToIndo($karyawan->tanggal_masuk) : '-' }}
+                                </li>
+                                @if ($karyawan->status_aktif_karyawan === '0')
+                                    <li class="list-inline-item d-flex gap-1">
+                                        <i class="ti ti-calendar-off"></i>
+                                        {{ !empty($karyawan->tanggal_nonaktif) ? DateToIndo($karyawan->tanggal_nonaktif) : '-' }}
+                                    </li>
+                                @endif
                             </ul>
                         </div>
                         @if ($karyawan->status_aktif_karyawan === '1')
@@ -61,11 +71,11 @@
 </div>
 <!-- User Profile Content -->
 <div class="row">
-    <div class="col-xl-3 col-lg-5 col-md-5">
+    <div class="col-xl-4 col-lg-5 col-md-5">
         <!-- About User -->
         <div class="card mb-4">
             <div class="card-body">
-                <small class="card-text text-uppercase">Data Karyawan</small>
+                <small class="card-text text-uppercase text-muted small">Data Pribadi</small>
                 <ul class="list-unstyled mb-4 mt-3">
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-barcode text-heading"></i><span class="fw-medium mx-2 text-heading">NIK:</span>
@@ -78,7 +88,7 @@
                     </li>
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-user text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Nama Karyawan:</span> <span>{{ textCamelCase($karyawan->nama_karyawan) }}</span>
+                            Nama Lengkap:</span> <span>{{ textCamelCase($karyawan->nama_karyawan) }}</span>
                     </li>
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-map-pin text-heading"></i><span class="fw-medium mx-2 text-heading">
@@ -89,93 +99,55 @@
                             Tanggal Lahir:</span>
                         <span>{{ !empty($karyawan->tanggal_lahir) ? DateToIndo($karyawan->tanggal_lahir) : '' }}</span>
                     </li>
-                    <li class="mb-3">
-                        <i class="ti ti-map text-heading"></i>
-                        <span class="fw-medium mx-2 text-heading">
-                            Alamat:
-                        </span>
-                        <span mb-3>{{ textCamelCase($karyawan->alamat) }}</span>
-                    </li>
-
-
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-gender-genderfluid text-heading"></i><span class="fw-medium mx-2 text-heading">
                             Jenis Kelamin:</span>
                         <span>{{ $karyawan->jenis_kelamin == 'L' ? 'Laki - Laki' : 'Perempuan' }}</span>
                     </li>
                     <li class="d-flex align-items-center mb-3">
-                        <i class="ti ti-phone text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            No. HP:</span>
-                        <span>{{ $karyawan->no_hp }}</span>
-                    </li>
-                    <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-friends text-heading"></i><span class="fw-medium mx-2 text-heading">
                             Status Kawin:</span>
                         <span>{{ $karyawan->keterangan_status_kawin }} </span>
                     </li>
-                    <li class="d-flex align-items-center mb-3">
+                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-school text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Pendidikan Terakhir:</span>
+                            Pendidikan:</span>
                         <span>{{ $karyawan->pendidikan_terakhir }} </span>
                     </li>
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="ti ti-building text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Kantor:</span>
-                        <span>{{ $karyawan->nama_cabang }} </span>
-                    </li>
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="ti ti-building-arch text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Depertemen:</span>
-                        <span>{{ $karyawan->nama_dept }} </span>
-                    </li>
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="ti ti-user text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Jabatan:</span>
-                        <span>{{ $karyawan->nama_jabatan }} </span>
-                    </li>
-
-                    <li class="d-flex align-items-center mb-3">
-                        <i class="ti ti-calendar text-heading"></i><span class="fw-medium mx-2 text-heading">
-                            Tanggal Masuk:</span>
-                        <span>{{ !empty($karyawan->tanggal_masuk) ? DateToIndo($karyawan->tanggal_masuk) : '' }}
+                    <li class="d-flex align-items-start mb-3">
+                        <i class="ti ti-map text-heading mt-1"></i>
+                        <span class="fw-medium mx-2 text-heading">
+                            Alamat:
                         </span>
+                        <span>{{ textCamelCase($karyawan->alamat) }}</span>
                     </li>
-                    @if ($karyawan->status_aktif_karyawan === '0')
-                        <li class="d-flex align-items-center mb-3">
-                            <i class="ti ti-calendar text-heading"></i><span class="fw-medium mx-2 text-heading">
-                                Tanggal Nonaktif:</span>
-                            <span>{{ !empty($karyawan->tanggal_nonaktif) ? DateToIndo($karyawan->tanggal_nonaktif) : '' }}
-                            </span>
-                        </li>
-                        <li class="d-flex align-items-center mb-3">
-                            <i class="ti ti-calendar text-heading"></i><span class="fw-medium mx-2 text-heading">
-                                Tanggal Off Gaji:</span>
-                            <span>{{ !empty($karyawan->tanggal_off_gaji) ? DateToIndo($karyawan->tanggal_off_gaji) : '' }}
-                            </span>
-                        </li>
-                    @endif
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="ti ti-phone text-heading"></i><span class="fw-medium mx-2 text-heading">
+                            No. HP:</span>
+                        <span>{{ $karyawan->no_hp }}</span>
+                    </li>
                 </ul>
-
             </div>
         </div>
         <!--/ About User -->
+        <!-- User Account -->
         <div class="card mb-4">
             <div class="card-body">
-                <small class="card-text text-uppercase">Data User</small>
+                <small class="card-text text-uppercase text-muted small">Akun Pengguna</small>
                 @if ($user)
                     <ul class="list-unstyled mb-4 mt-3">
                         <li class="d-flex align-items-center mb-3">
-                            <i class="ti ti-barcode text-heading"></i><span class="fw-medium mx-2 text-heading">Username :</span>
+                            <i class="ti ti-user-circle text-heading"></i><span class="fw-medium mx-2 text-heading">Username :</span>
                             <span>{{ $user->username }}</span>
                         </li>
                         <li class="d-flex align-items-center mb-3">
-                            <i class="ti ti-barcode text-heading"></i><span class="fw-medium mx-2 text-heading">Email :</span>
+                            <i class="ti ti-mail text-heading"></i><span class="fw-medium mx-2 text-heading">Email :</span>
                             <span>{{ $user->email }}</span>
                         </li>
-                        <li class="d-flex align-items-center mb-3">
-                            <i class="ti ti-barcode text-heading"></i><span class="fw-medium mx-2 text-heading">Password :</span>
+                        {{-- <li class="d-flex align-items-center mb-3">
+                            <i class="ti ti-lock text-heading"></i><span class="fw-medium mx-2 text-heading">Password :</span>
                             <span>********</span>
-                        </li>
+                        </li> --}}
                     </ul>
                 @else
                     <div class="alert alert-danger mt-4" role="alert">
@@ -184,35 +156,31 @@
                 @endif
             </div>
         </div>
-
-
-
+        <!--/ User Account -->
 
     </div>
-    <div class="col-xl-9 col-lg-7 col-md-7">
+    <div class="col-xl-8 col-lg-7 col-md-7">
+        <!-- Employment Details -->
+        <!-- Employment Details Removed as per request (Redundant with Header) -->
+
         <!-- Activity Timeline -->
         <div class="row">
             <div class="col-md-12">
                 <ul class="nav nav-pills flex-column flex-sm-row mb-4">
                     <li class="nav-item">
-                        <a class="nav-link active" href="javascript:void(0);"><i class="ti-xs ti ti-face-id me-1"></i> Face
-                            Recognition</a>
+                        <a class="nav-link active" href="javascript:void(0);"><i class="ti-xs ti ti-face-id me-1"></i> Wajah</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages-profile-teams.html"><i class="ti-xs ti ti-home-move me-1"></i>
+                        <a class="nav-link" href="javascript:void(0);"><i class="ti-xs ti ti-home-move me-1"></i>
                             Mutasi/Promosi/Demosi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages-profile-projects.html"><i class="ti-xs ti ti-coins me-1"></i>
+                        <a class="nav-link" href="javascript:void(0);"><i class="ti-xs ti ti-coins me-1"></i>
                             Gaji</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="pages-profile-connections.html"><i class="ti-xs ti ti-report-money me-1"></i> Tunjangan</a>
+                        <a class="nav-link" href="javascript:void(0);"><i class="ti-xs ti ti-report-money me-1"></i> Tunjangan</a>
                     </li>
-                    {{-- <li class="nav-item">
-                  <a class="nav-link" href="{{ route('karyawan.dokumen', Crypt::encrypt($karyawan->nik)) }}"><i
-                        class="ti-xs ti ti-file-stack me-1"></i> Dokumen</a>
-               </li> --}}
                 </ul>
             </div>
         </div>
@@ -266,7 +234,6 @@
                 </div>
             </div>
         </div>
-
         <!--/ Activity Timeline -->
     </div>
 </div>
@@ -306,6 +273,15 @@
 @endsection
 @push('myscript')
 <script src="{{ asset('assets/external/js/face-model-cache.js') }}"></script>
+<style>
+
+    .nav-pills .nav-link.active,
+    .nav-pills .show>.nav-link {
+        background-color: {{ $general_setting->theme_color_1 }} !important;
+        color: #fff !important;
+        box-shadow: 0 2px 4px 0 rgba(15, 77, 58, 0.4);
+    }
+</style>
 <script>
     $("#btnAddface").click(function(e) {
         e.preventDefault();

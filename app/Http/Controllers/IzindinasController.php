@@ -314,7 +314,7 @@ class IzindinasController extends Controller
                     })
                     ->first();
                 
-                 if ($nextRule) {
+                 if ($nextRule && !$user->hasRole('super admin')) {
                     // Update to next step
                     Izindinas::where('kode_izin_dinas', $kode_izin_dinas)->update(['approval_step' => $nextLevel]);
                 } else {

@@ -7,50 +7,167 @@
     <title>Presensi {{ date('Y-m-d H:i:s') }}</title>
     <link rel="stylesheet" href="{{ asset('assets/css/report.css') }}">
     <style>
-        p {
-            line-height: 1rem !important;
-            margin: 0 !important;
-            padding: 0 !important;
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .header table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header h4 {
+            line-height: 1.2;
+            margin: 0 0 5px 0;
         }
 
         .btn {
             display: inline-block;
-            padding: 0.375rem 0.75rem;
+            padding: 6px 12px;
             margin-bottom: 0;
-            font-size: 1rem;
+            font-size: 14px;
             font-weight: 400;
-            line-height: 1.5;
+            line-height: 1.42857143;
             text-align: center;
-            text-decoration: none;
+            white-space: nowrap;
             vertical-align: middle;
+            -ms-touch-action: manipulation;
+            touch-action: manipulation;
             cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            background-image: none;
             border: 1px solid transparent;
-            border-radius: 0.375rem;
-            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            border-radius: 4px;
+            text-decoration: none;
         }
 
         .btn-warning {
-            color: #000;
-            background-color: #ffc107;
-            border-color: #ffc107;
-        }
-
-        .btn-warning:hover {
-            color: #000;
-            background-color: #ffca2c;
-            border-color: #ffc920;
+            color: #fff;
+            background-color: #f0ad4e;
+            border-color: #eea236;
         }
 
         .btn-secondary {
-            color: #fff;
-            background-color: #6c757d;
-            border-color: #6c757d;
+            color: #333;
+            background-color: #fff;
+            border-color: #ccc;
         }
 
-        .btn-secondary:hover {
-            color: #fff;
-            background-color: #5a6268;
-            border-color: #545b62;
+        /* Responsive Table Container */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            max-height: 75vh;
+            overflow-y: auto;
+            position: relative;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+
+        .datatable3 {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            min-width: 100%;
+        }
+
+        .datatable3 th,
+        .datatable3 td {
+            border: 1px solid #333;
+            padding: 10px; /* Increased padding */
+            vertical-align: middle; /* Align middle as requested */
+            white-space: nowrap;
+        }
+
+        .datatable3 td p {
+            margin-top: 5px !important;
+            margin-bottom: 5px !important;
+            line-height: 1 !important;
+        }
+
+        .datatable3 td h4 {
+            margin-top: 0 !important;
+            margin-bottom: 5px !important;
+        }
+
+        .datatable3 th {
+            background-color: #024a75;
+            color: white;
+            text-transform: uppercase;
+            text-align: center;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 20; /* Higher than body columns */
+            height: 40px; /* Fixed height for sticky calculation */
+            box-sizing: border-box;
+            box-shadow: inset 0 0 0 1px #333; /* Simulate border to fix transparency gaps */
+            border: none; /* Remove default border to rely on box-shadow */
+        }
+
+        .datatable3 thead tr:nth-child(2) th {
+            top: 40px;
+        }
+
+        .datatable3 thead tr:nth-child(3) th {
+            top: 80px;
+        }
+        
+        
+        /* Sticky Column Styles (Screen Only) */
+        @media screen {
+            .sticky-col {
+                position: sticky;
+                background-color: #fff;
+                z-index: 10; /* Body sticky columns */
+                /* Fix for missing borders in sticky columns */
+                box-shadow: inset 0 0 0 1px #333; /* Simulate border */
+                border: none !important; /* Remove actual border to prevent double lines */
+            }
+            
+            .datatable3 th.sticky-col {
+                z-index: 30; /* Intersection (Header + Sticky Col) must be highest */
+                background-color: #024a75;
+                box-shadow: inset 0 0 0 1px #333; /* Simulate border */
+            }
+
+            .first-col { left: 0; width: 30px; }
+            .second-col { left: 30px; width: 70px; }
+            .third-col { left: 100px; width: 150px; }
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            .table-responsive {
+                overflow: visible;
+                border: none;
+            }
+            .datatable3 {
+                width: 100%;
+                table-layout: auto;
+            }
+            .btn {
+                display: none;
+            }
+            .sticky-col {
+                position: static !important;
+            }
         }
     </style>
     <script src="{{ asset('assets/vendor/libs/jquery/jquery.js') }}"></script>
@@ -62,7 +179,7 @@
     <div class="header" style="margin-bottom: 10px">
         <table>
             <tr>
-                <td>
+                <td style="width: 70px; padding-right: 10px;">
                     @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
                         <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" alt="Logo Perusahaan" style="max-width: 100px;">
                     @else
@@ -125,46 +242,28 @@
             </tr>
         </table>
     </div>
-    <div class="content">
-        <table class="datatable3" style="width: 250%; table-layout: fixed">
-            <colgroup>
-                <col style="width: 1%">
-                
-                <col style="width: 5%">
-                
-                @php
-                    $tgl_col = $periode_dari;
-                @endphp
-                @while (strtotime($tgl_col) <= strtotime($periode_sampai))
-                    <col style="width: 100px">
-                    @php
-                        $tgl_col = date('Y-m-d', strtotime('+1 day', strtotime($tgl_col)));
-                    @endphp
-                @endwhile
-                
-                {{-- Rekap Columns (9 columns) --}}
-                <col style="width: 2%">
-                <col style="width: 2%">
-                <col style="width: 2%">
-                <col style="width: 2%">
-                
-            </colgroup>
+    <div class="table-responsive">
+        <table class="datatable3">
             <thead>
                 <tr>
-                    <th rowspan="3">No</th>
-                   
-                    <th rowspan="3">Nama Karyawan</th>
-                    
-                    
-                    
-                    <th colspan="4">Rekap</th>
+                    <th rowspan="3" class="sticky-col first-col">No</th>
+                    <th rowspan="3" class="sticky-col second-col">Nik</th>
+                    <th rowspan="3" class="sticky-col third-col">Nama Karyawan</th>
+                    <th rowspan="3">Jabatan</th>
+                    <th rowspan="3">Dept</th>
+                    <th rowspan="3">Cabang</th>
+                    <th colspan="{{ $jmlhari }}">Tanggal</th>
+                    <th rowspan="3" style="min-width: 60px">Denda</th>
+                    <th rowspan="3" style="min-width: 60px">Pot. Jam</th>
+                    <th rowspan="3" style="min-width: 60px">Lembur</th>
+                    <th colspan="9">Rekap</th>
                 </tr>
                 <tr>
                     @php
                         $tanggal_presensi = $periode_dari;
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
-                        
+                        <th style="width: 100px">{{ getHari(date('Y-m-d', strtotime($tanggal_presensi))) }}</th>
                         @php
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
@@ -173,14 +272,18 @@
                     <th rowspan="2">Izin</th>
                     <th rowspan="2">Sakit</th>
                     <th rowspan="2">Alfa</th>
-                    
+                    <th rowspan="2">Libur</th>
+                    <th rowspan="2">Terlambat</th>
+                    <th rowspan="2">Tidak Scan Masuk</th>
+                    <th rowspan="2">Tidak Scan Pulang</th>
+                    <th rowspan="2">Pulang Cepat</th>
                 </tr>
                 <tr>
                     @php
                         $tanggal_presensi = $periode_dari;
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
-                        
+                        <th>{{ date('d', strtotime($tanggal_presensi)) }}</th>
                         @php
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
@@ -197,10 +300,12 @@
                         $mapJadwalByDay = $jadwal_byday[$d['nik']] ?? [];
                     @endphp
                     <tr>
-                        <td style="width:1%">{{ $loop->iteration }}</td>
-                        
-                        <td style="width:5%">{{ $d['nama_karyawan'] }}</td>
-                        
+                        <td class="sticky-col first-col">{{ $loop->iteration }}</td>
+                        <td class="sticky-col second-col">'{{ $d['nik_show'] ?? $d['nik'] }}</td>
+                        <td class="sticky-col third-col">{{ $d['nama_karyawan'] }}</td>
+                        <td>{{ $d['nama_jabatan'] }}</td>
+                        <td style="text-align: center">{{ $d['kode_dept'] }}</td>
+                        <td style="text-align: center">{{ $d['kode_cabang'] }}</td>
                         @php
                             $total_denda = 0;
                             $total_potongan_jam = 0;
@@ -555,17 +660,26 @@
 
                                 $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
                             @endphp
-                            
+                            <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}">
+                                {!! $ket !!}
+
+                            </td>
                             @php
                                 $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                             @endphp
                         @endwhile
-                        
+                        <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
+                        <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
+                        <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
                         <td style="text-align:center">{{ $jml_hadir }}</td>
                         <td style="text-align:center">{{ $jml_izin }}</td>
                         <td style="text-align:center">{{ $jml_sakit }}</td>
                         <td style="text-align:center">{{ $jml_alfa }}</td>
-                        
+                        <td style="text-align:center">{{ $jml_libur }}</td>
+                        <td style="text-align:center">{{ $jml_terlambat }}</td>
+                        <td style="text-align:center">{{ $jml_tidakscanmasuk }}</td>
+                        <td style="text-align:center">{{ $jml_tidakscanpulang }}</td>
+                        <td style="text-align:center">{{ $jml_pulangcepat }}</td>
                     </tr>
                 @endforeach
             </tbody>

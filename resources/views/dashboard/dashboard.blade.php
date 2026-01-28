@@ -29,10 +29,10 @@
     }
 
     .stat-card--highlight {
-        background: linear-gradient(135deg, #0f9f6e, #0b5d3d);
+        background: var(--theme-color-1);
         color: #fff;
         border: none;
-        box-shadow: 0 25px 45px rgba(15, 159, 110, 0.35);
+        box-shadow: 0 25px 45px rgba(0, 0, 0, 0.15);
     }
 
     .stat-card__top {
@@ -84,7 +84,7 @@
         align-items: center;
         gap: 0.35rem;
         font-weight: 600;
-        color: var(--stat-accent, #0f9f6e);
+        color: var(--stat-accent, var(--theme-color-1));
     }
 
     .stat-card__trend i {
@@ -214,9 +214,9 @@
     .welcome-card {
         border-radius: 24px;
         padding: 2rem;
-        background: linear-gradient(135deg, #0f9f6e 0%, #0b5d3d 100%);
+        background: var(--theme-color-1);
         border: 1px solid rgba(0, 0, 0, 0.05);
-        box-shadow: 0 25px 45px rgba(15, 159, 110, 0.35);
+        box-shadow: 0 25px 45px rgba(0, 0, 0, 0.15);
         margin-top: 1.5rem;
         margin-bottom: 2rem;
         position: relative;
@@ -395,7 +395,7 @@
 
 <div class="stat-grid">
     @foreach ($presenceStats as $stat)
-        <div class="stat-card {{ $stat['class'] ?? '' }}" style="--stat-accent: {{ $stat['accent'] ?? '#0f9f6e' }};">
+        <div class="stat-card {{ $stat['class'] ?? '' }}" style="--stat-accent: {{ $stat['accent'] ?? 'var(--theme-color-1)' }};">
             <div class="stat-card__top">
                 <div>
                     <p class="stat-card__title">{{ $stat['title'] }}</p>

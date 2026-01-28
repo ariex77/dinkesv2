@@ -134,10 +134,18 @@ class PresensiistirahatController extends Controller
         $image = $request->image;
         $folderPath = "public/uploads/istirahat/";
         $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
-        $image_parts = explode(";base64", $image);
-        $image_base64 = base64_decode($image_parts[1]);
-        $fileName = $formatName . ".png";
-        $file = $folderPath . $fileName;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, file_get_contents($image));
+        } else {
+            $image_parts = explode(";base64", $image);
+            $image_base64 = base64_decode($image_parts[1]);
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, $image_base64);
+        }
 
         $jam_kerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
 
@@ -177,7 +185,7 @@ class PresensiistirahatController extends Controller
                                 'foto_istirahat_in' => $fileName
                             ]);
                         }
-                        Storage::put($file, $image_base64);
+                        // Storage::put($file, $image_base64);
 
                         return response()->json(['status' => true, 'message' => 'Berhasil Memulai Istirahat', 'notifikasi' => ''], 200);
                     } catch (\Exception $e) {
@@ -196,7 +204,7 @@ class PresensiistirahatController extends Controller
                                 'foto_istirahat_out' => $fileName
                             ]);
                         }
-                        Storage::put($file, $image_base64);
+                        // Storage::put($file, $image_base64);
                         return response()->json(['status' => true, 'message' => 'Berhasil Mengakhiri Istirahat', 'notifikasi' => ''], 200);
                     } catch (\Exception $e) {
                         return response()->json(['status' => false, 'message' => $e->getMessage()], 400);

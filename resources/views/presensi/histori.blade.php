@@ -7,6 +7,10 @@
             height: 2.5rem;
             cursor: pointer;
         }
+        
+        .iconpresence {
+            color: var(--color-nav);
+        }
 
         /* Tambahkan style untuk header dan content */
         #header-section {
@@ -33,8 +37,8 @@
         }
 
         .flatpickr-date:focus {
-            border-color: #32745e !important;
-            box-shadow: 0 0 0 3px rgba(50, 116, 94, 0.1) !important;
+            border-color: var(--color-nav) !important;
+            box-shadow: 0 0 0 3px rgba(var(--color-nav-rgb), 0.1) !important;
         }
 
         .flatpickr-date::after {
@@ -58,7 +62,9 @@
         .flatpickr-date:hover::after,
         .flatpickr-date:focus::after {
             opacity: 1;
-            transform: translateY(-50%) scale(1.1);
+            /* Filter to colorize the SVG if possible, or just accept default for now. 
+               Ideally use mask-image for full dynamic color. */
+            /* transform: translateY(-50%) scale(1.1); */
         }
 
         /* Flatpickr Calendar Container */
@@ -85,7 +91,7 @@
 
         /* Flatpickr Header */
         .flatpickr-months {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
+            background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-nav-active) 100%) !important;
             padding: 15px 0 !important;
             border-radius: 16px 16px 0 0;
         }
@@ -117,12 +123,12 @@
 
         /* Flatpickr Weekdays */
         .flatpickr-weekdays {
-            background: rgba(50, 116, 94, 0.1) !important;
+            background: rgba(var(--color-nav-rgb), 0.1) !important;
             padding: 10px 0 !important;
         }
 
         .flatpickr-weekday {
-            color: #32745e !important;
+            color: var(--color-nav) !important;
             font-weight: 600 !important;
             font-size: 13px !important;
         }
@@ -140,29 +146,29 @@
         }
 
         .flatpickr-day:hover {
-            background: rgba(50, 116, 94, 0.1) !important;
-            border-color: #32745e !important;
+            background: rgba(var(--color-nav-rgb), 0.1) !important;
+            border-color: var(--color-nav) !important;
             transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(50, 116, 94, 0.2) !important;
+            box-shadow: 0 4px 8px rgba(var(--color-nav-rgb), 0.2) !important;
         }
 
         .flatpickr-day.selected {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
-            border-color: #32745e !important;
+            background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-nav-active) 100%) !important;
+            border-color: var(--color-nav) !important;
             color: white !important;
             font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(50, 116, 94, 0.4) !important;
+            box-shadow: 0 4px 12px rgba(var(--color-nav-rgb), 0.4) !important;
         }
 
         .flatpickr-day.today {
-            border-color: #32745e !important;
-            background: rgba(50, 116, 94, 0.1) !important;
-            color: #32745e !important;
+            border-color: var(--color-nav) !important;
+            background: rgba(var(--color-nav-rgb), 0.1) !important;
+            color: var(--color-nav) !important;
             font-weight: 700 !important;
         }
 
         .flatpickr-day.today.selected {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
+            background: linear-gradient(135deg, var(--color-nav) 0%, var(--color-nav-active) 100%) !important;
             color: white !important;
         }
 
@@ -184,7 +190,7 @@
         }
 
         .flatpickr-time input:hover {
-            border-color: #32745e !important;
+            border-color: var(--color-nav) !important;
         }
 
         /* Mobile Responsive - Enhanced */
@@ -322,126 +328,68 @@
                     </div>
                 @endif
                 @foreach ($datapresensi as $d)
-                    @if ($d->status == 'h')
-                        @php
-                            $jam_in = date('Y-m-d H:i', strtotime($d->jam_in));
-                            $jam_masuk = date('Y-m-d H:i', strtotime($d->tanggal . ' ' . $d->jam_masuk));
-                        @endphp
-                        <div class="card historicard historibordergreen mb-1">
-                            <div class="historicontent">
-                                <div class="historidetail1">
-                                    <div class="iconpresence">
-                                        <ion-icon name="finger-print-outline" style="font-size: 48px"></ion-icon>
-                                    </div>
-                                    <div class="datepresence">
-                                        <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                        <span class="timepresence">
-                                            @if ($d->jam_in != null)
-                                                {{ date('H:i', strtotime($d->jam_in)) }}
-                                            @else
-                                                <span class="text-danger">
-                                                    <ion-icon name="hourglass-outline"></ion-icon> Belum Absen
-                                                </span>
-                                            @endif
-                                            -
-                                            @if ($d->jam_out != null)
-                                                {{ date('H:i', strtotime($d->jam_out)) }}
-                                            @else
-                                                <span class="text-danger">
-                                                    <ion-icon name="hourglass-outline"></ion-icon> Belum Absen
-                                                </span>
-                                            @endif
-                                        </span>
-                                        <br>
-                                        @if ($d->jam_in != null)
-                                            @php
-                                                $terlambat = hitungjamterlambat(date('H:i', strtotime($jam_in)), date('H:i', strtotime($jam_masuk)));
-
-                                            @endphp
-                                            {!! $terlambat['show'] !!}
+                    <div class="card mb-1 card-hover" style="border: 1px solid #f0f0f0; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                        <div class="card-body p-2 d-flex align-items-center">
+                            <div class="icon-container mr-1 d-flex align-items-center justify-content-center" 
+                                style="width: 45px; height: 45px; border-radius: 12px; flex-shrink: 0; 
+                                background-color: {{ $d->status == 'h' ? 'rgba(var(--color-nav-rgb), 0.1)' : ($d->status == 'i' ? 'rgba(30, 144, 255, 0.1)' : ($d->status == 's' ? 'rgba(255, 99, 132, 0.1)' : 'rgba(255, 159, 64, 0.1)')) }};">
+                                @if ($d->status == 'h')
+                                    <ion-icon name="finger-print-outline" style="font-size: 20px; color: var(--color-nav);"></ion-icon>
+                                @elseif ($d->status == 'i')
+                                    <ion-icon name="document-text-outline" style="font-size: 20px; color: #1e90ff;"></ion-icon>
+                                @elseif ($d->status == 's')
+                                    <ion-icon name="medkit-outline" style="font-size: 20px; color: #ff6384;"></ion-icon>
+                                @elseif ($d->status == 'c')
+                                    <ion-icon name="calendar-outline" style="font-size: 20px; color: #ff9f40;"></ion-icon>
+                                @endif
+                            </div>
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 text-truncate" style="font-size: 14px; font-weight: 600; color: #333;">{{ DateToIndo($d->tanggal) }}</h5>
+                                    <span class="badge" style="background-color: #f8f9fa; color: #666; font-weight: normal; font-size: 10px; border: 1px solid #eee;">
+                                        {{ $d->nama_jam_kerja }} ({{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }})
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex flex-column" style="font-size: 12px; line-height: 1.2;">
+                                        @if ($d->status == 'h')
+                                            <span style="color: #555;">
+                                                <span style="font-weight: 500;">{{ $d->jam_in != null ? date('H:i', strtotime($d->jam_in)) : '__:__' }}</span>
+                                                <span style="color: #ccc; margin: 0 2px;">-</span>
+                                                <span style="font-weight: 500;">{{ $d->jam_out != null ? date('H:i', strtotime($d->jam_out)) : '__:__' }}</span>
+                                            </span>
+                                        @elseif ($d->status == 'i')
+                                            <span style="color: #1e90ff;">Izin: {{ $d->keterangan_izin }}</span>
+                                        @elseif ($d->status == 's')
+                                            <span style="color: #ff6384;">Sakit: {{ $d->keterangan_sakit }}</span>
+                                        @elseif ($d->status == 'c')
+                                            <span style="color: #ff9f40;">Cuti: {{ $d->keterangan_cuti }}</span>
                                         @endif
-
-
                                     </div>
-                                </div>
-                                <div class="historidetail2">
-                                    <h4>{{ $d->nama_jam_kerja }}</h4>
-                                    <span class="timepresence">
-                                        {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                    </span>
+                                    
+                                    @if ($d->status == 'h' && $d->jam_in != null)
+                                        @php
+                                            $jam_in_ts = strtotime($d->jam_in);
+                                            $jam_masuk_ts = strtotime($d->tanggal . ' ' . $d->jam_masuk);
+                                        @endphp
+                                        @if ($jam_in_ts > $jam_masuk_ts)
+                                            @php
+                                                $terlambat_selisih = $jam_in_ts - $jam_masuk_ts;
+                                                $jam_telat = floor($terlambat_selisih / 3600);
+                                                $sisa = $terlambat_selisih % 3600;
+                                                $menit_telat = floor($sisa / 60);
+                                            @endphp
+                                            <span class="badge bg-danger" style="font-size: 10px;">
+                                                Telat {{ $jam_telat > 0 ? $jam_telat . 'j ' : '' }}{{ $menit_telat }}m
+                                            </span>
+                                        @else
+                                            <span class="badge bg-success" style="font-size: 10px;">Tepat Waktu</span>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>
-                    @elseif($d->status == 'i')
-                        <div class="card historicard historibordergreen mb-1">
-                            <div class="historicontent">
-                                <div class="historidetail1">
-                                    <div class="iconpresence">
-                                        <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
-                                    </div>
-                                    <div class="datepresence">
-                                        <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                        <h4 class="timepresence">
-                                            Izin Absen
-                                        </h4>
-                                        <span>{{ $d->keterangan_izin }}</span>
-                                    </div>
-                                </div>
-                                <div class="historidetail2">
-                                    <h4>{{ $d->nama_jam_kerja }}</h4>
-                                    <span class="timepresence">
-                                        {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    @elseif($d->status == 'i')
-                        <div class="card historicard historibordergreen mb-1">
-                            <div class="historicontent">
-                                <div class="historidetail1">
-                                    <div class="iconpresence">
-                                        <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
-                                    </div>
-                                    <div class="datepresence">
-                                        <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                        <h4 class="timepresence">
-                                            Izin Cuti
-                                        </h4>
-                                        <span>{{ $d->keterangan_cuti }}</span>
-                                    </div>
-                                </div>
-                                <div class="historidetail2">
-                                    <h4>{{ $d->nama_jam_kerja }}</h4>
-                                    <span class="timepresence">
-                                        {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    @elseif($d->status == 's')
-                        <div class="card historicard historibordergreen mb-1">
-                            <div class="historicontent">
-                                <div class="historidetail1">
-                                    <div class="iconpresence">
-                                        <ion-icon name="bag-add-outline" style="font-size: 48px; color: #d4095a"></ion-icon>
-                                    </div>
-                                    <div class="datepresence">
-                                        <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                        <h4 class="timepresence">
-                                            Izin Sakit
-                                        </h4>
-                                        <span>{{ $d->keterangan_sakit }}</span>
-                                    </div>
-                                </div>
-                                <div class="historidetail2">
-                                    <h4>{{ $d->nama_jam_kerja }}</h4>
-                                    <span class="timepresence">
-                                        {{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                    </div>
                 @endforeach
             </div>
         </div>

@@ -359,7 +359,7 @@ class IzinabsenController extends Controller
                     })
                     ->first();
                 
-                if ($nextRule) {
+                if ($nextRule && !$user->hasRole('super admin')) {
                     // Move to next step
                      Izinabsen::where('kode_izin', $kode_izin)->update([
                         'approval_step' => $nextLevel

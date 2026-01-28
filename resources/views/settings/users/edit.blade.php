@@ -1,21 +1,27 @@
 <form action="{{ route('users.update', Crypt::encrypt($user->id)) }}" id="formeditUser" method="POST">
+    @php
+        $currentRole = strtolower($user->roles->pluck('name')->first() ?? '');
+        $isSuperAdmin = $currentRole === 'super admin';
+        $isKaryawan = $currentRole === 'karyawan';
+    @endphp
     @csrf
     @method('PUT')
-    <x-input-with-icon icon="ti ti-user" label="Nama User" name="name" value="{{ $user->name }}" />
+    <x-input-with-icon icon="ti ti-user" label="Nama User" name="name" value="{{ $user->name }}" :readonly="$isKaryawan" />
     <x-input-with-icon icon="ti ti-user" label="Username" name="username" value="{{ $user->username }}" />
     <x-input-with-icon icon="ti ti-mail" label="Email" name="email" value="{{ $user->email }}" />
     <x-input-with-icon icon="ti ti-key" label="Password" name="password" type="password" />
-    <x-select label="Role" name="role" :data="$roles" key="name" textShow="name" :selected="$user->roles->pluck('name')[0]" />
+    @if(!$isKaryawan)
+        <x-select label="Role" name="role" :data="$roles" key="name" textShow="name" :selected="$user->roles->pluck('name')[0]" />
+    @else
+        <input type="hidden" name="role" value="karyawan">
+    @endif
     
+    @if(!$isKaryawan)
     <!-- Hak Akses Cabang -->
     <div class="form-group" id="cabang-access-group">
         <label class="form-label">Hak Akses Cabang</label>
         <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;" id="cabang-checkbox-container">
             @if(isset($cabangs) && count($cabangs) > 0)
-                @php
-                    $currentRole = strtolower($user->roles->pluck('name')->first() ?? '');
-                    $isSuperAdmin = $currentRole === 'super admin';
-                @endphp
                 @foreach($cabangs as $cabang)
                     <div class="form-check mb-2">
                         <input class="form-check-input cabang-checkbox" 
@@ -46,10 +52,6 @@
         <label class="form-label">Hak Akses Departemen</label>
         <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;" id="departemen-checkbox-container">
             @if(isset($departemens) && count($departemens) > 0)
-                @php
-                    $currentRole = strtolower($user->roles->pluck('name')->first() ?? '');
-                    $isSuperAdmin = $currentRole === 'super admin';
-                @endphp
                 @foreach($departemens as $departemen)
                     <div class="form-check mb-2">
                         <input class="form-check-input departemen-checkbox" 
@@ -74,6 +76,7 @@
             <div class="text-danger small">{{ $message }}</div>
         @enderror
     </div>
+    @endif
     
     <div class="form-group">
         <button class="btn btn-primary w-100" type="submit">
@@ -88,8 +91,9 @@
 <script src="{{ asset('/assets/vendor/libs/@form-validation/umd/plugin-auto-focus/index.min.js') }}"></script>
 <script src="{{ asset('assets/js/pages/users/edit.js') }}"></script>
 <script>
+    const isKaryawan = @json($isKaryawan);
     // Auto-check semua cabang dan departemen jika role adalah super admin
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
         const roleSelect = document.querySelector('select[name="role"]');
         const cabangCheckboxes = document.querySelectorAll('.cabang-checkbox');
         const departemenCheckboxes = document.querySelectorAll('.departemen-checkbox');
@@ -99,45 +103,39 @@
         function toggleAccessBasedOnRole() {
             const selectedRole = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.toLowerCase() : '';
             const isSuperAdmin = selectedRole === 'super admin';
+            const cabangGroup = document.getElementById('cabang-access-group');
+            const departemenGroup = document.getElementById('departemen-access-group');
 
-            // Toggle cabang checkboxes
-            cabangCheckboxes.forEach(checkbox => {
-                if (isSuperAdmin) {
-                    checkbox.checked = true;
-                    checkbox.disabled = true;
-                } else {
-                    checkbox.disabled = false;
-                }
-            });
-
-            // Toggle departemen checkboxes
-            departemenCheckboxes.forEach(checkbox => {
-                if (isSuperAdmin) {
-                    checkbox.checked = true;
-                    checkbox.disabled = true;
-                } else {
-                    checkbox.disabled = false;
-                }
-            });
-
-            // Update help text
-            if (cabangHelpText) {
-                cabangHelpText.textContent = isSuperAdmin 
-                    ? 'Super Admin memiliki akses ke semua cabang' 
-                    : 'Pilih cabang yang dapat diakses oleh user ini (minimal 1)';
-            }
-            if (departemenHelpText) {
-                departemenHelpText.textContent = isSuperAdmin 
-                    ? 'Super Admin memiliki akses ke semua departemen' 
-                    : 'Pilih departemen yang dapat diakses oleh user ini (minimal 1)';
-            }
-            
-            // Hide error messages when switching to super admin
             if (isSuperAdmin) {
+                // Hide access groups for Super Admin
+                if (cabangGroup) cabangGroup.style.display = 'none';
+                if (departemenGroup) departemenGroup.style.display = 'none';
+                
+                // Hide error messages
                 const cabangError = document.getElementById('cabang-error');
                 const departemenError = document.getElementById('departemen-error');
                 if (cabangError) cabangError.style.display = 'none';
                 if (departemenError) departemenError.style.display = 'none';
+            } else {
+                // Show access groups for other roles
+                if (cabangGroup) cabangGroup.style.display = 'block';
+                if (departemenGroup) departemenGroup.style.display = 'block';
+                
+                // Ensure checkboxes are enabled
+                cabangCheckboxes.forEach(checkbox => {
+                    checkbox.disabled = false;
+                });
+                departemenCheckboxes.forEach(checkbox => {
+                    checkbox.disabled = false;
+                });
+
+                // Update help text
+                if (cabangHelpText) {
+                    cabangHelpText.textContent = 'Pilih cabang yang dapat diakses oleh user ini (minimal 1)';
+                }
+                if (departemenHelpText) {
+                    departemenHelpText.textContent = 'Pilih departemen yang dapat diakses oleh user ini (minimal 1)';
+                }
             }
         }
 
@@ -164,8 +162,8 @@
                     departemenCheckboxes.forEach(checkbox => {
                         checkbox.disabled = false;
                     });
-                } else {
-                    // Validasi untuk role selain super admin
+                } else if(!isKaryawan) {
+                    // Validasi untuk role selain super admin dan bukan karyawan
                     const checkedCabangs = Array.from(cabangCheckboxes).filter(cb => cb.checked).length;
                     const checkedDepartemens = Array.from(departemenCheckboxes).filter(cb => cb.checked).length;
                     
@@ -252,5 +250,5 @@
                 });
             });
         }
-    });
+    })();
 </script>

@@ -317,6 +317,11 @@ class PresensiController extends Controller
         $in_out = $status == 1 ? "in" : "out";
         $image = $request->image;
         $folderPath = "public/uploads/absensi/";
+        if (!Storage::exists($folderPath)) {
+            Storage::makeDirectory($folderPath, 0775, true);
+            $path = Storage::path($folderPath);
+            chmod($path, 0775);
+        }
 
 
         $jam_kerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
@@ -367,10 +372,18 @@ class PresensiController extends Controller
             }
         }
         $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
-        $image_parts = explode(";base64", $image);
-        $image_base64 = base64_decode($image_parts[1]);
-        $fileName = $formatName . ".png";
-        $file = $folderPath . $fileName;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, file_get_contents($image));
+        } else {
+            $image_parts = explode(";base64", $image);
+            $image_base64 = base64_decode($image_parts[1]);
+            $fileName = $formatName . ".png";
+            $file = $folderPath . $fileName;
+            Storage::put($file, $image_base64);
+        }
 
         // Gunakan Carbon dengan timezone cabang untuk perhitungan jam
         // Parse jam_masuk (bisa H:i atau H:i:s) dan gabungkan dengan tanggal
@@ -465,7 +478,7 @@ class PresensiController extends Controller
                                 'status' => 'h'
                             ]);
                         }
-                        Storage::put($file, $image_base64);
+
 
                         //Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                         if ($generalsetting->notifikasi_wa == 1) {
@@ -521,7 +534,7 @@ class PresensiController extends Controller
                                 'status' => 'h'
                             ]);
                         }
-                        Storage::put($file, $image_base64);
+
                         //Kirim Notifikasi Ke WA (dibungkus try-catch agar error WA tidak mempengaruhi response sukses)
                         if ($generalsetting->notifikasi_wa == 1) {
                             try {

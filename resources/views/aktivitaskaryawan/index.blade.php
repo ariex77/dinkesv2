@@ -35,7 +35,7 @@
                                         </div>
                                     </div>
                                 @endif
-                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                <div class="{{ auth()->user()->hasRole('karyawan') ? 'col-lg-4' : 'col-lg-3' }} col-sm-12 col-md-12">
                                     <div class="form-group mb-3">
                                         <div class="input-group input-group-merge">
                                             <span class="input-group-text" id="basic-addon-search31"><i class="ti ti-calendar"></i></span>
@@ -44,7 +44,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                <div class="{{ auth()->user()->hasRole('karyawan') ? 'col-lg-4' : 'col-lg-3' }} col-sm-12 col-md-12">
                                     <div class="form-group mb-3">
                                         <div class="input-group input-group-merge">
                                             <span class="input-group-text" id="basic-addon-search31"><i class="ti ti-calendar"></i></span>
@@ -53,7 +53,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                <div class="{{ auth()->user()->hasRole('karyawan') ? 'col-lg-4' : 'col-lg-3' }} col-sm-12 col-md-12">
                                     <div class="d-flex gap-1">
                                         <button class="btn btn-primary"><i class="ti ti-search me-1"></i>Cari</button>
                                         @can('aktivitaskaryawan.index')
@@ -83,99 +83,96 @@
                 </div>
                 <div class="row">
                     <div class="col-12">
-                        <div class="table-responsive mb-2">
-                            <table class="table table-hover table-bordered table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>Karyawan</th>
-                                        <th>Aktivitas</th>
-                                        <th>Foto</th>
-                                        <th>Lokasi</th>
-                                        <th>Tanggal</th>
-                                        <th>#</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($aktivitas as $index => $item)
-                                        <tr>
-                                            <td>{{ $aktivitas->firstItem() + $index }}</td>
-                                            <td>
-                                                <div>
-                                                    <strong>{{ $item->nama_karyawan ?? 'N/A' }}</strong><br>
-                                                    <small class="text-muted">{{ $item->nik }}</small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div style="max-width: 300px;">
-                                                    {{ Str::limit($item->aktivitas, 100) }}
-                                                </div>
-                                            </td>
-                                            <td>
-                                                @if ($item->foto)
-                                                    <img src="{{ asset('storage/uploads/aktivitas/' . $item->foto) }}" alt="Foto Aktivitas"
-                                                        class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover;"
-                                                        onclick="showImageModal('{{ asset('storage/uploads/aktivitas/' . $item->foto) }}', 'Foto Aktivitas - {{ $item->karyawan->nama_karyawan ?? $item->nik }}')">
-                                                @else
-                                                    <span class="text-muted">-</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if ($item->lokasi)
-                                                    <span class="badge bg-info">{{ $item->lokasi }}</span>
-                                                @else
-                                                    <span class="text-muted">-</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <strong>{{ $item->created_at->format('d/m/Y') }}</strong><br>
-                                                    <small class="text-muted">{{ $item->created_at->format('H:i:s') }}</small>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    @can('aktivitaskaryawan.index')
-                                                        <div>
-                                                            <a href="{{ route('aktivitaskaryawan.show', $item) }}" class="me-2">
-                                                                <i class="ti ti-eye text-info"></i>
-                                                            </a>
+                        <div class="row">
+                            <div class="col-12">
+                                @forelse($aktivitas as $item)
+                                    <div class="card mb-2 shadow-sm border">
+                                        <div class="card-body p-2">
+                                            <div class="row align-items-center">
+                                                <!-- Foto -->
+                                                <div class="col-md-1 text-center">
+                                                    @php
+                                                        $path = 'uploads/aktivitas/'.$item->foto;
+                                                    @endphp
+                                                    @if ($item->foto && Storage::disk('public')->exists($path))
+                                                        <img src="{{ asset('storage/' . $path) }}" alt="Foto"
+                                                            class="rounded-circle cursor-pointer"
+                                                            style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #e9ecef;"
+                                                            onclick="showImageModal('{{ asset('storage/' . $path) }}', 'Foto Aktivitas - {{ $item->karyawan->nama_karyawan ?? $item->nik }}')">
+                                                    @else
+                                                        <div class="avatar bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 40px; height: 40px; border: 1px solid #e9ecef;">
+                                                            <i class="ti ti-photo-off text-muted"></i>
                                                         </div>
-                                                    @endcan
-                                                    @can('aktivitaskaryawan.edit')
-                                                        <div>
-                                                            <a href="{{ route('aktivitaskaryawan.edit', $item) }}" class="me-2">
-                                                                <i class="ti ti-edit text-success"></i>
+                                                    @endif
+                                                </div>
+                                                <!-- Identity -->
+                                                <div class="col-md-3">
+                                                    <div class="fw-bold text-dark" style="font-size: 14px;">{{ $item->nama_karyawan ?? 'N/A' }}</div>
+                                                    <div class="text-muted" style="font-size: 12px;">{{ $item->nik }}</div>
+                                                </div>
+                                                <!-- Activity -->
+                                                <div class="col-md-3">
+                                                    <div class="fw-bold text-dark mb-1" style="font-size: 11px;">Deskripsi:</div>
+                                                    <div class="text-dark" style="font-size: 13px; line-height: 1.2;">
+                                                        {{ Str::limit($item->aktivitas, 100) }}
+                                                    </div>
+                                                </div>
+                                                <!-- Map Icon -->
+                                                <div class="col-md-1 text-center">
+                                                    @if ($item->lokasi)
+                                                        <a href="javascript:void(0)" onclick="showMapModal('{{ $item->lokasi }}', 'Lokasi - {{ $item->karyawan->nama_karyawan ?? $item->nik }}')" class="text-primary fs-3" title="Lihat Lokasi">
+                                                            <i class="ti ti-map-2"></i>
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted" style="font-size: 10px;">-</span>
+                                                    @endif
+                                                </div>
+                                                <!-- Info -->
+                                                <div class="col-md-2 text-center">
+                                                    <div class="text-muted" style="font-size: 11px;">
+                                                        {{ $item->created_at->format('d/m/Y') }}
+                                                    </div>
+                                                    <div class="text-muted" style="font-size: 10px;">
+                                                        {{ $item->created_at->format('H:i:s') }}
+                                                    </div>
+                                                </div>
+                                                <!-- Actions -->
+                                                <div class="col-md-2 text-end">
+                                                    <div class="btn-group shadow-sm" role="group">
+                                                        @can('aktivitaskaryawan.index')
+                                                            <a href="{{ route('aktivitaskaryawan.show', $item) }}" class="btn btn-sm btn-outline-info py-1 px-2" title="Detail">
+                                                                <i class="ti ti-eye"></i>
                                                             </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('aktivitaskaryawan.delete')
-                                                        <div>
-                                                            <form method="POST" name="deleteform" class="deleteform me-1"
+                                                        @endcan
+                                                        @can('aktivitaskaryawan.edit')
+                                                            <a href="{{ route('aktivitaskaryawan.edit', $item) }}" class="btn btn-sm btn-outline-success py-1 px-2" title="Edit">
+                                                                <i class="ti ti-edit"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('aktivitaskaryawan.delete')
+                                                            <form method="POST" name="deleteform" class="deleteform d-inline"
                                                                 action="{{ route('aktivitaskaryawan.destroy', $item) }}">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <a href="#" class="delete-confirm ml-1">
-                                                                    <i class="ti ti-trash text-danger"></i>
-                                                                </a>
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2" title="Hapus">
+                                                                    <i class="ti ti-trash"></i>
+                                                                </button>
                                                             </form>
-                                                        </div>
-                                                    @endcan
+                                                        @endcan
+                                                    </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">
-                                                <div class="text-muted">
-                                                    <i class="ti ti-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                                                    <p class="mt-2">Tidak ada data aktivitas karyawan</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                                        <i class="ti ti-inbox me-2 fs-4"></i>
+                                        <div>
+                                            Tidak ada data aktivitas karyawan.
+                                        </div>
+                                    </div>
+                                @endforelse
+                            </div>
                         </div>
                         <div style="float: right;">
                             {{ $aktivitas->appends(request()->query())->links() }}
@@ -202,6 +199,24 @@
                 <a id="downloadImage" href="" download class="btn btn-primary">
                     <i class="ti ti-download me-2"></i>Download
                 </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Modal -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mapModalLabel">Lokasi Aktivitas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="map" style="height: 400px; width: 100%;"></div>
+            </div>
+            <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
             </div>
         </div>
@@ -237,9 +252,41 @@
             document.getElementById('downloadImage').href = imageSrc;
             new bootstrap.Modal(document.getElementById('imageModal')).show();
         }
-
-        // Make function global
         window.showImageModal = showImageModal;
+
+        // Map Modal Logic
+        let map = null;
+        let marker = null;
+
+        function showMapModal(lokasi, title) {
+            document.getElementById('mapModalLabel').textContent = title;
+            const myModal = new bootstrap.Modal(document.getElementById('mapModal'));
+            myModal.show();
+
+            const [lat, long] = lokasi.split(',');
+            
+            // Wait for modal to fully show before initializing/resizing map
+            document.getElementById('mapModal').addEventListener('shown.bs.modal', function () {
+                if (map) {
+                    map.remove(); // Clean up existing map instance
+                }
+
+                map = L.map('map').setView([lat, long], 16);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                marker = L.marker([lat, long]).addTo(map)
+                    .bindPopup(title)
+                    .openPopup();
+                
+                map.invalidateSize(); // Ensure map renders correctly
+            }, { once: true });
+        }
+        window.showMapModal = showMapModal;
+
 
         $('.delete-confirm').click(function(e) {
             var form = $(this).closest('form');

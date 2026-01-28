@@ -156,6 +156,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/karyawan', 'store')->name('karyawan.store')->can('karyawan.create');
         Route::get('/karyawan/import', 'import')->name('karyawan.import')->can('karyawan.create');
         Route::get('/karyawan/download-template', 'download_template')->name('karyawan.download_template')->can('karyawan.create');
+        Route::get('/karyawan/export', 'export')->name('karyawan.export')->can('karyawan.index');
         Route::post('/karyawan/import', 'import_proses')->name('karyawan.import_proses')->can('karyawan.create');
         Route::get('/karyawan/{nik}/edit', 'edit')->name('karyawan.edit')->can('karyawan.edit');
         Route::put('/karyawan/{nik}', 'update')->name('karyawan.update')->can('karyawan.edit');
@@ -171,6 +172,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/karyawan/deletejamkerjabydate', 'deletejamkerjabydate')->name('karyawan.deletejamkerjabydate')->can('karyawan.setjamkerja');
 
         Route::get('/karyawan/{nik}/createuser', 'createuser')->name('karyawan.createuser')->can('users.create');
+        Route::get('/karyawan/generatealluser', 'generateAllUser')->name('karyawan.generatealluser')->can('users.create');
         Route::get('/karyawan/{nik}/deleteuser', 'deleteuser')->name('karyawan.deleteuser')->can('users.create');
         Route::get('/karyawan/{nik}/lockunlocklocation', 'lockunlocklocation')->name('karyawan.lockunlocklocation')->can('karyawan.edit');
         Route::get('/karyawan/{nik}/lockunlockjamkerja', 'lockunlockjamkerja')->name('karyawan.lockunlockjamkerja')->can('karyawan.edit');

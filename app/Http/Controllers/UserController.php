@@ -38,6 +38,8 @@ class UserController extends Controller
             ->select('users.*', 'users_karyawan.nik')
             ->distinct()
             ->paginate(10);
+        
+        $users->appends($request->all());
 
         $roles = Role::orderBy('name')->get();
         return view('settings.users.index', compact('users', 'roles'));
@@ -45,7 +47,7 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')->where('name', '!=', 'karyawan')->get();
         $cabangs = Cabang::orderBy('kode_cabang')->get();
         $departemens = Departemen::orderBy('kode_dept')->get();
         return view('settings.users.create', compact('roles', 'cabangs', 'departemens'));
@@ -56,7 +58,7 @@ class UserController extends Controller
         $id = Crypt::decrypt($id);
         $user = User::with(['roles', 'cabangs', 'departemens'])->where('id', $id)->first();
 
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')->where('name', '!=', 'karyawan')->get();
         $cabangs = Cabang::orderBy('kode_cabang')->get();
         $departemens = Departemen::orderBy('kode_dept')->get();
         $userCabangs = $user->cabangs->pluck('kode_cabang')->toArray();
@@ -163,8 +165,8 @@ class UserController extends Controller
             // Jika role adalah super admin, berikan akses ke semua cabang dan departemen
             $roleName = isset($request->role) ? strtolower($request->role) : strtolower($user->roles->pluck('name')->first() ?? '');
             
-            // Validasi untuk role selain super admin
-            if ($roleName !== 'super admin') {
+            // Validasi untuk role selain super admin dan karyawan
+            if ($roleName !== 'super admin' && $roleName !== 'karyawan') {
                 $request->validate([
                     'cabangs' => 'required|array|min:1',
                     'cabangs.*' => 'exists:cabang,kode_cabang',
@@ -235,14 +237,20 @@ class UserController extends Controller
     {
         $id = Crypt::decrypt($id);
         $request->validate([
-            'passwordbaru' => 'required',
-            'konfirmasipassword' => 'required|same:passwordbaru'
+            'username' => 'required|unique:users,username,' . $id,
+            'konfirmasipassword' => 'same:passwordbaru'
         ]);
         try {
-            User::where('id', $id)->update([
-                'password' => Hash::make($request->passwordbaru)
-            ]);
-            return Redirect::back()->with(['success' => 'Password Berhasil Diubah']);
+            $data = [
+                'username' => $request->username
+            ];
+
+            if (!empty($request->passwordbaru)) {
+                $data['password'] = Hash::make($request->passwordbaru);
+            }
+
+            User::where('id', $id)->update($data);
+            return Redirect::back()->with(['success' => 'Data Berhasil Diupdate']);
         } catch (\Exception $e) {
             return Redirect::back()->with(['error' => $e->getMessage()]);
         }

@@ -22,8 +22,13 @@
  <!-- Page CSS -->
  <style>
      :root {
-         --bs-primary: #053b22;
-         --bs-primary-rgb: 5, 59, 34;
+         /* Dynamic Theme Colors */
+         --theme-color-1: {{ $general_setting->theme_color_1 ?? '#053b22' }};
+         --theme-color-2: {{ $general_setting->theme_color_2 ?? '#0b6a3a' }};
+
+         --bs-primary: var(--theme-color-1);
+         /* Note: bootstrap rgb var might need manual conversion if strict compliance needed, skipping for now */
+         --bs-primary-rgb: 5, 59, 34; 
      }
 
      .form-group {
@@ -49,7 +54,7 @@
 
      /* Custom Sidebar Color */
      #layout-menu {
-         background: #053b22 !important;
+         background: var(--theme-color-1) !important;
          color: #fff !important;
      }
 
@@ -65,7 +70,7 @@
      #layout-menu .menu-inner>.menu-item.active>.menu-link,
      #layout-menu .menu-inner>.menu-item.open>.menu-link,
      #layout-menu .menu-sub>.menu-item.active>.menu-link {
-         background: linear-gradient(135deg, #0b6a3a, #0f7f47) !important;
+         background: var(--theme-color-2) !important;
          color: #fff !important;
          border-radius: 10px;
          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -82,46 +87,48 @@
      }
 
      .menu-inner-shadow {
-         box-shadow: none !important;
+         display: none !important;
+         background: transparent !important;
      }
 
      .btn-primary {
-         background-color: #053b22 !important;
-         border-color: #053b22 !important;
+         background-color: var(--theme-color-1) !important;
+         border-color: var(--theme-color-1) !important;
      }
 
      .btn-primary:hover,
      .btn-primary:focus,
      .btn-primary:active {
-         background-color: #042b19 !important;
-         border-color: #042b19 !important;
+         background-color: var(--theme-color-2) !important;
+         border-color: var(--theme-color-2) !important;
      }
 
      .bg-primary,
      .badge-primary,
      .alert-primary,
      .progress-bar {
-         background-color: #053b22 !important;
-         border-color: #053b22 !important;
+         background-color: var(--theme-color-1) !important;
+         border-color: var(--theme-color-1) !important;
      }
 
      .text-primary {
-         color: #053b22 !important;
+         color: var(--theme-color-1) !important;
      }
 
      .border-primary {
-         border-color: #053b22 !important;
+         border-color: var(--theme-color-1) !important;
      }
 
      .table thead.thead-dark th,
-     .table-dark thead th {
-         background-color: #053b22 !important;
+     .table-dark thead th,
+     thead.table-dark th {
+         background-color: var(--theme-color-1) !important;
          color: #fff !important;
      }
 
      .table-dark,
      .table-dark> :not(caption)>*>* {
-         background-color: #053b22 !important;
+         background-color: var(--theme-color-1) !important;
          color: #fff !important;
          border-color: rgba(255, 255, 255, 0.15) !important;
      }

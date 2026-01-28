@@ -333,12 +333,15 @@ function hitungpulangcepat($tanggal_presensi, $jam_out, $jam_pulang, $istirahat,
 
 
     if ($istirahat == 1) {
-        if ($jam_out <= $jam_akhir_istirahat && $jam_out >= $jam_awal_istirahat) {
-            $j_pulang = $jam_akhir_istirahat;
-            $pengurang =  0;
-        } else {
+        if ($jam_out >= $jam_akhir_istirahat) {
+            $j_pulang = $jam_out;
+            $pengurang = 0;
+        } elseif ($jam_out < $jam_awal_istirahat) {
             $j_pulang = $jam_out;
             $pengurang = 1;
+        } else {
+            $j_pulang = $jam_akhir_istirahat;
+            $pengurang = 0;
         }
     } else {
         $j_pulang = $jam_out;

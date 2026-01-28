@@ -352,9 +352,12 @@ class KontrakController extends Controller
             ->where('karyawan_tunjangan_detail.kode_tunjangan', $kontrak->kode_tunjangan)
             ->get();
 
+        $setting = \App\Models\Pengaturanumum::first();
+
         $pdf = Pdf::loadView('datamaster.kontrak.print', [
             'kontrak' => $kontrak,
-            'tunjanganItems' => $tunjanganItems
+            'tunjanganItems' => $tunjanganItems,
+            'setting' => $setting
         ])->setPaper('legal', 'portrait');
 
         $filename = 'kontrak-' . $kontrak->nik . '-' . $kontrak->no_kontrak . '.pdf';

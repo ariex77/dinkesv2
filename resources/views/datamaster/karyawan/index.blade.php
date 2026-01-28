@@ -13,28 +13,32 @@
                 @can('karyawan.create')
                     <a href="#" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i> Tambah
                         Karyawan</a>
+                    <a href="{{ route('karyawan.export', request()->query()) }}" class="btn btn-success"><i class="ti ti-file-export me-2"></i> Export Excel</a>
                     <a href="#" class="btn btn-success" id="btnImport"><i class="ti ti-file-import me-2"></i> Import Excel</a>
+                    @can('users.create')
+                        <a href="{{ route('karyawan.generatealluser') }}" class="btn btn-warning"><i class="ti ti-user-plus me-2"></i> Buat User (All)</a>
+                    @endcan
                 @endcan
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-12">
                         <form action="{{ route('karyawan.index') }}">
-                            <div class="row">
-                                <div class="col-lg-4 col-sm-12 col-md-12">
+                            <div class="row g-2">
+                                <div class="col-lg-5 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
                                         icon="ti ti-search" hideLabel />
                                 </div>
-                                <div class="col-lg-2 col-sm-12 col-md-12">
+                                <div class="col-lg-3 col-sm-12 col-md-12">
                                     <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
                                         selected="{{ Request('kode_cabang') }}" hideLabel />
                                 </div>
-                                <div class="col-lg-2 col-sm-12 col-md-12">
+                                <div class="col-lg-3 col-sm-12 col-md-12">
                                     <x-select label="Departemen" name="kode_dept" :data="$departemen" key="kode_dept" textShow="nama_dept"
                                         selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
                                 </div>
-                                <div class="col-lg-2 col-sm-12 col-md-12">
-                                    <button class="btn btn-primary"><i class="ti ti-icons ti-search me-1"></i>Cari</button>
+                                <div class="col-lg-1 col-sm-12 col-md-12">
+                                    <button class="btn btn-primary w-100"><i class="ti ti-icons ti-search me-1"></i></button>
                                 </div>
                             </div>
 
@@ -44,146 +48,149 @@
                 <div class="row">
                     <div class="col-12">
 
-                        <div class="table-responsive mb-2">
-                            <table class="table  table-hover table-bordered table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>NIK</th>
-                                        <th>Nama Karyawan</th>
-                                        <th>Dept</th>
-                                        <th>Jabatan</th>
-                                        <th>Cabang</th>
-                                        <th>Status</th>
-                                        <th>Tanggal Masuk</th>
-                                        <th class="text-center"><i class="ti ti-map-pin"></i></th>
-                                        <th class="text-center"><i class="ti ti-clock-hour-3"></i></th>
-                                        <th class="text-center"><i class="ti ti-fingerprint"></i></th>
-                                        <th>Foto</th>
-                                        <th>#</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($karyawan as $d)
-                                        <tr>
-                                            <td>{{ $d->nik_show ?? $d->nik }}</td>
-                                            <td>{{ $d->nama_karyawan }}</td>
-                                            <td>{{ $d->nama_dept }}</td>
-                                            <td>{{ $d->nama_jabatan }}</td>
-                                            <td>{{ $d->nama_cabang }}</td>
-                                            <td>
-                                                @if ($d->status_aktif_karyawan == '1')
-                                                    <span class="badge bg-success">Aktif</span>
-                                                @else
-                                                    <span class="badge bg-danger">Non Aktif</span>
-                                                @endif
-                                            </td>
-                                            <td>{{ date('d-m-y', strtotime($d->tanggal_masuk)) }}</td>
-                                            <td class="text-center">
-
-                                                @if ($d->lock_location == '1')
-                                                    <a href="{{ route('karyawan.lockunlocklocation', Crypt::encrypt($d->nik)) }}">
-                                                        <i class="ti ti-lock text-success"></i>
-                                                    </a>
-                                                @else
-                                                    <a href="{{ route('karyawan.lockunlocklocation', Crypt::encrypt($d->nik)) }}">
-                                                        <i class="ti ti-lock-open text-danger"></i>
-                                                    </a>
-                                                @endif
-                                            </td>
-                                            <td class="text-center">
-
-                                                @if ($d->lock_jam_kerja == '1')
-                                                    <a href="{{ route('karyawan.lockunlockjamkerja', Crypt::encrypt($d->nik)) }}">
-                                                        <i class="ti ti-lock text-success"></i>
-                                                    </a>
-                                                @else
-                                                    <a href="{{ route('karyawan.lockunlockjamkerja', Crypt::encrypt($d->nik)) }}">
-                                                        <i class="ti ti-lock-open text-danger"></i>
-                                                    </a>
-                                                @endif
-                                            </td>
-                                            <td>{{ $d->pin }}</td>
-                                            <td>
-                                                @if (!empty($d->foto))
-                                                    @if (Storage::disk('public')->exists('/karyawan/' . $d->foto))
-                                                        <div class="avatar avatar-xs me-2">
-                                                            <img src="{{ getfotoKaryawan($d->foto) }}" alt="" class="rounded-circle">
-                                                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                @foreach ($karyawan as $d)
+                                    <div class="card mb-2 shadow-sm border">
+                                        <div class="card-body p-2">
+                                            <div class="row align-items-center">
+                                                <!-- Avatar -->
+                                                <div class="col-md-1 text-center">
+                                                    @if (!empty($d->foto) && Storage::disk('public')->exists('/karyawan/' . $d->foto))
+                                                        <img src="{{ getfotoKaryawan($d->foto) }}" alt="Avatar"
+                                                            class="rounded-circle"
+                                                            style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #e9ecef;">
                                                     @else
-                                                        <div class="avatar avatar-xs me-2">
-                                                            <img src="{{ asset('assets/img/avatars/No_Image_Available.jpg') }}" alt=""
-                                                                class="rounded-circle">
-                                                        </div>
+                                                        <img src="{{ asset('assets/img/avatars/No_Image_Available.jpg') }}"
+                                                            alt="No Image" class="rounded-circle"
+                                                            style="width: 40px; height: 40px; object-fit: cover; border: 1px solid #e9ecef;">
                                                     @endif
-                                                @else
-                                                    <div class="avatar avatar-xs me-2">
-                                                        <img src="{{ asset('assets/img/avatars/No_Image_Available.jpg') }}" alt=""
-                                                            class="rounded-circle">
+                                                </div>
+                                                <!-- Identity -->
+                                                <div class="col-md-4">
+                                                    <div class="fw-bold text-dark" style="font-size: 14px;">
+                                                        {{ $d->nama_karyawan }}
+                                                        <span class="text-muted fw-normal" style="font-size: 12px;">({{ $d->nik_show ?? $d->nik }})</span>
                                                     </div>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <div class="d-flex">
-                                                    @can('karyawan.setjamkerja')
-                                                        <div>
-                                                            <a href="#" class="me-2 btnSetJamkerja" nik="{{ Crypt::encrypt($d->nik) }}">
-                                                                <i class="ti ti-device-watch text-primary"></i>
-                                                            </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('karyawan.setcabang')
-                                                        <div>
-                                                            <a href="#" class="me-2 btnSetCabang" nik="{{ Crypt::encrypt($d->nik) }}">
-                                                                <i class="ti ti-map text-warning"></i>
-                                                            </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('karyawan.edit')
-                                                        <div>
-                                                            <a href="#" class="me-2 btnEdit" nik="{{ Crypt::encrypt($d->nik) }}">
-                                                                <i class="ti ti-edit text-success"></i>
-                                                            </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('karyawan.show')
-                                                        <div>
-                                                            <a href="{{ route('karyawan.show', Crypt::encrypt($d->nik)) }}" class="me-2">
-                                                                <i class="ti ti-file-description text-info"></i>
-                                                            </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('karyawan.delete')
-                                                        <div>
-                                                            <form method="POST" name="deleteform" class="deleteform me-1"
-                                                                action="{{ route('karyawan.delete', Crypt::encrypt($d->nik)) }}">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <a href="#" class="delete-confirm ml-1">
-                                                                    <i class="ti ti-trash text-danger"></i>
-                                                                </a>
-                                                            </form>
-                                                        </div>
-                                                    @endcan
-
-                                                    @can('users.create')
-                                                        @if (empty($d->id_user))
-                                                            <a href="{{ route('karyawan.createuser', Crypt::encrypt($d->nik)) }}">
-                                                                <i class="ti ti-user-plus text-danger"></i>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-label-primary" style="font-size: 10px;">{{ $d->nama_jabatan }}</span>
+                                                        <span class="badge bg-label-info" style="font-size: 10px;">{{ $d->nama_dept }}</span>
+                                                        <span class="badge bg-label-warning" style="font-size: 10px;">{{ $d->nama_cabang }}</span>
+                                                    </div>
+                                                </div>
+                                                <!-- Status & Date -->
+                                                <div class="col-md-3 border-start border-end d-none d-md-block text-center">
+                                                    <div class="mb-1">
+                                                        @if ($d->status_aktif_karyawan == '1')
+                                                            <span class="badge bg-success py-1 px-2" style="font-size: 10px;">Aktif</span>
+                                                        @else
+                                                            <span class="badge bg-danger py-1 px-2" style="font-size: 10px;">Non Aktif</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="text-muted" style="font-size: 11px;">
+                                                        Masuk: {{ date('d-m-Y', strtotime($d->tanggal_masuk)) }}
+                                                    </div>
+                                                    <div class="text-muted" style="font-size: 10px;">
+                                                        @php
+                                                            $awal = new DateTime($d->tanggal_masuk);
+                                                            $akhir = new DateTime();
+                                                            $masa_kerja = $akhir->diff($awal);
+                                                        @endphp
+                                                        {{ $masa_kerja->y . ' Th ' . $masa_kerja->m . ' Bln' }}
+                                                    </div>
+                                                </div>
+                                                <!-- Locks -->
+                                                <div class="col-md-2 text-center d-flex justify-content-center gap-3">
+                                                    <div class="text-center">
+                                                        @if ($d->lock_location == '1')
+                                                            <a href="{{ route('karyawan.lockunlocklocation', Crypt::encrypt($d->nik)) }}"
+                                                                data-bs-toggle="tooltip" title="Unlock Location">
+                                                                <i class="ti ti-lock text-success fs-5"></i>
                                                             </a>
                                                         @else
-                                                            <a href="{{ route('karyawan.deleteuser', Crypt::encrypt($d->nik)) }}">
-                                                                <i class="ti ti-user text-success"></i>
+                                                            <a href="{{ route('karyawan.lockunlocklocation', Crypt::encrypt($d->nik)) }}"
+                                                                data-bs-toggle="tooltip" title="Lock Location">
+                                                                <i class="ti ti-lock-open text-danger fs-5"></i>
                                                             </a>
                                                         @endif
-                                                    @endcan
-
+                                                        <div class="d-block text-muted" style="font-size: 9px;">Location</div>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        @if ($d->lock_jam_kerja == '1')
+                                                            <a href="{{ route('karyawan.lockunlockjamkerja', Crypt::encrypt($d->nik)) }}"
+                                                                data-bs-toggle="tooltip" title="Unlock Jam Kerja">
+                                                                <i class="ti ti-lock text-success fs-5"></i>
+                                                            </a>
+                                                        @else
+                                                            <a href="{{ route('karyawan.lockunlockjamkerja', Crypt::encrypt($d->nik)) }}"
+                                                                data-bs-toggle="tooltip" title="Lock Jam Kerja">
+                                                                <i class="ti ti-lock-open text-danger fs-5"></i>
+                                                            </a>
+                                                        @endif
+                                                        <div class="d-block text-muted" style="font-size: 9px;">Jam Kerja</div>
+                                                    </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-
-                                </tbody>
-                            </table>
+                                                <!-- Actions -->
+                                                <div class="col-md-2 text-end">
+                                                    <div class="d-flex flex-column align-items-end gap-1">
+                                                        <div class="btn-group shadow-sm" role="group">
+                                                            @can('karyawan.setjamkerja')
+                                                                <a href="#" class="btn btn-sm btn-outline-secondary btnSetJamkerja py-1 px-2"
+                                                                    nik="{{ Crypt::encrypt($d->nik) }}" title="Set Jam Kerja">
+                                                                    <i class="ti ti-device-watch"></i>
+                                                                </a>
+                                                            @endcan
+                                                            @can('karyawan.setcabang')
+                                                                <a href="#" class="btn btn-sm btn-outline-secondary btnSetCabang py-1 px-2"
+                                                                    nik="{{ Crypt::encrypt($d->nik) }}" title="Set Cabang">
+                                                                    <i class="ti ti-map"></i>
+                                                                </a>
+                                                            @endcan
+                                                            @can('karyawan.edit')
+                                                                <a href="#" class="btn btn-sm btn-outline-primary btnEdit py-1 px-2"
+                                                                    nik="{{ Crypt::encrypt($d->nik) }}" title="Edit">
+                                                                    <i class="ti ti-edit"></i>
+                                                                </a>
+                                                            @endcan
+                                                            @can('karyawan.show')
+                                                                <a href="{{ route('karyawan.show', Crypt::encrypt($d->nik)) }}"
+                                                                    class="btn btn-sm btn-outline-info py-1 px-2" title="Detail">
+                                                                    <i class="ti ti-file-description"></i>
+                                                                </a>
+                                                            @endcan
+                                                            @can('karyawan.delete')
+                                                                <form method="POST" name="deleteform" class="deleteform d-inline"
+                                                                    action="{{ route('karyawan.delete', Crypt::encrypt($d->nik)) }}">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit"
+                                                                        class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2"
+                                                                        title="Delete">
+                                                                        <i class="ti ti-trash"></i>
+                                                                    </button>
+                                                                </form>
+                                                            @endcan
+                                                        </div>
+                                                        @can('users.create')
+                                                            @if (empty($d->id_user))
+                                                                <a href="{{ route('karyawan.createuser', Crypt::encrypt($d->nik)) }}"
+                                                                    class="btn btn-sm btn-danger py-0 px-2" style="font-size: 10px;">
+                                                                    <i class="ti ti-user-plus me-1"></i> Buat User
+                                                                </a>
+                                                            @else
+                                                                <a href="{{ route('karyawan.deleteuser', Crypt::encrypt($d->nik)) }}"
+                                                                    class="btn btn-sm btn-success py-0 px-2" style="font-size: 10px;">
+                                                                    <i class="ti ti-user me-1"></i> Hapus User
+                                                                </a>
+                                                            @endif
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                         <div style="float: right;">
                             {{ $karyawan->links() }}

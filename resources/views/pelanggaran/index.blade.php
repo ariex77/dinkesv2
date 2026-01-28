@@ -62,91 +62,103 @@
                 </div>
                 <div class="row">
                     <div class="col-12">
-                        <div class="table-responsive mb-2">
-                            <table class="table table-hover table-bordered table-striped">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>No</th>
-                                        <th>No Dokumen</th>
-                                        <th>Karyawan</th>
-                                        <th>Tanggal</th>
-                                        <th>Dari</th>
-                                        <th>Sampai</th>
-                                        <th>Jenis SP</th>
-                                        
-
-                                        <th>#</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($pelanggaran as $index => $item)
-                                        <tr>
-                                            <td>{{ $pelanggaran->firstItem() + $index }}</td>
-                                            <td><strong>{{ $item->no_dokumen }}</strong></td>
-                                            <td>
-                                                <div>
-                                                    <strong>{{ $item->nama_karyawan ?? 'N/A' }}</strong><br>
-                                                    <small class="text-muted">{{ $item->nik_show ?? $item->nik }}</small><br>
-                                                    <small class="text-muted">{{ $item->nama_jabatan }} - {{ $item->nama_dept }}</small>
+@forelse($pelanggaran as $index => $item)
+                                    @php
+                                        $colorClass = '';
+                                        $badgeClass = '';
+                                        switch ($item->jenis_sp) {
+                                            case 'ST':
+                                                $colorClass = 'border border-info';
+                                                $badgeClass = 'bg-info';
+                                                break;
+                                            case 'SP1':
+                                                $colorClass = 'border border-success';
+                                                $badgeClass = 'bg-success';
+                                                break;
+                                            case 'SP2':
+                                                $colorClass = 'border border-warning';
+                                                $badgeClass = 'bg-warning';
+                                                break;
+                                            case 'SP3':
+                                                $colorClass = 'border border-danger';
+                                                $badgeClass = 'bg-danger';
+                                                break;
+                                            default:
+                                                $colorClass = 'border border-secondary';
+                                                $badgeClass = 'bg-secondary';
+                                                break;
+                                        }
+                                    @endphp
+                                    <div class="card mb-2 shadow-sm {{ $colorClass }}">
+                                        <div class="card-body p-2">
+                                            <div class="row align-items-center">
+                                                <!-- Identity -->
+                                                <div class="col-md-4">
+                                                    <div class="fw-bold text-dark" style="font-size: 14px;">
+                                                        {{ $item->nama_karyawan ?? 'N/A' }}
+                                                        <span class="text-muted fw-normal" style="font-size: 12px;">({{ $item->nik_show ?? $item->nik }})</span>
+                                                    </div>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-label-primary" style="font-size: 10px;">{{ $item->nama_jabatan }}</span>
+                                                        <span class="badge bg-label-info" style="font-size: 10px;">{{ $item->nama_dept }}</span>
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td>{{ date('d/m/Y', strtotime($item->tanggal)) }}</td>
-                                            <td>{{ date('d/m/Y', strtotime($item->dari)) }}</td>
-                                            <td>{{ date('d/m/Y', strtotime($item->sampai)) }}</td>
-                                            <td><span class="badge bg-warning">{{ $item->jenis_sp }}</span></td>
-                                            
-                                            
-                                            <td>
-                                                <div class="d-flex">
-                                                    @can('pelanggaran.index')
-                                                        <div>
-                                                            <a href="{{ route('pelanggaran.print', Crypt::encrypt($item->no_sp)) }}" class="me-2" target="_blank">
-                                                                <i class="ti ti-printer text-primary"></i>
-                                                            </a>
+                                                <!-- Violation Info -->
+                                                <div class="col-md-6 border-start border-end">
+                                                    <div class="d-flex justify-content-between px-2 mb-1">
+                                                        <span class="fw-bold text-dark" style="font-size: 12px;">{{ $item->no_dokumen }}</span>
+                                                        <span class="badge {{ $badgeClass }}" style="font-size: 12px;">{{ $item->jenis_sp }}</span>
+                                                    </div>
+                                                    <div class="d-flex gap-3 px-2">
+                                                        <div class="text-muted" style="font-size: 11px;">
+                                                            <i class="ti ti-calendar me-1"></i>Tgl: {{ date('d-m-Y', strtotime($item->tanggal)) }}
                                                         </div>
-                                                    @endcan
-                                                    @can('pelanggaran.index')
-                                                        <div>
-                                                            <a href="{{ route('pelanggaran.show', Crypt::encrypt($item->no_sp)) }}" class="me-2">
-                                                                <i class="ti ti-file-description text-info"></i>
-                                                            </a>
+                                                        <div class="text-muted" style="font-size: 11px;">
+                                                            <i class="ti ti-calendar-event me-1"></i>Periode: {{ date('d-m-Y', strtotime($item->dari)) }} s.d {{ date('d-m-Y', strtotime($item->sampai)) }}
                                                         </div>
-                                                    @endcan
-                                                    @can('pelanggaran.edit')
-                                                        <div>
-                                                            <a href="#" class="me-2 editPelanggaran" no_sp="{{ Crypt::encrypt($item->no_sp) }}">
-                                                                <i class="ti ti-edit text-success"></i>
+                                                    </div>
+                                                </div>
+                                                <!-- Actions -->
+                                                <div class="col-md-2 text-end">
+                                                    <div class="btn-group shadow-sm" role="group">
+                                                        @can('pelanggaran.index')
+                                                            <a href="{{ route('pelanggaran.print', Crypt::encrypt($item->no_sp)) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" target="_blank" title="Cetak">
+                                                                <i class="ti ti-printer"></i>
                                                             </a>
-                                                        </div>
-                                                    @endcan
-                                                    @can('pelanggaran.delete')
-                                                        <div>
-                                                            <form method="POST" name="deleteform" class="deleteform me-1"
+                                                            <a href="{{ route('pelanggaran.show', Crypt::encrypt($item->no_sp)) }}" class="btn btn-sm btn-outline-info py-1 px-2" title="Detail">
+                                                                <i class="ti ti-file-description"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('pelanggaran.edit')
+                                                            <a href="#" class="btn btn-sm btn-outline-primary editPelanggaran py-1 px-2" no_sp="{{ Crypt::encrypt($item->no_sp) }}" title="Edit">
+                                                                <i class="ti ti-edit"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('pelanggaran.delete')
+                                                            <form method="POST" name="deleteform" class="deleteform d-inline"
                                                                 action="{{ route('pelanggaran.delete', Crypt::encrypt($item->no_sp)) }}">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <a href="#" class="delete-confirm ml-1">
-                                                                    <i class="ti ti-trash text-danger"></i>
-                                                                </a>
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2" title="Hapus">
+                                                                    <i class="ti ti-trash"></i>
+                                                                </button>
                                                             </form>
-                                                        </div>
-                                                    @endcan
+                                                        @endcan
+                                                    </div>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="10" class="text-center py-4">
-                                                <div class="text-muted">
-                                                    <i class="ti ti-inbox" style="font-size: 48px; opacity: 0.3;"></i>
-                                                    <p class="mt-2">Tidak ada data pelanggaran</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="card">
+                                        <div class="card-body text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="ti ti-inbox" style="font-size: 48px; opacity: 0.3;"></i>
+                                                <p class="mt-2">Tidak ada data pelanggaran</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforelse
                         <div style="float: right;">
                             {{ $pelanggaran->appends(request()->query())->links() }}
                         </div>

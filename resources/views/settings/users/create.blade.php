@@ -76,57 +76,50 @@
 <script src="{{ asset('assets/js/pages/users/create.js') }}"></script>
 <script>
     // Auto-check semua cabang dan departemen jika role adalah super admin
-    document.addEventListener('DOMContentLoaded', function() {
-        const roleSelect = document.querySelector('select[name="role"]');
-        const cabangCheckboxes = document.querySelectorAll('.cabang-checkbox');
-        const departemenCheckboxes = document.querySelectorAll('.departemen-checkbox');
+    // Auto-check semua cabang dan departemen jika role adalah super admin
+    (function() {
+        const roleSelect = document.querySelector('#formcreateUser select[name="role"]');
+        const cabangCheckboxes = document.querySelectorAll('#formcreateUser .cabang-checkbox');
+        const departemenCheckboxes = document.querySelectorAll('#formcreateUser .departemen-checkbox');
         const cabangHelpText = document.getElementById('cabang-help-text');
         const departemenHelpText = document.getElementById('departemen-help-text');
 
         function toggleAccessBasedOnRole() {
             const selectedRole = roleSelect ? roleSelect.options[roleSelect.selectedIndex].text.toLowerCase() : '';
             const isSuperAdmin = selectedRole === 'super admin';
+            const cabangGroup = document.getElementById('cabang-access-group');
+            const departemenGroup = document.getElementById('departemen-access-group');
 
-            // Toggle cabang checkboxes
-            cabangCheckboxes.forEach(checkbox => {
-                if (isSuperAdmin) {
-                    checkbox.checked = true;
-                    checkbox.disabled = true;
-                } else {
-                    checkbox.checked = false;
-                    checkbox.disabled = false;
-                }
-            });
-
-            // Toggle departemen checkboxes
-            departemenCheckboxes.forEach(checkbox => {
-                if (isSuperAdmin) {
-                    checkbox.checked = true;
-                    checkbox.disabled = true;
-                } else {
-                    checkbox.checked = false;
-                    checkbox.disabled = false;
-                }
-            });
-
-            // Update help text
-            if (cabangHelpText) {
-                cabangHelpText.textContent = isSuperAdmin 
-                    ? 'Super Admin memiliki akses ke semua cabang' 
-                    : 'Pilih cabang yang dapat diakses oleh user ini (minimal 1)';
-            }
-            if (departemenHelpText) {
-                departemenHelpText.textContent = isSuperAdmin 
-                    ? 'Super Admin memiliki akses ke semua departemen' 
-                    : 'Pilih departemen yang dapat diakses oleh user ini (minimal 1)';
-            }
-            
-            // Hide error messages when switching to super admin
             if (isSuperAdmin) {
+                // Hide access groups for Super Admin
+                if (cabangGroup) cabangGroup.style.display = 'none';
+                if (departemenGroup) departemenGroup.style.display = 'none';
+                
+                // Hide error messages
                 const cabangError = document.getElementById('cabang-error');
                 const departemenError = document.getElementById('departemen-error');
                 if (cabangError) cabangError.style.display = 'none';
                 if (departemenError) departemenError.style.display = 'none';
+            } else {
+                // Show access groups for other roles
+                if (cabangGroup) cabangGroup.style.display = 'block';
+                if (departemenGroup) departemenGroup.style.display = 'block';
+
+                // Ensure checkboxes are enabled and unchecked (resets)
+                cabangCheckboxes.forEach(checkbox => {
+                    checkbox.disabled = false;
+                });
+                departemenCheckboxes.forEach(checkbox => {
+                    checkbox.disabled = false;
+                });
+
+                // Update help text
+                if (cabangHelpText) {
+                    cabangHelpText.textContent = 'Pilih cabang yang dapat diakses oleh user ini (minimal 1)';
+                }
+                if (departemenHelpText) {
+                    departemenHelpText.textContent = 'Pilih departemen yang dapat diakses oleh user ini (minimal 1)';
+                }
             }
         }
 
@@ -238,5 +231,5 @@
                 });
             });
         }
-    });
+    })();
 </script>

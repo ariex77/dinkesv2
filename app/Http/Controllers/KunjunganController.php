@@ -186,6 +186,14 @@ class KunjunganController extends Controller
                 $image_base64 = base64_decode($image_parts[1]);
                 $filename = 'kunjungan_' . time() . '_' . uniqid() . '.' . $image_type;
                 $filepath = 'uploads/kunjungan/' . $filename;
+                
+                $destinationPath = 'uploads/kunjungan/';
+                if (!Storage::disk('public')->exists($destinationPath)) {
+                    Storage::disk('public')->makeDirectory($destinationPath, 0775, true);
+                    $path = Storage::disk('public')->path($destinationPath);
+                    chmod($path, 0775);
+                }
+
                 Storage::disk('public')->put($filepath, $image_base64);
                 $data['foto'] = $filename;
             } else {
@@ -297,6 +305,14 @@ class KunjunganController extends Controller
             $file = $request->file('foto');
             $filename = 'kunjungan_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
             $filepath = 'uploads/kunjungan/' . $filename;
+
+            $destinationPath = 'uploads/kunjungan/';
+            if (!Storage::disk('public')->exists($destinationPath)) {
+                Storage::disk('public')->makeDirectory($destinationPath, 0775, true);
+                $path = Storage::disk('public')->path($destinationPath);
+                chmod($path, 0775);
+            }
+
             Storage::disk('public')->put($filepath, file_get_contents($file));
             $data['foto'] = $filename;
         } elseif ($request->filled('foto')) {
@@ -309,6 +325,14 @@ class KunjunganController extends Controller
                 $image_base64 = base64_decode($image_parts[1]);
                 $filename = 'kunjungan_' . time() . '_' . uniqid() . '.' . $image_type;
                 $filepath = 'uploads/kunjungan/' . $filename;
+
+                $destinationPath = 'uploads/kunjungan/';
+                if (!Storage::disk('public')->exists($destinationPath)) {
+                    Storage::disk('public')->makeDirectory($destinationPath, 0775, true);
+                    $path = Storage::disk('public')->path($destinationPath);
+                    chmod($path, 0775);
+                }
+
                 Storage::disk('public')->put($filepath, $image_base64);
                 $data['foto'] = $filename;
             } else {

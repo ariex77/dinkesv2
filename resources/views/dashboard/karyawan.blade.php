@@ -1,20 +1,25 @@
 @extends('layouts.mobile.app')
 @section('content')
     <style>
-        :root {
-            --bg-body: #dff9fb;
-            --bg-nav: #ffffff;
-            --color-nav: #32745e;
-            --color-nav-active: #58907D;
-            --bg-indicator: #32745e;
-            --color-nav-hover: #3ab58c;
-        }
+        /* :root variables moved to layout for dynamic theming */
 
+        .bg-header-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 320px;
+            background-color: var(--color-nav);
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            z-index: 0;
+        }
 
         #header-section {
             height: auto;
             padding: 20px;
             position: relative;
+            z-index: 1;
 
         }
 
@@ -22,16 +27,17 @@
             position: absolute;
             right: 15px;
             top: 15px;
+            z-index: 2;
         }
 
         .logout-btn {
-            color: var(--bg-indicator);
+            color: #fff;
             font-size: 30px;
             text-decoration: none;
         }
 
         .logout-btn:hover {
-            color: var(--color-nav-hover);
+            color: #e0e0e0;
 
         }
 
@@ -39,16 +45,17 @@
             position: absolute;
             left: 15px;
             top: 15px;
+            z-index: 2;
         }
 
         .notification-btn {
-            color: var(--bg-indicator);
+            color: #fff;
             font-size: 30px;
             text-decoration: none;
         }
 
         .notification-btn:hover {
-            color: var(--color-nav-hover);
+            color: #e0e0e0;
         }
 
 
@@ -65,11 +72,11 @@
         }
 
         #user-info h3 {
-            color: var(--bg-indicator);
+            color: #fff;
         }
 
         #user-info span {
-            color: var(--color-nav);
+            color: #f0f0f0;
         }
 
         #section-presensi {
@@ -82,13 +89,13 @@
         }
 
         #presensi-today h4 {
-            color: #32745e;
+            color: var(--color-nav);
             font-weight: bold;
             margin: 0
         }
 
         #presensi-today #presensi-text {
-            color: #12855f;
+            color: var(--color-nav-active);
         }
 
         #presensi-data {
@@ -119,10 +126,7 @@
         }
 
         #app-section {
-
-
-            padding: 20px;
-
+            padding: 0px 20px 20px 20px;
         }
 
         #app-section #title {
@@ -130,16 +134,17 @@
         }
 
         .iconpresence {
-            color: #32745e
+            color: var(--color-nav);
         }
 
         #jam {
-            color: var(--bg-indicator);
+            color: #ffffff;
             font-weight: bold;
             font-size: 48px;
 
         }
     </style>
+    <div class="bg-header-curve"></div>
     <div id="header-section">
         <div id="section-notification">
             <a href="#" class="notification-btn">
@@ -183,9 +188,9 @@
                 @endif
             </a>
         </div>
-        <div id="section-jam " class="text-center mt-1 mb-2">
-            <h2 id="jam" class="mb-2" style="text-shadow: 0px 0px 2px #04ab86b7; line-height: 1rem"></h2>
-            <span class="">Hari ini : {{ getNamaHari(date('D')) }}, {{ DateToIndo(date('Y-m-d')) }}</span>
+        <div id="section-jam" class="text-center mt-1 mb-2">
+            <h2 id="jam" class="mb-2" style="text-shadow: 0px 0px 2px var(--color-nav); line-height: 1rem"></h2>
+            <span style="color: #ffffff;">Hari ini : {{ getNamaHari(date('D')) }}, {{ DateToIndo(date('Y-m-d')) }}</span>
         </div>
         
         <!-- ALERT SECTION (CAROUSEL / SINGLE) -->
@@ -217,7 +222,7 @@
                     .carousel-indicators li.active {
                         width: 25px; /* Pill shape for active */
                         border-radius: 5px;
-                        background-color: #32745e; /* Theme color */
+                        background-color: var(--bg-indicator); /* Theme color */
                     }
                 </style>
                 <div id="alertCarousel" class="carousel slide" data-ride="carousel" style="margin-top: 10px; margin-bottom: 45px;">
@@ -351,7 +356,7 @@
                                 @endphp
                                 <img src="{{ url($path) }}" alt="" class="imaged w48">
                             @else
-                                <ion-icon name="camera"></ion-icon>
+                                <ion-icon name="camera-outline" style="font-size: 30px; color: var(--color-nav);"></ion-icon>
                             @endif
                         </div>
                         <div id="presensi-detail">
@@ -360,7 +365,7 @@
                                 @if ($jam_in != null)
                                     {{ date('H:i', strtotime($jam_in)) }}
                                 @else
-                                    <ion-icon name="hourglass-outline"></ion-icon> Belum Absen
+                                    __:__
                                 @endif
                             </span>
                         </div>
@@ -380,7 +385,7 @@
                                 @endphp
                                 <img src="{{ url($path) }}" alt="" class="imaged w48">
                             @else
-                                <ion-icon name="camera"></ion-icon>
+                                <ion-icon name="camera-outline" style="font-size: 30px; color: var(--color-nav);"></ion-icon>
                             @endif
                         </div>
                         <div id="presensi-detail">
@@ -389,7 +394,7 @@
                                 @if ($jam_out != null)
                                     {{ date('H:i', strtotime($jam_out)) }}
                                 @else
-                                    <i class="ti ti-hourglass-low text-warning"></i> Belum Absen
+                                    __:__
                                 @endif
                             </span>
                         </div>
@@ -401,64 +406,52 @@
     </div>
 
     <div id="app-section">
-        <div class="row">
-            <div class="col-3">
-                <div class="card">
-                    <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/hadir.webp') }}" alt="" style="width: 50px" class="mb-1">
-                        <br>
-                        <span style="font-size: 0.8rem; font-weight:500">
-                            Hadir
-                        </span>
-                        <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
-                            {{ $rekappresensi ? $rekappresensi->hadir : 0 }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card">
-                    <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/sakit.png') }}" alt="" style="width: 50px" class="mb-1">
-                        <br>
-                        <span style="font-size: 0.8rem; font-weight:500">Sakit</span>
-                        <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
-                            {{ $rekappresensi ? $rekappresensi->sakit : 0 }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card">
-                    <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/izin.webp') }}" alt="" style="width: 50px" class="mb-1">
-                        <br>
-                        <span style="font-size: 0.8rem; font-weight:500">Izin</span>
-                        <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
-                            {{ $rekappresensi ? $rekappresensi->izin : 0 }}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            <div class="col-3">
-                <div class="card">
-                    <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                        <img src="{{ asset('assets/template/img/3d/cuti.png') }}" alt="" style="width: 50px" class="mb-1">
-                        <br>
-                        <span style="font-size: 0.8rem; font-weight:500">Cuti</span>
-                        <span class="badge bg-success" style="position: absolute; top: 5px; right: 5px">
-                            {{ $rekappresensi ? $rekappresensi->cuti : 0 }}
-                        </span>
+        <!-- Floating Stats Card -->
+        <div class="row" style="margin-bottom: 15px;">
+            <div class="col-12">
+                <div class="card" style="border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+                    <div class="card-body p-3">
+                        <div class="row">
+                            <div class="col-12 text-center" style="margin-bottom: 15px;">
+                                <h4 style="font-size: 14px; font-weight: 600; color: #555; margin: 0;">Rekap Presensi 30 Hari Terakhir</h4>
+                                <span style="font-size: 11px; color: #999;">Update Terakhir: {{ date('H:i') }} WIB</span>
+                            </div>
+                        </div>
+                        <div class="row text-center">
+                            <div class="col-3" style="border-right: 1px solid #f0f0f0;">
+                                <h4 class="mb-0" style="font-weight: 700; font-size: 24px; color: var(--color-nav);">{{ $rekappresensi ? $rekappresensi->hadir : 0 }}</h4>
+                                <span style="font-size: 11px; color: #888;">Hadir</span>
+                            </div>
+                            <div class="col-3" style="border-right: 1px solid #f0f0f0;">
+                                <h4 class="mb-0" style="font-weight: 700; font-size: 24px; color: #ff9800;">{{ $rekappresensi ? $rekappresensi->sakit : 0 }}</h4>
+                                <span style="font-size: 11px; color: #888;">Sakit</span>
+                            </div>
+                            <div class="col-3" style="border-right: 1px solid #f0f0f0;">
+                                <h4 class="mb-0" style="font-weight: 700; font-size: 24px; color: #1e90ff;">{{ $rekappresensi ? $rekappresensi->izin : 0 }}</h4>
+                                <span style="font-size: 11px; color: #888;">Izin</span>
+                            </div>
+                            <div class="col-3">
+                                <h4 class="mb-0" style="font-weight: 700; font-size: 24px; color: #ff6384;">{{ $rekappresensi ? $rekappresensi->cuti : 0 }}</h4>
+                                <span style="font-size: 11px; color: #888;">Cuti</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+        @php
+           $scheme = $namasettings->mobile_theme_scheme ?? 'green';
+        @endphp
         <div class="row mt-2">
             <div class="col-3">
                 <a href="{{ route('karyawan.idcard', Crypt::encrypt($karyawan->nik)) }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt="" style="width: 50px" class="mb-0">
+                            @if ($scheme == 'green')
+                                <img src="{{ asset('assets/template/img/3d/card.webp') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                            @else
+                                <ion-icon name="id-card-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            @endif
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 ID Card
@@ -471,7 +464,11 @@
                 <a href="{{ route('presensiistirahat.create') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/alarm.png') }}" alt="" style="width: 50px" class="mb-0">
+                            @if ($scheme == 'green')
+                                <img src="{{ asset('assets/template/img/3d/praying.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                            @else
+                                <ion-icon name="cafe-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            @endif
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Istirahat
@@ -481,13 +478,17 @@
                 </a>
             </div>
             <div class="col-3">
-                <a href="javascript:void(0)" id="btnDaftarkanWajah">
+                <a href="{{ route('lembur.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 50px" class="mb-0">
+                            @if ($scheme == 'green')
+                                <img src="{{ asset('assets/template/img/3d/clock.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                            @else
+                                <ion-icon name="time-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            @endif
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
-                                Wajah
+                                Lembur
                             </span>
                         </div>
                     </div>
@@ -498,7 +499,11 @@
                 <a href="{{ route('slipgaji.index') }}">
                     <div class="card">
                         <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                            <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 50px" class="mb-0">
+                            @if ($scheme == 'green')
+                                <img src="{{ asset('assets/template/img/3d/slipgaji.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                            @else
+                                <ion-icon name="cash-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            @endif
                             <br>
                             <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                 Slip Gaji
@@ -514,7 +519,11 @@
                     <a href="{{ route('aktivitaskaryawan.index') }}">
                         <div class="card">
                             <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                                <img src="{{ asset('assets/template/img/3d/activity.png') }}" alt="" style="width: 50px" class="mb-0">
+                                @if ($scheme == 'green')
+                                    <img src="{{ asset('assets/template/img/3d/activity.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                                @else
+                                    <ion-icon name="pulse-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                                @endif
                                 <br>
                                 <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                     Aktivitas
@@ -529,7 +538,11 @@
                     <a href="{{ route('kunjungan.index') }}">
                         <div class="card">
                             <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
-                                <img src="{{ asset('assets/template/img/3d/maps.png') }}" alt="" style="width: 50px" class="mb-0">
+                                @if ($scheme == 'green')
+                                    <img src="{{ asset('assets/template/img/3d/maps.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                                @else
+                                    <ion-icon name="map-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                                @endif
                                 <br>
                                 <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
                                     Visit
@@ -539,9 +552,37 @@
                     </a>
                 </div>
             @endcan
-            
+            <div class="col-3">
+                <a href="javascript:void(0)" id="btnDaftarkanWajah">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            @if ($scheme == 'green')
+                                <img src="{{ asset('assets/template/img/3d/scanwajah.png') }}" alt="" style="width: 40px; margin-bottom: 5px;">
+                            @else
+                                <ion-icon name="scan-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            @endif
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Wajah
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
 
-            
+            <div class="col-3">
+                <a href="{{ route('shortcut.index') }}">
+                    <div class="card">
+                        <div class="card-body text-center" style="padding: 5px 5px !important; line-height:0.8rem">
+                            <ion-icon name="apps-outline" style="font-size: 40px; color: var(--color-nav); margin-bottom: 5px;"></ion-icon>
+                            <br>
+                            <span style="font-size: 0.8rem; font-weight:500" class="mb-2">
+                                Lainnya
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -566,145 +607,146 @@
                     <div class="col">
                         {{-- {{ $d->jam_out != null ? 'historibordergreen' : 'historiborderred' }} --}}
                         @foreach ($datapresensi as $d)
-                            @if ($d->status == 'h')
-                                @php
-                                    $jam_in = date('Y-m-d H:i', strtotime($d->jam_in));
-                                    $jam_masuk = date('Y-m-d H:i', strtotime($d->tanggal . ' ' . $d->jam_masuk));
-                                @endphp
-                                <div class="card historicard historibordergreen mb-1">
-                                    <div class="historicontent">
-                                        <div class="historidetail1">
-                                            <div class="iconpresence">
-                                                <ion-icon name="finger-print-outline" style="font-size: 48px"></ion-icon>
-                                            </div>
-                                            <div class="datepresence">
-                                                <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                                <span class="timepresence">
-                                                    @if ($d->jam_in != null)
-                                                        {{ date('H:i', strtotime($d->jam_in)) }}
-                                                    @else
-                                                        <span class="text-danger">
-                                                            <ion-icon name="hourglass-outline"></ion-icon> Belum Absen
-                                                        </span>
-                                                    @endif
-                                                    -
-                                                    @if ($d->jam_out != null)
-                                                        {{ date('H:i', strtotime($d->jam_out)) }}
-                                                    @else
-                                                        <span class="text-danger">
-                                                            <ion-icon name="hourglass-outline"></ion-icon> Belum Absen
-                                                        </span>
-                                                    @endif
-                                                </span>
-
-                                                @if ($d->istirahat_in != null)
-                                                    <br>
-                                                    <span class="timepresence text-info">
-                                                        {{ date('H:i', strtotime($d->istirahat_in)) }} -
-                                                        @if ($d->istirahat_out != null)
-                                                            {{ date('H:i', strtotime($d->istirahat_out)) }}
-                                                        @else
-                                                            <ion-icon name="hourglass-outline"></ion-icon>
-                                                        @endif
+                            <div class="card mb-1 card-hover" style="border: 1px solid var(--color-nav); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                                <div class="card-body p-2 d-flex align-items-center">
+                                    <div class="icon-container mr-1 d-flex align-items-center justify-content-center" 
+                                        style="width: 45px; height: 45px; border-radius: 12px; flex-shrink: 0; 
+                                        background-color: {{ $d->status == 'h' ? 'rgba(var(--color-nav-rgb), 0.1)' : ($d->status == 'i' ? 'rgba(30, 144, 255, 0.1)' : ($d->status == 's' ? 'rgba(255, 99, 132, 0.1)' : 'rgba(255, 159, 64, 0.1)')) }};">
+                                        @if ($d->status == 'h')
+                                            <ion-icon name="finger-print-outline" style="font-size: 20px; color: var(--color-nav);"></ion-icon>
+                                        @elseif ($d->status == 'i')
+                                            <ion-icon name="document-text-outline" style="font-size: 20px; color: #1e90ff;"></ion-icon>
+                                        @elseif ($d->status == 's')
+                                            <ion-icon name="medkit-outline" style="font-size: 20px; color: #ff6384;"></ion-icon>
+                                        @elseif ($d->status == 'c')
+                                            <ion-icon name="calendar-outline" style="font-size: 20px; color: #ff9f40;"></ion-icon>
+                                        @endif
+                                    </div>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="row align-items-center">
+                                            <div class="col-12">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <h5 class="mb-0 text-truncate" style="font-size: 14px; font-weight: 600; color: #333;">{{ DateToIndo($d->tanggal) }}</h5>
+                                                    <span class="badge" style="background-color: #f8f9fa; color: #666; font-weight: normal; font-size: 10px; border: 1px solid #eee;">
+                                                        {{ $d->nama_jam_kerja }} ({{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }})
                                                     </span>
+                                                </div>
+                                                <div class="mb-2">
+                                                    @if ($d->status == 'h')
+                                                        @php
+                                                            $jam_in_ts = strtotime($d->jam_in);
+                                                            $jam_masuk_ts = strtotime($d->tanggal . ' ' . $d->jam_masuk);
+                                                            $is_late = $jam_in_ts > $jam_masuk_ts;
+                                                            $jam_telat = 0;
+                                                            $menit_telat = 0;
+                                                            
+                                                            if ($is_late) {
+                                                                $terlambat_selisih = $jam_in_ts - $jam_masuk_ts;
+                                                                $jam_telat = floor($terlambat_selisih / 3600);
+                                                                $sisa = $terlambat_selisih % 3600;
+                                                                $menit_telat = floor($sisa / 60);
+                                                            }
+                                                            
+                                                            // Calculation Logic
+                                                            $denda_display = 0;
+                                                            $potongan_jam = 0;
+                                                            $potongan_jam_terlambat = 0;
+                                                            $pulangcepat = 0;
+                                                            $potongan_tidak_scan = 0;
+
+                                                            if (!empty($d->denda)) {
+                                                                $denda_display = $d->denda;
+                                                                if ($is_late) {
+                                                                    $desimal_terlambat = $jam_telat + round($menit_telat / 60, 2);
+                                                                    if ($desimal_terlambat >= 1) {
+                                                                        $potongan_jam_terlambat = $desimal_terlambat > $d->total_jam ? $d->total_jam : $desimal_terlambat;
+                                                                    }
+                                                                }
+                                                            } else {
+                                                                if ($is_late){
+                                                                    $desimal_terlambat = $jam_telat + round($menit_telat / 60, 2);
+                                                                    if ($desimal_terlambat < 1) {
+                                                                        $denda_display = hitungdenda($denda_list, $menit_telat);
+                                                                        $potongan_jam_terlambat = 0;
+                                                                    } else {
+                                                                        $denda_display = 0;
+                                                                        $potongan_jam_terlambat = $desimal_terlambat > $d->total_jam ? $d->total_jam : $desimal_terlambat;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            $pulangcepat = hitungpulangcepat(
+                                                                $d->tanggal,
+                                                                $d->jam_out,
+                                                                $d->jam_pulang,
+                                                                $d->istirahat,
+                                                                $d->jam_awal_istirahat,
+                                                                $d->jam_akhir_istirahat,
+                                                                $d->lintashari
+                                                            );
+                                                            $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
+
+                                                            if ($d->tanggal != date('Y-m-d')) {
+                                                                if (empty($d->jam_out) || empty($d->jam_in)) {
+                                                                    $potongan_tidak_scan = $d->total_jam;
+                                                                }
+                                                            }
+
+                                                            if ($potongan_tidak_scan > 0) {
+                                                                $potongan_jam = $potongan_tidak_scan;
+                                                            } else {
+                                                                $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                                                            }
+                                                        @endphp
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span style="color: #555; font-size: 12px; font-weight: 500;">
+                                                                {{ $d->jam_in != null ? date('H:i', strtotime($d->jam_in)) : '__:__' }}
+                                                                <span style="color: #ccc; margin: 0 5px;">-</span>
+                                                                {{ $d->jam_out != null ? date('H:i', strtotime($d->jam_out)) : '__:__' }}
+                                                            </span>
+                                                            @if ($is_late)
+                                                                <span class="badge bg-danger" style="font-size: 10px;">
+                                                                    Telat {{ $jam_telat > 0 ? $jam_telat . 'j ' : '' }}{{ $menit_telat }}m
+                                                                </span>
+                                                            @else
+                                                                <span class="badge bg-success" style="font-size: 10px;">Tepat Waktu</span>
+                                                            @endif
+                                                        </div>
+                                                    @elseif ($d->status == 'i')
+                                                        <span style="color: #1e90ff; font-size: 12px;">Izin: {{ $d->keterangan_izin }}</span>
+                                                    @elseif ($d->status == 's')
+                                                        <span style="color: #ff6384; font-size: 12px;">Sakit: {{ $d->keterangan_izin_sakit }}</span>
+                                                    @elseif ($d->status == 'c')
+                                                        <span style="color: #ff9f40; font-size: 12px;">Cuti: {{ $d->keterangan_izin_cuti }}</span>
+                                                    @endif
+                                                </div>
+                                                
+                                                @if ($d->status == 'h' && $d->jam_in != null)
+                                                    <div class="d-flex flex-wrap gap-1">
+                                                        @if ($denda_display > 0)
+                                                            <span class="badge bg-danger" style="font-size: 10px;">
+                                                                Denda Rp. {{ number_format($denda_display) }}
+                                                            </span>
+                                                        @endif
+                                                        
+                                                        @if ($pulangcepat > 0)
+                                                            <span class="badge bg-danger" style="font-size: 10px;">
+                                                                Pulang Cepat
+                                                            </span>
+                                                        @endif
+
+                                                        @if ($potongan_jam > 0)
+                                                            <span class="badge bg-danger" style="font-size: 10px;">
+                                                                PJ: {{ number_format($potongan_jam, 2) }} Jam
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                 @endif
-                                                <br>
-                                                @if ($d->jam_in != null)
-                                                    @php
-                                                        $terlambat = hitungjamterlambat(
-                                                            date('H:i', strtotime($jam_in)),
-                                                            date('H:i', strtotime($jam_masuk)),
-                                                        );
-
-                                                    @endphp
-                                                    {!! $terlambat['show'] !!}
-                                                @endif
-
-
                                             </div>
-                                        </div>
-                                        <div class="historidetail2">
-                                            <h4>{{ $d->nama_jam_kerja }}</h4>
-                                            <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
-                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                            </span>
                                         </div>
                                     </div>
                                 </div>
-                            @elseif($d->status == 'i')
-                                <div class="card historicard historibordergreen mb-1">
-                                    <div class="historicontent">
-                                        <div class="historidetail1">
-                                            <div class="iconpresence">
-                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
-                                            </div>
-                                            <div class="datepresence">
-                                                <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                                <h4 class="timepresence">
-                                                    Izin Absen
-                                                </h4>
-                                                <span>{{ $d->keterangan_izin }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="historidetail2">
-                                            <h4>{{ $d->nama_jam_kerja }}</h4>
-                                            <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
-                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @elseif($d->status == 'i')
-                                <div class="card historicard historibordergreen mb-1">
-                                    <div class="historicontent">
-                                        <div class="historidetail1">
-                                            <div class="iconpresence">
-                                                <ion-icon name="document-text-outline" style="font-size: 48px; color: #1f7ee4"></ion-icon>
-                                            </div>
-                                            <div class="datepresence">
-                                                <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                                <h4 class="timepresence">
-                                                    Izin Cuti
-                                                </h4>
-                                                <span>{{ $d->keterangan_cuti }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="historidetail2">
-                                            <h4>{{ $d->nama_jam_kerja }}</h4>
-                                            <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
-                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @elseif($d->status == 's')
-                                <div class="card historicard historibordergreen mb-1">
-                                    <div class="historicontent">
-                                        <div class="historidetail1">
-                                            <div class="iconpresence">
-                                                <ion-icon name="bag-add-outline" style="font-size: 48px; color: #d4095a"></ion-icon>
-                                            </div>
-                                            <div class="datepresence">
-                                                <h4>{{ DateToIndo($d->tanggal) }}</h4>
-                                                <h4 class="timepresence">
-                                                    Izin Sakit
-                                                </h4>
-                                                <span>{{ $d->keterangan_sakit }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="historidetail2">
-                                            <h4>{{ $d->nama_jam_kerja }}</h4>
-                                            <span class="timepresence">
-                                                {{ date('H:i', strtotime($d->jam_masuk)) }} -
-                                                {{ date('H:i', strtotime($d->jam_pulang)) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
+                            </div>
                         @endforeach
                     </div>
                 </div>

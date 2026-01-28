@@ -34,6 +34,9 @@ class GeneralsettingController extends Controller
             'tujuan_notifikasi_wa' => 'required|in:0,1',
             'id_group_wa' => 'nullable|string|max:255',
             'timezone' => 'required|string|max:50',
+            'nama_hrd' => 'nullable|string',
+            'theme_color_1' => 'nullable|string|max:20',
+            'theme_color_2' => 'nullable|string|max:20',
         ]);
 
         try {
@@ -45,6 +48,7 @@ class GeneralsettingController extends Controller
                 'nama_perusahaan' => $request->nama_perusahaan,
                 'alamat' => $request->alamat,
                 'telepon' => $request->telepon,
+                'nama_hrd' => $request->nama_hrd,
                 'total_jam_bulan' => $request->total_jam_bulan,
                 'denda' => $request->has('denda') ? true : false,
                 'face_recognition' => $request->has('face_recognition') ? true : false,
@@ -68,12 +72,23 @@ class GeneralsettingController extends Controller
                 'jml_hari_izin_max' => $request->jml_hari_izin_max,
                 'batas_presensi_lintashari' => $request->batas_presensi_lintashari,
                 'timezone' => $request->timezone,
+                'theme_color_1' => $request->theme_color_1,
+                'theme_color_2' => $request->theme_color_2,
+                'mobile_theme_scheme' => $request->mobile_theme_scheme,
             ];
 
             if ($request->hasFile('logo')) {
                 $logo = $request->file('logo');
                 $logoName = time() . '.' . $logo->getClientOriginalExtension();
-                $logo->storeAs('public/logo', $logoName);
+                
+                $destinationPath = 'public/logo';
+                if (!Storage::exists($destinationPath)) {
+                    Storage::makeDirectory($destinationPath, 0775, true);
+                    $path = Storage::path($destinationPath);
+                    chmod($path, 0775);
+                }
+                
+                $logo->storeAs($destinationPath, $logoName);
 
                 // Hapus logo lama jika ada
                 if ($setting->logo && Storage::exists('public/logo/' . $setting->logo)) {

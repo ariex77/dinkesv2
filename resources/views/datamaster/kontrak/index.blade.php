@@ -17,15 +17,17 @@
                 @endcan
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-12">
+                <div class="card mb-3 shadow-sm">
+                    <div class="card-body p-3">
                         <form action="{{ route('kontrak.index') }}">
-                            <div class="row">
-                                <div class="col-lg-4 col-sm-12 col-md-12">
-                                    <x-input-with-icon label="Cari Nama Karyawan" name="nama_karyawan" icon="ti ti-search"
-                                        value="{{ request('nama_karyawan') }}" placeholder="Masukkan nama karyawan" hideLabel />
+                            <div class="row g-2 align-items-center">
+                                <div class="col-lg-4 col-sm-12">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="ti ti-search"></i></span>
+                                        <input type="text" class="form-control" name="nama_karyawan" value="{{ request('nama_karyawan') }}" placeholder="Cari Nama Karyawan...">
+                                    </div>
                                 </div>
-                                <div class="col-lg-2 col-sm-12 col-md-12">
+                                <div class="col-lg-3 col-sm-6">
                                     <select class="form-select" name="kode_cabang">
                                         <option value="">Semua Cabang</option>
                                         @foreach ($cabangs as $cabang)
@@ -36,7 +38,7 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-2 col-sm-12 col-md-12">
+                                <div class="col-lg-3 col-sm-6">
                                     <select class="form-select" name="kode_dept">
                                         <option value="">Semua Departemen</option>
                                         @foreach ($departemens as $dept)
@@ -46,93 +48,99 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-lg-4 col-sm-12 col-md-12 d-flex gap-2">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="ti ti-search me-1"></i> Cari
+                                <div class="col-lg-2 col-sm-12">
+                                    <button class="btn btn-primary w-100" type="submit">
+                                        <i class="ti ti-filter me-1"></i> Filter
                                     </button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>No.</th>
-                                <th>No Kontrak</th>
-                                <th>NIK</th>
-                                <th>Nama Karyawan</th>
-                                <th>Tanggal</th>
-                                <th>Dari</th>
-                                <th>Sampai</th>
-                                <th>Jabatan</th>
-                                <th>Cabang</th>
-                                <th>Departemen</th>
-                                <th>Status Kontrak</th>
-                                <th class="text-center">#</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($kontraks as $kontrak)
-                                <tr>
-                                    <td>{{ $loop->iteration + ($kontraks->currentPage() - 1) * $kontraks->perPage() }}</td>
-                                    <td class="fw-semibold">{{ $kontrak->no_kontrak }}</td>
-                                    <td>{{ $kontrak->nik }}</td>
-                                    <td>{{ $kontrak->nama_karyawan ?? '-' }}</td>
-                                    <td>{{ date('d/m/Y', strtotime($kontrak->tanggal)) ?? '-' }}</td>
-                                    <td>{{ date('d/m/Y', strtotime($kontrak->dari)) ?? '-' }}</td>
-                                    <td>{{ date('d/m/Y', strtotime($kontrak->sampai)) ?? '-' }}</td>
-                                    <td>{{ $kontrak->nama_jabatan ?? '-' }}</td>
-                                    <td>{{ $kontrak->nama_cabang ?? '-' }}</td>
-                                    <td>{{ $kontrak->nama_dept ?? '-' }}</td>
-                                    <td>
-                                        @if ($kontrak->status_kontrak == '1')
-                                            <span class="badge bg-success">Aktif</span>
-                                        @else
-                                            <span class="badge bg-danger">Non Aktif</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="d-flex">
-                                            @can('kontrak.edit')
-                                                <div>
-                                                    <a href="#" class="me-2 btnEditKontrak" data-id="{{ Crypt::encrypt($kontrak->id) }}">
-                                                        <i class="ti ti-edit text-success"></i>
-                                                    </a>
-                                                </div>
-                                            @endcan
-                                            <div>
-                                                <a href="{{ route('kontrak.print', Crypt::encrypt($kontrak->id)) }}" target="_blank" class="me-2">
-                                                    <i class="ti ti-printer text-primary"></i>
-                                                </a>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        @forelse ($kontraks as $kontrak)
+                            <div class="card mb-2 shadow-sm border">
+                                <div class="card-body p-2">
+                                    <div class="row align-items-center">
+                                        <!-- Icon -->
+                                        <div class="col-md-1 text-center">
+                                            <div class="avatar bg-info-subtle text-info rounded px-2 py-2 d-flex align-items-center justify-content-center mx-auto" style="width: 40px; height: 40px; border: 1px solid #e9ecef;">
+                                                <i class="ti ti-file-description fs-3"></i>
                                             </div>
-                                            @can('kontrak.delete')
-                                                <div>
-                                                    <form method="POST" name="deleteform" class="deleteform me-1"
+                                        </div>
+                                        <!-- Identity -->
+                                        <div class="col-md-4">
+                                            <div class="fw-bold text-dark" style="font-size: 14px;">
+                                                {{ $kontrak->nama_karyawan ?? '-' }}
+                                                <span class="text-muted fw-normal" style="font-size: 12px;">({{ $kontrak->nik }})</span>
+                                            </div>
+                                            <div class="mt-1">
+                                                <span class="badge bg-label-primary" style="font-size: 10px;">{{ $kontrak->nama_jabatan ?? '-' }}</span>
+                                                <span class="badge bg-label-info" style="font-size: 10px;">{{ $kontrak->nama_dept ?? '-' }}</span>
+                                                <span class="badge bg-label-warning" style="font-size: 10px;">{{ $kontrak->nama_cabang ?? '-' }}</span>
+                                            </div>
+                                        </div>
+                                        <!-- Period -->
+                                        <div class="col-md-3 border-start border-end d-none d-md-block text-center">
+                                            <div class="fw-bold text-dark" style="font-size: 13px;">
+                                                {{ date('d-m-Y', strtotime($kontrak->dari)) }} s/d {{ date('d-m-Y', strtotime($kontrak->sampai)) }}
+                                            </div>
+                                            <div class="text-muted" style="font-size: 11px;">
+                                                Masa Kontrak
+                                            </div>
+                                        </div>
+                                        <!-- Status & Doc No -->
+                                        <div class="col-md-2 text-center">
+                                            @if ($kontrak->status_kontrak == '1')
+                                                <span class="badge bg-success py-1 px-2" style="font-size: 11px;">Aktif</span>
+                                            @else
+                                                <span class="badge bg-danger py-1 px-2" style="font-size: 11px;">Non Aktif</span>
+                                            @endif
+                                            <div class="text-muted mt-1" style="font-size: 10px;">
+                                                {{ $kontrak->no_kontrak }}
+                                            </div>
+                                        </div>
+                                        <!-- Actions -->
+                                        <div class="col-md-2 text-end">
+                                            <div class="btn-group shadow-sm" role="group">
+                                                <a href="{{ route('kontrak.print', Crypt::encrypt($kontrak->id)) }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2" title="Cetak">
+                                                    <i class="ti ti-printer"></i>
+                                                </a>
+                                                @can('kontrak.edit')
+                                                    <a href="#" class="btn btn-sm btn-outline-success btnEditKontrak py-1 px-2" data-id="{{ Crypt::encrypt($kontrak->id) }}" title="Edit">
+                                                        <i class="ti ti-edit"></i>
+                                                    </a>
+                                                @endcan
+                                                @can('kontrak.delete')
+                                                    <form method="POST" name="deleteform" class="deleteform d-inline"
                                                         action="{{ route('kontrak.delete', Crypt::encrypt($kontrak->id)) }}">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <a href="#" class="delete-confirm ml-1">
-                                                            <i class="ti ti-trash text-danger"></i>
-                                                        </a>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2" title="Hapus">
+                                                            <i class="ti ti-trash"></i>
+                                                        </button>
                                                     </form>
-                                                </div>
-                                            @endcan
+                                                @endcan
+                                            </div>
                                         </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="16" class="text-center text-muted">Belum ada data kontrak.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="alert alert-info d-flex align-items-center" role="alert">
+                                <i class="ti ti-info-circle me-2 fs-4"></i>
+                                <div>
+                                    Belum ada data kontrak yang tersedia.
+                                </div>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
                 <div class="mt-3">
                     {{ $kontraks->links('pagination::bootstrap-5') }}
                 </div>
+            </div>
             </div>
         </div>
     </div>

@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use App\Imports\KaryawanImport;
 use App\Exports\TemplateKaryawanExport;
+use App\Exports\KaryawanExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class KaryawanController extends Controller
@@ -189,6 +190,12 @@ class KaryawanController extends Controller
             $simpan = Karyawan::create($data);
             if ($simpan) {
                 if ($request->hasfile('foto')) {
+                    if (!Storage::exists($destination_foto_path)) {
+                        Storage::makeDirectory($destination_foto_path, 0775, true);
+                        // Explicit chmod to ensure permissions are correct on some hosting environments
+                        $path = Storage::path($destination_foto_path);
+                        chmod($path, 0775);
+                    }
                     $request->file('foto')->storeAs($destination_foto_path, $foto_name);
                 }
             }
@@ -289,7 +296,20 @@ class KaryawanController extends Controller
             $data = array_merge($data_karyawan, $data_foto);
             $simpan = Karyawan::where('nik', $nik)->update($data);
             if ($simpan) {
+                $user_karyawan = Userkaryawan::where('nik', $nik)->first();
+                if ($user_karyawan) {
+                    User::where('id', $user_karyawan->id_user)->update([
+                        'name' => $request->nama_karyawan
+                    ]);
+                }
+
                 if ($request->hasfile('foto')) {
+                    if (!Storage::exists($destination_foto_path)) {
+                        Storage::makeDirectory($destination_foto_path, 0775, true);
+                        // Explicit chmod to ensure permissions are correct on some hosting environments
+                        $path = Storage::path($destination_foto_path);
+                        chmod($path, 0775);
+                    }
                     Storage::delete($destination_foto_path . "/" . $karyawan->foto);
                     $request->file('foto')->storeAs($destination_foto_path, $foto_name);
                 }
@@ -552,6 +572,53 @@ class KaryawanController extends Controller
         }
     }
 
+    public function generateAllUser()
+    {
+        $generalsetting = Pengaturanumum::first();
+        // Get all active employees who don't have a user yet
+        // Since 'user' relation might not exist in Karyawan model, we use a left join check or explicit query
+        $karyawan = Karyawan::where('status_aktif_karyawan', 1)
+            ->leftJoin('users_karyawan', 'karyawan.nik', '=', 'users_karyawan.nik')
+            ->whereNull('users_karyawan.id_user')
+            ->select('karyawan.*')
+            ->get();
+
+        if ($karyawan->isEmpty()) {
+            return Redirect::back()->with(messageError('Tidak ada karyawan aktif yang belum memiliki user'));
+        }
+
+        DB::beginTransaction();
+        try {
+            $count = 0;
+            foreach ($karyawan as $k) {
+                // Check if user already exists (double check)
+                $existingUser = Userkaryawan::where('nik', $k->nik)->first();
+                if (!$existingUser) {
+                    $user = User::create([
+                        'name' => $k->nama_karyawan,
+                        'username' => $k->nik,
+                        'password' => Hash::make($k->nik),
+                        'email' => strtolower(removeTitik($k->nik)) . '@' . $generalsetting->domain_email,
+                    ]);
+
+                    Userkaryawan::create([
+                        'nik' => $k->nik,
+                        'id_user' => $user->id
+                    ]);
+
+                    $user->assignRole('karyawan');
+                    $count++;
+                }
+            }
+
+            DB::commit();
+            return Redirect::back()->with(messageSuccess($count . ' User Berhasil Dibuat'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return Redirect::back()->with(messageError($e->getMessage()));
+        }
+    }
+
     public function deleteuser($nik)
     {
         $nik = Crypt::decrypt($nik);
@@ -594,6 +661,11 @@ class KaryawanController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function export(Request $request)
+    {
+        return Excel::download(new KaryawanExport($request->all()), 'karyawan_export.xlsx');
     }
 
 

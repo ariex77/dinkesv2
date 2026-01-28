@@ -189,14 +189,28 @@ class AktivitasKaryawanController extends Controller
                 $fotoName = time() . '_aktivitas.' . $image_type;
 
                 // Save file
-                Storage::put('public/uploads/aktivitas/' . $fotoName, $image_base64);
+                $destinationPath = 'public/uploads/aktivitas/';
+                if (!Storage::exists($destinationPath)) {
+                    Storage::makeDirectory($destinationPath, 0775, true);
+                    $path = Storage::path($destinationPath);
+                    chmod($path, 0775);
+                }
+                Storage::put($destinationPath . $fotoName, $image_base64);
                 $data['foto'] = $fotoName;
             }
         } elseif ($request->hasFile('foto')) {
             // Handle file upload (for admin)
             $foto = $request->file('foto');
             $fotoName = time() . '_' . $foto->getClientOriginalName();
-            $foto->storeAs('public/uploads/aktivitas', $fotoName);
+            
+            $destinationPath = 'public/uploads/aktivitas';
+            if (!Storage::exists($destinationPath)) {
+                Storage::makeDirectory($destinationPath, 0775, true);
+                $path = Storage::path($destinationPath);
+                chmod($path, 0775);
+            }
+            
+            $foto->storeAs($destinationPath, $fotoName);
             $data['foto'] = $fotoName;
         }
 
@@ -346,7 +360,13 @@ class AktivitasKaryawanController extends Controller
                 $fotoName = time() . '_aktivitas.' . $image_type;
 
                 // Save file
-                Storage::put('public/uploads/aktivitas/' . $fotoName, $image_base64);
+                $destinationPath = 'public/uploads/aktivitas/';
+                if (!Storage::exists($destinationPath)) {
+                    Storage::makeDirectory($destinationPath, 0775, true);
+                    $path = Storage::path($destinationPath);
+                    chmod($path, 0775);
+                }
+                Storage::put($destinationPath . $fotoName, $image_base64);
                 $data['foto'] = $fotoName;
             }
         } elseif ($request->hasFile('foto')) {
@@ -358,7 +378,15 @@ class AktivitasKaryawanController extends Controller
 
             $foto = $request->file('foto');
             $fotoName = time() . '_' . $foto->getClientOriginalName();
-            $foto->storeAs('public/uploads/aktivitas', $fotoName);
+            
+            $destinationPath = 'public/uploads/aktivitas';
+            if (!Storage::exists($destinationPath)) {
+                Storage::makeDirectory($destinationPath, 0775, true);
+                $path = Storage::path($destinationPath);
+                chmod($path, 0775);
+            }
+            
+            $foto->storeAs($destinationPath, $fotoName);
             $data['foto'] = $fotoName;
         }
 

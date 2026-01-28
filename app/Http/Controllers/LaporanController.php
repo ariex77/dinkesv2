@@ -19,6 +19,10 @@ use App\Models\Userkaryawan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Exports\PresensiExport;
+use App\Exports\GajiExport;
+use App\Exports\PresensiKaryawanExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
@@ -62,12 +66,15 @@ class LaporanController extends Controller
             $bulan = str_pad($bulan, 2, '0', STR_PAD_LEFT);
             $periode_dari = $tahun . '-' . $bulan . '-' . $periode_laporan_dari;
             $periode_sampai = $request->tahun . '-' . $request->bulan . '-' . $periode_laporan_sampai;
-        } else {
+        } elseif ($request->periode_laporan == 2) {
             // Menambahkan nol di depan bulan jika bulan kurang dari 10
 
             $bulan = str_pad($request->bulan, 2, '0', STR_PAD_LEFT);
             $periode_dari = $request->tahun . '-' . $bulan . '-01';
             $periode_sampai = date('Y-m-t', strtotime($periode_dari));
+        } else {
+            $periode_dari = $request->dari;
+            $periode_sampai = $request->sampai;
         }
 
 
@@ -354,11 +361,7 @@ class LaporanController extends Controller
             'nik' => $request->nik ?? ''
         ];
 
-        if (isset($_POST['exportButton'])) {
-            header("Content-type: application/vnd-ms-excel");
-            // Mendefinisikan nama file ekspor "-SahabatEkspor.xls"
-            header("Content-Disposition: attachment; filename=Rekap Presensi $periode_dari - $periode_sampai.xls");
-        }
+
         if (!empty($request->nik) && $request->format_laporan == 1) {
             $karyawan = Karyawan::join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
                 ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
@@ -368,6 +371,9 @@ class LaporanController extends Controller
                 ->first();
             $data['karyawan'] = $karyawan;
             $data['presensi'] = $presensi;
+            if ($request->has('exportButton')) {
+                return Excel::download(new PresensiKaryawanExport($data), 'Laporan Presensi Karyawan ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+            }
             return view('laporan.presensi_karyawan_cetak', $data);
         } else {
             $laporan_presensi = $presensi->groupBy('nik')->map(function ($rows) use ($jenis_tunjangan) {
@@ -425,8 +431,14 @@ class LaporanController extends Controller
                 return view('laporan.slip_karyawan_cetak', $data);
             } else {
                 if ($request->format_laporan == 1) {
+                    if ($request->has('exportButton')) {
+                        return Excel::download(new PresensiExport($data), 'Rekap Presensi ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+                    }
                     return view('laporan.presensi_cetak', $data);
                 } else if ($request->format_laporan == 2) {
+                    if ($request->has('exportButton')) {
+                        return Excel::download(new GajiExport($data), 'Rekap Gaji ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+                    }
                     return view('laporan.gaji_cetak', $data);
                 } else if ($request->format_laporan == 3) {
                     return view('laporan.slip_cetak', $data);

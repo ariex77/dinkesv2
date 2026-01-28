@@ -73,6 +73,7 @@ class ApprovalFeatureController extends Controller
     {
         try {
             $feature = ApprovalFeature::findOrFail($id);
+            ApprovalLayer::where('feature', $feature->feature)->delete();
             $feature->delete();
             return Redirect::back()->with(['success' => 'Data Berhasil Dihapus']);
         } catch (\Exception $e) {

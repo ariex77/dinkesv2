@@ -27,6 +27,28 @@
 
     <link rel="stylesheet" href="{{ asset('assets/login/css/style.css') }}" />
     <style>
+        :root {
+            /* Dynamic Theme Colors */
+            --theme-color-1: {{ $general_setting->theme_color_1 ?? '#053b22' }};
+            --theme-color-2: {{ $general_setting->theme_color_2 ?? '#0b6a3a' }};
+        }
+
+        .sign-btn {
+            background-color: var(--theme-color-1) !important;
+        }
+
+        .sign-btn:hover {
+            background-color: var(--theme-color-2) !important;
+        }
+
+        .bullets span.active {
+            background-color: var(--theme-color-1) !important;
+        }
+
+        .carousel {
+            background: var(--theme-color-1) !important;
+        }
+
         .alert {
             padding: 15px;
             margin-bottom: 20px;
@@ -51,6 +73,9 @@
                 transform: translateY(0);
                 opacity: 1;
             }
+        }
+        .text-group h2 {
+            color: #ffffff !important;
         }
     </style>
     <!-- OneSignal SDK -->
@@ -89,8 +114,12 @@
                     <form id="formAuthentication" class="mb-3" action="{{ route('login') }}" method="POST">
                         @csrf
                         <div class="logo">
-                            <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
-                            <h4>GAWE V3</h4>
+                            @if (!empty($general_setting->logo) && Storage::disk('public')->exists('logo/' . $general_setting->logo))
+                                <img src="{{ asset('storage/logo/' . $general_setting->logo) }}" alt="Company Logo" style="height: auto; width: 80px; margin-bottom: 20px;" />
+                            @else
+                                <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
+                            @endif
+                            <h4>E-Presensi v2.0</h4>
                         </div>
 
                         <div class="heading">
@@ -147,9 +176,9 @@
 
                 <div class="carousel">
                     <div class="images-wrapper">
-                        <img src="{{ asset('assets/login/images/image1.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
-                        <img src="{{ asset('assets/login/images/image2.png') }}" class="image img-2" alt="Presensi illustration 2" />
-                        <img src="{{ asset('assets/login/images/image3.png') }}" class="image img-3" alt="Presensi illustration 3" />
+                        <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
+                        <img src="{{ asset('assets/login/images/hospital2.png') }}" class="image img-2" alt="Presensi illustration 2" />
+                        <img src="{{ asset('assets/login/images/image1.png') }}" class="image img-3" alt="Presensi illustration 3" />
                     </div>
 
                     <div class="text-slider">
