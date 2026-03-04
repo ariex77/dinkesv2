@@ -208,16 +208,23 @@ class UpdateService
 
             $zipPath = $updateDir . '/update_' . $update->version . '.zip';
 
-            // Download file
-            $this->addProgressLog($updateLog, 'Mengunduh file update...', 20);
-            $response = Http::timeout(300)->get($update->file_url);
+            // Download file - disable time limit for large files
+            set_time_limit(0);
+            ini_set('memory_limit', '512M');
             
-            if (!$response->successful()) {
-                throw new \Exception('Gagal mengunduh file update');
+            $this->addProgressLog($updateLog, 'Mengunduh file update (mohon tunggu)...', 20);
+            
+            // Use simple streaming download with sink
+            $response = Http::timeout(600)->withOptions([
+                'sink' => $zipPath,
+            ])->get($update->file_url);
+            
+            // Check if file was downloaded successfully
+            if (!File::exists($zipPath) || File::size($zipPath) == 0) {
+                throw new \Exception('Gagal mengunduh file update - file kosong atau tidak tersimpan');
             }
-
-            $this->addProgressLog($updateLog, 'Menyimpan file ke disk...', 60);
-            File::put($zipPath, $response->body());
+            
+            $this->addProgressLog($updateLog, 'File berhasil diunduh ke disk...', 60);
             
             $fileSize = filesize($zipPath);
             $fileSizeMB = round($fileSize / 1024 / 1024, 2);
@@ -288,16 +295,7 @@ class UpdateService
             }
             File::makeDirectory($extractPath, 0755, true);
 
-            $zip = new ZipArchive();
-            if ($zip->open($zipPath) === true) {
-                $totalFiles = $zip->numFiles;
-                $this->addProgressLog($updateLog, "Menemukan {$totalFiles} file dalam ZIP", 20);
-                $zip->extractTo($extractPath);
-                $zip->close();
-                $this->addProgressLog($updateLog, 'File berhasil diekstrak ✓', 30);
-            } else {
-                throw new \Exception('Gagal mengekstrak file update');
-            }
+            $this->smartExtract($zipPath, $extractPath, $updateLog);
 
             // 3. Copy files ke aplikasi
             $this->addProgressLog($updateLog, 'Menyalin file ke aplikasi...', 35);
@@ -305,22 +303,14 @@ class UpdateService
             $this->addProgressLog($updateLog, 'File berhasil disalin ✓', 50);
 
             // 4. Run migrations
-            if ($update->migrations && count($update->migrations) > 0) {
-                $this->addProgressLog($updateLog, 'Menjalankan migrations...', 55);
-                $this->runMigrations($update->migrations, $updateLog);
-                $this->addProgressLog($updateLog, 'Migrations selesai ✓', 70);
-            } else {
-                $this->addProgressLog($updateLog, 'Menjalankan semua pending migrations...', 55);
-                Artisan::call('migrate', ['--force' => true]);
-                $this->addProgressLog($updateLog, 'Migrations selesai ✓', 70);
-            }
+            $this->addProgressLog($updateLog, 'Menjalankan semua pending migrations...', 55);
+            Artisan::call('migrate', ['--force' => true]);
+            $this->addProgressLog($updateLog, 'Migrations selesai ✓', 70);
 
-            // 5. Run seeders jika ada
-            if ($update->seeders && count($update->seeders) > 0) {
-                $this->addProgressLog($updateLog, 'Menjalankan seeders...', 75);
-                $this->runSeeders($update->seeders, $updateLog);
-                $this->addProgressLog($updateLog, 'Seeders selesai ✓', 80);
-            }
+            // 5. Run seeders
+            $this->addProgressLog($updateLog, 'Menjalankan seeders...', 75);
+            Artisan::call('db:seed', ['--force' => true]);
+            $this->addProgressLog($updateLog, 'Seeders selesai ✓', 80);
 
             // 6. Update version
             $this->addProgressLog($updateLog, 'Mengupdate versi aplikasi...', 85);
@@ -369,7 +359,77 @@ class UpdateService
     }
 
     /**
-     * Backup database
+     * Smart Extract (Native > PHP Fallback)
+     */
+    private function smartExtract($zipPath, $extractPath, $updateLog)
+    {
+        $this->addProgressLog($updateLog, 'Mengekstrak file ZIP...', 20);
+        
+        // 1. Try Native Unzip
+        try {
+            $unzipPath = 'unzip'; // Default to PATH
+            if (file_exists('/usr/bin/unzip') && is_executable('/usr/bin/unzip')) {
+                $unzipPath = '/usr/bin/unzip';
+            } elseif (file_exists('/bin/unzip') && is_executable('/bin/unzip')) {
+                $unzipPath = '/bin/unzip';
+            }
+
+            if ($this->hasUnzip()) {
+                // Use detected path
+                $command = "{$unzipPath} -o -q '{$zipPath}' -d '{$extractPath}' 2>&1";
+                $output = [];
+                $returnVar = -1;
+                
+                exec($command, $output, $returnVar);
+
+                if ($returnVar === 0) {
+                    $this->addProgressLog($updateLog, 'Ekstraksi cepat berhasil (Native) ✓', 35);
+                    return;
+                }
+                
+                $errorMsg = implode("\n", $output);
+                $this->addProgressLog($updateLog, "Native unzip gagal (code {$returnVar}), menggunakan fallback PHP... Error: " . substr($errorMsg, 0, 100), 20);
+            }
+        } catch (\Exception $e) {
+            // Ignore and fallback
+        }
+
+        // 2. PHP Fallback (Optimized: EXTRACT ALL AT ONCE)
+        $this->addProgressLog($updateLog, "Mengekstrak menggunakan PHP (Mohon tunggu, ini mungkin memakan waktu)...", 25);
+        
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath) === true) {
+            set_time_limit(0);
+            ini_set('memory_limit', '1024M');
+            
+            if ($zip->extractTo($extractPath)) {
+                $zip->close();
+                $this->addProgressLog($updateLog, 'Ekstraksi selesai (PHP) ✓', 35);
+            } else {
+                $zip->close();
+                throw new \Exception('Gagal mengekstrak file ZIP (PHP ZipArchive failed)');
+            }
+        } else {
+            throw new \Exception('Gagal membuka file ZIP');
+        }
+    }
+
+    private function hasUnzip()
+    {
+        // Check common absolute paths first
+        if (file_exists('/usr/bin/unzip') && is_executable('/usr/bin/unzip')) {
+            return true;
+        }
+        if (file_exists('/bin/unzip') && is_executable('/bin/unzip')) {
+            return true;
+        }
+        
+        exec('which unzip', $output, $returnVar);
+        return $returnVar === 0;
+    }
+
+    /**
+     * Backup database with fallback
      */
     protected function backupDatabase(UpdateLog $updateLog): void
     {
@@ -381,20 +441,82 @@ class UpdateService
 
             $backupFile = $backupDir . '/backup_' . date('Y-m-d_His') . '_' . $updateLog->version . '.sql';
             
-            $dbName = config('database.connections.mysql.database');
-            $dbUser = config('database.connections.mysql.username');
-            $dbPass = config('database.connections.mysql.password');
-            $dbHost = config('database.connections.mysql.host');
+            // Try native mysqldump first
+            if ($this->hasMysqldump()) {
+                $dbName = config('database.connections.mysql.database');
+                $dbUser = config('database.connections.mysql.username');
+                $dbPass = config('database.connections.mysql.password');
+                $dbHost = config('database.connections.mysql.host');
+                $dbPort = config('database.connections.mysql.port', 3306);
+                
+                $command = "mysqldump --no-tablespaces --column-statistics=0 -h {$dbHost} -P {$dbPort} -u {$dbUser} -p{$dbPass} {$dbName} > '{$backupFile}' 2>&1";
+                
+                exec($command, $output, $returnVar);
 
-            $command = "mysqldump -h {$dbHost} -u {$dbUser} -p{$dbPass} {$dbName} > {$backupFile}";
-            exec($command, $output, $returnVar);
-
-            if ($returnVar !== 0) {
-                Log::warning('Database backup mungkin gagal, lanjutkan update');
+                if ($returnVar === 0 && File::exists($backupFile) && File::size($backupFile) > 0) {
+                    $this->addProgressLog($updateLog, 'Backup database berhasil (Native) ✓', 10);
+                    return;
+                }
+                
+                $this->addProgressLog($updateLog, "mysqldump gagal/hilang, mencoba fallback PHP...", 5);
+            } else {
+                 $this->addProgressLog($updateLog, "mysqldump tidak ditemukan, menggunakan fallback PHP...", 5);
             }
+
+            // Fallback: PHP Based Backup
+            $this->backupDatabasePHP($backupFile, $updateLog);
+            
         } catch (\Exception $e) {
             Log::warning('Gagal backup database: ' . $e->getMessage());
+             $this->addProgressLog($updateLog, "Backup gagal, melanjutkan update (Warning: {$e->getMessage()})", 10);
         }
+    }
+
+    private function hasMysqldump()
+    {
+        exec('which mysqldump', $output, $returnVar);
+        return $returnVar === 0;
+    }
+
+    /**
+     * PHP-based Database Backup (Fallback)
+     */
+    protected function backupDatabasePHP(string $filePath, UpdateLog $updateLog)
+    {
+        $handle = fopen($filePath, 'w+');
+        if (!$handle) {
+            throw new \Exception("Gagal membuat file backup di {$filePath}");
+        }
+
+        $tables = DB::select('SHOW TABLES');
+        $dbName = config('database.connections.mysql.database');
+
+        foreach ($tables as $table) {
+            $tableArray = (array)$table;
+            $tableName = array_values($tableArray)[0];
+
+            $createTable = DB::select("SHOW CREATE TABLE {$tableName}");
+            $createTableSql = ((array)$createTable[0])['Create Table'];
+
+            fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+            fwrite($handle, $createTableSql . ";\n\n");
+
+            DB::table($tableName)->orderByRaw('1')->chunk(200, function ($rows) use ($handle, $tableName) {
+                foreach ($rows as $row) {
+                    $values = array_map(function ($value) {
+                        return is_null($value) ? "NULL" : "'" . addslashes($value) . "'";
+                    }, (array)$row);
+                    
+                    $sql = "INSERT INTO `{$tableName}` VALUES (" . implode(',', $values) . ");\n";
+                    fwrite($handle, $sql);
+                }
+            });
+            
+            fwrite($handle, "\n\n");
+        }
+
+        fclose($handle);
+        $this->addProgressLog($updateLog, 'Backup database selesai (PHP) ✓', 15);
     }
 
     /**

@@ -52,7 +52,37 @@ class AdditionalDummyDataSeeder extends Seeder
 
         $this->command->info('Additional branches seeded (BDG, JKT, SBY).');
 
-        // 2. Create 30 Dummy Karyawan
+        // 2. Ensure Departments Exist
+        $deptData = [
+            ['kode_dept' => 'PRD', 'nama_dept' => 'PRODUKSI'],
+            ['kode_dept' => 'SDM', 'nama_dept' => 'SUMBER DAYA MANUSIA'],
+            ['kode_dept' => 'KUA', 'nama_dept' => 'KEUANGAN'],
+        ];
+
+        foreach ($deptData as $d) {
+            \App\Models\Departemen::updateOrCreate(
+                ['kode_dept' => $d['kode_dept']],
+                $d
+            );
+        }
+
+        // 3. Ensure Jabatan Exists
+        $jabatanData = [
+            ['kode_jabatan' => 'J01', 'nama_jabatan' => 'Manager'],
+            ['kode_jabatan' => 'J02', 'nama_jabatan' => 'Supervisor'],
+            ['kode_jabatan' => 'J03', 'nama_jabatan' => 'Staff'],
+            ['kode_jabatan' => 'J04', 'nama_jabatan' => 'Operator'],
+            ['kode_jabatan' => 'J05', 'nama_jabatan' => 'Helper'],
+        ];
+
+        foreach ($jabatanData as $j) {
+            \App\Models\Jabatan::updateOrCreate(
+                ['kode_jabatan' => $j['kode_jabatan']],
+                $j
+            );
+        }
+
+        // 4. Create 30 Dummy Karyawan
         $depts = ['PRD', 'SDM', 'KUA'];
         $jabatan_codes = ['J01', 'J02', 'J03', 'J04', 'J05'];
         $cabang_codes = ['BDG', 'JKT', 'SBY'];

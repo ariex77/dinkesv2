@@ -26,6 +26,91 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
+    public function cuti()
+    {
+        $data['list_bulan'] = config('global.list_bulan');
+        $data['start_year'] = config('global.start_year');
+        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
+        $data['departemen'] = Departemen::orderBy('kode_dept')->get();
+        $data['cuti'] = \App\Models\Cuti::orderBy('kode_cuti')->get();
+        return view('laporan.cuti', $data);
+    }
+
+    public function cetakcuti(Request $request)
+    {
+        $tahun = $request->tahun;
+        $kode_cabang = $request->kode_cabang;
+        $kode_dept = $request->kode_dept;
+        $kode_cuti = $request->kode_cuti;
+        $generalsetting = \App\Models\Pengaturanumum::where('id', 1)->first();
+
+        // Get Master Cuti info if specific cuti selected
+        $master_cuti = null;
+        if (!empty($kode_cuti)) {
+            $master_cuti = \App\Models\Cuti::where('kode_cuti', $kode_cuti)->first();
+        }
+
+        // Get Employees Query
+        $query = Karyawan::query();
+        $query->orderBy('nama_karyawan');
+        if (!empty($kode_cabang)) {
+            $query->where('kode_cabang', $kode_cabang);
+        }
+        if (!empty($kode_dept)) {
+            $query->where('kode_dept', $kode_dept);
+        }
+        $karyawan = $query->get();
+
+        // Get Approved Leave Data (Days)
+        // Join with Presensi and IzinCuti
+        $cuti_data = DB::table('presensi_izincuti_approve')
+            ->join('presensi', 'presensi_izincuti_approve.id_presensi', '=', 'presensi.id')
+            ->join('presensi_izincuti', 'presensi_izincuti_approve.kode_izin_cuti', '=', 'presensi_izincuti.kode_izin_cuti')
+            ->select('presensi.nik', 'presensi.tanggal', 'presensi_izincuti.kode_cuti')
+            ->whereRaw('YEAR(presensi.tanggal) = ?', [$tahun])
+            ->get();
+
+        // Process data structure
+        $rekap_cuti = [];
+        foreach ($karyawan as $k) {
+            $rekap_cuti[$k->nik] = [
+                'nama' => $k->nama_karyawan,
+                'bulan' => array_fill(1, 12, 0),
+                'total_ambil' => 0,
+                'sisa' => 0 
+            ];
+        }
+
+        foreach ($cuti_data as $d) {
+            // Check if employee exists in the filtered list
+            if (isset($rekap_cuti[$d->nik])) {
+                // Filter by specific cuti type if requested
+                if (!empty($kode_cuti) && $d->kode_cuti != $kode_cuti) {
+                    continue;
+                }
+
+                $bulan = (int)date('m', strtotime($d->tanggal));
+                $rekap_cuti[$d->nik]['bulan'][$bulan]++;
+                $rekap_cuti[$d->nik]['total_ambil']++;
+            }
+        }
+        
+        $data['tahun'] = $tahun;
+        $data['rekap_cuti'] = $rekap_cuti;
+        $data['master_cuti'] = $master_cuti;
+        $data['namacabang'] = !empty($kode_cabang) ? Cabang::where('kode_cabang', $kode_cabang)->first()->nama_cabang : 'Semua Cabang';
+        $data['namadept'] = !empty($kode_dept) ? Departemen::where('kode_dept', $kode_dept)->first()->nama_dept : 'Semua Departemen';
+        $data['jenis_cuti'] = !empty($master_cuti) ? $master_cuti->jenis_cuti : 'Semua Jenis Cuti';
+        $data['generalsetting'] = $generalsetting;
+
+        if(isset($_POST['exportexcel'])){
+             // Future export
+        }
+        
+        return view('laporan.cetak_cuti', $data);
+
+    }
+
     public function presensi()
     {
         $data['list_bulan'] = config('global.list_bulan');
@@ -286,6 +371,7 @@ class LaporanController extends Controller
             'presensi.keterangan_izin_cuti',
             'presensi.total_jam',
             'presensi.denda',
+            'presensi.status_potongan',
             'gaji_pokok.jumlah as gaji_pokok',
             'bpjs_kesehatan.jumlah as bpjs_kesehatan',
             'bpjs_tenagakerja.jumlah as bpjs_tenagakerja',
@@ -417,7 +503,8 @@ class LaporanController extends Controller
                         'keterangan_izin_sakit' => $row->keterangan_izin_sakit,
                         'keterangan_izin_cuti' => $row->keterangan_izin_cuti,
                         'total_jam' => $row->total_jam,
-                        'denda' => $row->denda ?? null
+                        'denda' => $row->denda ?? null,
+                        'status_potongan' => $row->status_potongan ?? null
                     ];
                 }
                 return $data;
@@ -642,14 +729,17 @@ class LaporanController extends Controller
                         $jam_masuk = $presensi->tanggal . ' ' . $presensi->jam_masuk;
                         $terlambat = hitungjamterlambat($presensi->jam_in, $jam_masuk);
 
-                        $denda = 0;
                         if ($terlambat != null) {
                             if ($terlambat['desimal_terlambat'] < 1) {
                                 $denda = hitungdenda($denda_list, $terlambat['menitterlambat']);
                             }
                         }
 
-                        Presensi::where('id', $presensi->id)->update(['denda' => $denda]);
+                        // Update denda and status_potongan
+                        Presensi::where('id', $presensi->id)->update([
+                            'denda' => $denda,
+                            'status_potongan' => $generalsetting->status_potongan_jam
+                        ]);
                         $updated_count++;
                     } else {
                         // Tidak ada presensi, cek apakah alpa
@@ -712,7 +802,8 @@ class LaporanController extends Controller
                                         'status' => 'a', // Alpa
                                         'jam_in' => null,
                                         'jam_out' => null,
-                                        'denda' => null // Alpa tidak ada denda, hanya potongan jam
+                                        'denda' => null, // Alpa tidak ada denda, hanya potongan jam
+                                        'status_potongan' => $generalsetting->status_potongan_jam
                                     ]);
                                     $inserted_alpa_count++;
                                 }
@@ -798,7 +889,10 @@ class LaporanController extends Controller
             // Update denda menjadi null untuk membatalkan kunci
             $updated_count = 0;
             if (!empty($presensi_ids)) {
-                $updated_count = Presensi::whereIn('id', $presensi_ids)->update(['denda' => null]);
+                $updated_count = Presensi::whereIn('id', $presensi_ids)->update([
+                    'denda' => null,
+                    'status_potongan' => null
+                ]);
             }
 
             /**

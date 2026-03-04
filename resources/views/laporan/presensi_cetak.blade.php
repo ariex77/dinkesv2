@@ -469,6 +469,11 @@
                                             $potongan_tidak_absen_masuk_atau_pulang == 0
                                                 ? $pulangcepat + $potongan_jam_terlambat
                                                 : $potongan_tidak_absen_masuk_atau_pulang;
+                                        
+                                        $status_potongan_harian = isset($d[$tanggal_presensi]['status_potongan']) ? $d[$tanggal_presensi]['status_potongan'] : $generalsetting->status_potongan_jam;
+                                        if ($status_potongan_harian == 0) {
+                                            $potongan_jam = 0;
+                                        }
                                         $ket_potongan_jam = !empty($potongan_jam)
                                             ? '<p><span style="color:red">PJ: ' . formatAngkaDesimal($potongan_jam) . ' Jam</span></p>'
                                             : '';
@@ -521,13 +526,16 @@
                                                 : null;
                                         $denda = $denda_dari_db !== null ? $denda_dari_db : 0;
 
+                                        $pjl_izin = $generalsetting->status_potongan_jam == 1 ? '<p>PJ : ' . formatAngkaDesimal($potongan_jam) . ' Jam</p>' : '';
                                         $ket =
                                             '<h4 style="font-weight: bold; margin-bottom:10px">IZIN</h4><p>' .
                                             $d[$tanggal_presensi]['keterangan_izin_absen'] .
-                                            '</p>
-                                            <p>PJ : ' .
-                                            formatAngkaDesimal($potongan_jam) .
-                                            ' Jam</p>';
+                                            '</p>' .
+                                            $pjl_izin;
+                                        
+                                        if ($generalsetting->status_potongan_jam == 0) {
+                                            $potongan_jam = 0;
+                                        }
                                     @endphp
                                 @elseif($d[$tanggal_presensi]['status'] == 's')
                                     @php
@@ -584,13 +592,19 @@
 
                                         $ket_denda_alpa =
                                             $denda != 0 ? '<p><span style="color:red">Denda : ' . formatAngka($denda) . '</span></p>' : '';
+                                        
+                                        $status_potongan_harian_alpa = isset($d[$tanggal_presensi]['status_potongan']) ? $d[$tanggal_presensi]['status_potongan'] : $generalsetting->status_potongan_jam;
+                                        
+                                        $pjl_alpa = $status_potongan_harian_alpa == 1 ? '<span>PJ : ' . formatAngkaDesimal($potongan_jam) . ' Jam</span>' : '';
 
                                         $ket =
-                                            '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>
-                                        <span>PJ : ' .
-                                            formatAngkaDesimal($potongan_jam) .
-                                            ' Jam</span>' .
+                                            '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>' .
+                                            $pjl_alpa .
                                             $ket_denda_alpa;
+                                        
+                                        if ($status_potongan_harian_alpa == 0) {
+                                            $potongan_jam = 0;
+                                        }
                                     @endphp
                                 @endif
                             @else
@@ -636,11 +650,14 @@
                                             // Untuk alpa yang belum ada di database, denda = 0
                                             $denda = 0;
 
+                                            $pjl_alpa_else = $generalsetting->status_potongan_jam == 1 ? '<span>PJ : ' . formatAngkaDesimal($potongan_jam) . ' Jam</span>' : '';
                                             $ket =
-                                                '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>
-                                                <span>PJ : ' .
-                                                formatAngkaDesimal($potongan_jam) .
-                                                ' Jam</span>';
+                                                '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>' .
+                                                $pjl_alpa_else;
+                                            
+                                            if ($generalsetting->status_potongan_jam == 0) {
+                                                $potongan_jam = 0;
+                                            }
                                         }
                                     }
 
@@ -660,14 +677,38 @@
 
                                 $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
                             @endphp
-                            <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}">
+                            <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}; position: relative;">
+                                @if(isset($d[$tanggal_presensi]['status_potongan']))
+                                    <span style="position:absolute; top:2px; right:2px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    </span>
+                                @endif
                                 {!! $ket !!}
-
                             </td>
                             @php
                                 $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                             @endphp
                         @endwhile
+                        {{-- This block ensures that if status_potongan_jam is OFF, daily PJ is not displayed --}}
+                        @php
+                            $status_potongan_final = isset($d[$tanggal_presensi]['status_potongan']) ? $d[$tanggal_presensi]['status_potongan'] : $generalsetting->status_potongan_jam;
+                        @endphp
+
+                        @if ($status_potongan_final == 1)
+                            @if (!empty($ket_potongan_jam) || !empty($ket_denda_alpa))
+                                @php
+                                    $ket .= !empty($ket_potongan_jam) ? $ket_potongan_jam : '';
+                                    $ket .= !empty($ket_denda_alpa) ? $ket_denda_alpa : '';
+                                @endphp
+                            @endif
+                        @endif
+                        @php
+                            if ($generalsetting->status_potongan_jam == 0) {
+                                $total_potongan_jam = 0;
+                            } elseif ($total_potongan_jam > $generalsetting->total_jam_bulan) {
+                                $total_potongan_jam = $generalsetting->total_jam_bulan;
+                            }
+                        @endphp
                         <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
                         <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
                         <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
@@ -743,6 +784,8 @@
                                     text: response.message,
                                     icon: 'success',
                                     confirmButtonText: 'OK'
+                                }).then(() => {
+                                    location.reload();
                                 });
                             },
                             error: function(xhr) {

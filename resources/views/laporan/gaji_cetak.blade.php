@@ -351,6 +351,10 @@
                                 @endphp
                             @endif
                             @php
+                                $status_potongan_harian = isset($d[$tanggal_presensi]['status_potongan']) ? $d[$tanggal_presensi]['status_potongan'] : $generalsetting->status_potongan_jam;
+                                if ($status_potongan_harian == 0) {
+                                    $potongan_jam = 0;
+                                }
                                 $total_denda += $denda;
                                 $total_potongan_jam += $potongan_jam;
                                 $total_jam_lembur += $jml_jam_lembur;
@@ -364,6 +368,9 @@
                         @endwhile
 
                         @php
+                            if ($total_potongan_jam > $generalsetting->total_jam_bulan) {
+                                $total_potongan_jam = $generalsetting->total_jam_bulan;
+                            }
                             $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
                             $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
 

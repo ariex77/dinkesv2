@@ -64,7 +64,7 @@ class PengumumanController extends Controller
             \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\PengumumanNotification($pengumuman));
 
             // Send OneSignal Push Notification
-            $this->sendOneSignalNotification($pengumuman->judul, $pengumuman->isi);
+            // $this->sendOneSignalNotification($pengumuman->judul, $pengumuman->isi);
 
             DB::commit();
             

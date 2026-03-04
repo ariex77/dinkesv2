@@ -69,4 +69,37 @@ class ProfileController extends Controller
             return Redirect::back()->with(messageError($e->getMessage()));
         }
     }
+    public function editprofile()
+    {
+        $user = auth()->user();
+        return view('profile.edit', compact('user'));
+    }
+
+    public function updateprofile(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $user->id,
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        try {
+            $data = [
+                'name' => $request->name,
+                'username' => $request->username,
+            ];
+
+            if ($request->filled('password')) {
+                $data['password'] = \Illuminate\Support\Facades\Hash::make($request->password);
+            }
+
+            User::where('id', $user->id)->update($data);
+
+            return Redirect::back()->with(messageSuccess('Profile Berhasil Diupdate'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError($e->getMessage()));
+        }
+    }
 }

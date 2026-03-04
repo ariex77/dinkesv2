@@ -39,6 +39,7 @@ class KontrakController extends Controller
         $query = Kontrak::select(
             'kontrak.*',
             'karyawan.nama_karyawan',
+            'karyawan.nik_show',
             'jabatan.nama_jabatan',
             'cabang.nama_cabang',
             'departemen.nama_dept'
@@ -176,6 +177,11 @@ class KontrakController extends Controller
         $id = Crypt::decrypt($encryptedId);
         $kontrak = Kontrak::findOrFail($id);
 
+        // Cek jika kontrak sudah tidak aktif
+        if ($kontrak->status_kontrak == '0') {
+            return Redirect::back()->with(messageError('Kontrak sudah nonaktif tidak dapat diedit.'));
+        }
+
         // Cek akses jika bukan super admin
         if (!$user->isSuperAdmin()) {
             $userCabangs = $user->getCabangCodes();
@@ -206,6 +212,11 @@ class KontrakController extends Controller
     {
         $id = Crypt::decrypt($encryptedId);
         $kontrak = Kontrak::findOrFail($id);
+
+        if ($kontrak->status_kontrak == '0') {
+            return Redirect::back()->with(messageError('Kontrak sudah nonaktif tidak dapat diedit.'));
+        }
+
         $data = $this->validateRequest($request, $kontrak->id);
 
         try {
@@ -223,6 +234,10 @@ class KontrakController extends Controller
 
         $id = Crypt::decrypt($encryptedId);
         $kontrak = Kontrak::findOrFail($id);
+
+        if ($kontrak->status_kontrak == '0') {
+            return Redirect::back()->with(messageError('Kontrak sudah nonaktif tidak dapat dihapus.'));
+        }
 
         // Cek akses jika bukan super admin
         if (!$user->isSuperAdmin()) {
@@ -251,6 +266,7 @@ class KontrakController extends Controller
         $kontrak = Kontrak::select(
             'kontrak.*',
             'karyawan.nama_karyawan',
+            'karyawan.nik_show',
             'karyawan.tempat_lahir',
             'karyawan.tanggal_lahir',
             'karyawan.jenis_kelamin',
@@ -303,6 +319,52 @@ class KontrakController extends Controller
         return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan'));
     }
 
+    public function template()
+    {
+        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', 'PKWT')->first();
+        if (!$template) {
+            // Default template if not exists
+            $konten = view('datamaster.kontrak.default_template')->render();
+            // Create initial record
+            $template = \App\Models\KonfigurasiDokumen::create([
+                'kode_dokumen' => 'PKWT',
+                'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                'konten' => $konten
+            ]);
+        }
+        return view('datamaster.kontrak.template', compact('template'));
+    }
+
+    public function updateTemplate(Request $request)
+    {
+        // Handle Reset
+        if ($request->has('reset') && $request->reset == 'true') {
+            $konten = view('datamaster.kontrak.default_template')->render();
+            \App\Models\KonfigurasiDokumen::updateOrCreate(
+                ['kode_dokumen' => 'PKWT'],
+                [
+                    'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                    'konten' => $konten
+                ]
+            );
+            return Redirect::back()->with(messageSuccess('Template kontrak berhasil direset ke default.'));
+        }
+
+        $request->validate([
+            'konten' => 'required'
+        ]);
+
+        \App\Models\KonfigurasiDokumen::updateOrCreate(
+            ['kode_dokumen' => 'PKWT'],
+            [
+                'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                'konten' => $request->konten
+            ]
+        );
+
+        return Redirect::back()->with(messageSuccess('Template kontrak berhasil diperbarui.'));
+    }
+
     public function print(string $encryptedId)
     {
         /** @var \App\Models\User $user */
@@ -313,6 +375,7 @@ class KontrakController extends Controller
         $kontrak = Kontrak::select(
             'kontrak.*',
             'karyawan.nama_karyawan',
+            'karyawan.nik_show',
             'karyawan.tempat_lahir',
             'karyawan.tanggal_lahir',
             'karyawan.jenis_kelamin',
@@ -341,7 +404,6 @@ class KontrakController extends Controller
                     abort(403, 'Anda tidak memiliki akses ke kontrak ini.');
                 }
             }
-            
         }
 
         $tunjanganItems = Detailtunjangan::select(
@@ -353,11 +415,61 @@ class KontrakController extends Controller
             ->get();
 
         $setting = \App\Models\Pengaturanumum::first();
+        
+        // Get Template
+        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', 'PKWT')->first();
+        if (!$template) {
+             // Fallback to default if not configured
+             $konten = view('datamaster.kontrak.default_template')->render();
+        } else {
+            $konten = $template->konten;
+        }
 
-        $pdf = Pdf::loadView('datamaster.kontrak.print', [
-            'kontrak' => $kontrak,
-            'tunjanganItems' => $tunjanganItems,
-            'setting' => $setting
+
+        // Prepare Placeholders
+        $placeholders = [
+            '{{no_kontrak}}' => $kontrak->no_kontrak,
+            '{{hari_ini}}' => now()->isoFormat('dddd'),
+            '{{tanggal_hari_ini}}' => now()->isoFormat('D MMMM Y'),
+            '{{nama_hrd}}' => $setting->nama_hrd ?? 'Pihak Pertama',
+            '{{nama_perusahaan}}' => $setting->nama_perusahaan ?? 'Perusahaan',
+            '{{alamat_perusahaan}}' => $setting->alamat ?? 'Lokasi Perusahaan',
+            '{{nama_karyawan}}' => $kontrak->nama_karyawan,
+            '{{tempat_lahir}}' => $kontrak->tempat_lahir ?? '-',
+            '{{tanggal_lahir}}' => $kontrak->tanggal_lahir ? Carbon::parse($kontrak->tanggal_lahir)->format('d-m-Y') : '-',
+            '{{jenis_kelamin}}' => $kontrak->jenis_kelamin,
+            '{{alamat_karyawan}}' => $kontrak->alamat ?? '-',
+            '{{no_ktp}}' => $kontrak->no_ktp ?? '-',
+            '{{jabatan}}' => $kontrak->nama_jabatan,
+            '{{cabang}}' => $kontrak->nama_cabang,
+            '{{tanggal_mulai}}' => $kontrak->dari ? Carbon::parse($kontrak->dari)->isoFormat('D MMMM Y') : '-',
+            '{{tanggal_selesai}}' => $kontrak->sampai ? Carbon::parse($kontrak->sampai)->isoFormat('D MMMM Y') : '-',
+            '{{gaji_pokok}}' => 'Rp ' . number_format($kontrak->jumlah_gaji ?? 0, 0, ',', '.'),
+        ];
+        
+        // Replace Tunjangan Loop
+        $tunjanganHtml = '<table width="100%" style="border-collapse:collapse; margin:0; padding:0;">';
+        if ($tunjanganItems->isNotEmpty()) {
+            foreach ($tunjanganItems as $item) {
+                $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">'.$item->jenis.'</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp '.number_format($item->jumlah ?? 0, 0, ',', '.').'</td></tr>';
+            }
+        } else {
+             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Transport</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
+             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Tunjangan Shift Malam</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
+             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Uang Makan</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
+        }
+        $tunjanganHtml .= '</table>';
+        $placeholders['{{tabel_tunjangan}}'] = $tunjanganHtml;
+
+
+        // Perform Replacement
+        foreach ($placeholders as $key => $value) {
+            $konten = str_replace($key, $value, $konten);
+        }
+
+        $pdf = Pdf::loadView('datamaster.kontrak.print_dynamic', [
+            'konten' => $konten,
+            'kontrak' => $kontrak // Pass for title etc
         ])->setPaper('legal', 'portrait');
 
         $filename = 'kontrak-' . $kontrak->nik . '-' . $kontrak->no_kontrak . '.pdf';
@@ -415,8 +527,9 @@ class KontrakController extends Controller
         $rules = [
             'nik' => ['required', 'exists:karyawan,nik'],
             'tanggal' => ['required', 'date'],
-            'dari' => ['required', 'date'],
-            'sampai' => ['required', 'date', 'after_or_equal:dari'],
+            'jenis_kontrak' => ['required', 'string', 'in:K,T'],
+            'dari' => ['nullable', 'required_if:jenis_kontrak,K', 'date'],
+            'sampai' => ['nullable', 'required_if:jenis_kontrak,K', 'date', 'after_or_equal:dari'],
             'kode_jabatan' => ['required', 'exists:jabatan,kode_jabatan'],
             'kode_cabang' => ['required', 'exists:cabang,kode_cabang'],
             'kode_dept' => ['required', 'exists:departemen,kode_dept'],

@@ -4,8 +4,22 @@
 
         <x-input-with-icon label="No Kontrak" name="no_kontrak" icon="ti ti-file-certificate" :disabled="true" placeholder="Auto" />
         <x-input-with-icon label="Tanggal Kontrak" name="tanggal" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('tanggal') }}" />
-        <x-input-with-icon label="Tanggal Mulai" name="dari" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('dari') }}" />
-        <x-input-with-icon label="Tanggal Selesai" name="sampai" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('sampai') }}" />
+        
+        <div class="form-group mb-1">
+            <select name="jenis_kontrak" id="jenis_kontrak" class="form-select">
+                <option value="" disabled selected>Pilih Status Kontrak</option>
+                <option value="K" @selected(old('jenis_kontrak') == 'K')>Kontrak (PKWT)</option>
+                <option value="T" @selected(old('jenis_kontrak') == 'T')>Tetap (PKWTT)</option>
+            </select>
+             @error('jenis_kontrak')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div id="periode_kontrak">
+            <x-input-with-icon label="Tanggal Mulai" name="dari" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('dari') }}" />
+            <x-input-with-icon label="Tanggal Selesai" name="sampai" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('sampai') }}" />
+        </div>
         <div class="form-group mb-1">
             <select name="nik" id="nik" class="form-select select2" data-placeholder="Pilih Karyawan">
                 <option value="">Pilih Karyawan</option>
@@ -20,6 +34,7 @@
                 <small class="text-danger">{{ $message }}</small>
             @enderror
         </div>
+
 
         <div class="form-group mb-1">
             <div class="input-group input-group-merge">
@@ -245,6 +260,19 @@
             $('#nik').trigger('change');
         }
 
+        function togglePeriodeKontrak() {
+            const status = $('#jenis_kontrak').val();
+            if (status === 'T') {
+                $('#periode_kontrak').hide();
+            } else {
+                $('#periode_kontrak').show();
+            }
+        }
+        $('#jenis_kontrak').on('change', togglePeriodeKontrak);
+        
+        // Trigger on load if old value exists
+        togglePeriodeKontrak();
+
         $("#formKontrak").on('submit', function(e) {
             e.preventDefault();
 
@@ -256,22 +284,38 @@
             const kode_cabang = $('#kode_cabang').val();
             const kode_dept = $('#kode_dept').val();
             const kode_jabatan = $('#kode_jabatan').val();
+            const jenis_kontrak = $('#jenis_kontrak').val();
 
             // Validasi
             let errors = [];
+
+            if (!jenis_kontrak) {
+                errors.push('Status Kontrak harus dipilih');
+            }
 
             if (!tanggal) {
                 errors.push('Tanggal Kontrak harus diisi');
             }
 
-            if (!dari) {
-                errors.push('Tanggal Mulai harus diisi');
-            }
+            if (jenis_kontrak === 'K') {
+                if (!dari) {
+                    errors.push('Tanggal Mulai harus diisi');
+                }
 
-            if (!sampai) {
-                errors.push('Tanggal Selesai harus diisi');
-            }
+                if (!sampai) {
+                    errors.push('Tanggal Selesai harus diisi');
+                }
 
+                 // Validasi tanggal
+                if (dari && sampai) {
+                    const dateDari = new Date(dari);
+                    const dateSampai = new Date(sampai);
+                    if (dateSampai < dateDari) {
+                        errors.push('Tanggal Selesai harus lebih besar atau sama dengan Tanggal Mulai');
+                    }
+                }
+            }
+            
             if (!nik) {
                 errors.push('Karyawan harus dipilih');
             }
@@ -286,15 +330,6 @@
 
             if (!kode_jabatan) {
                 errors.push('Jabatan harus dipilih');
-            }
-
-            // Validasi tanggal
-            if (dari && sampai) {
-                const dateDari = new Date(dari);
-                const dateSampai = new Date(sampai);
-                if (dateSampai < dateDari) {
-                    errors.push('Tanggal Selesai harus lebih besar atau sama dengan Tanggal Mulai');
-                }
             }
 
             // Jika ada error, tampilkan Sweet Alert

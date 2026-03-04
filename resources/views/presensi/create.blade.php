@@ -525,6 +525,60 @@
             margin-bottom: 5px;
             padding-bottom: 0;
         }
+
+        /* SKELETON LOADING STYLES */
+        .content-hide {
+            display: none !important;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-camera {
+            width: 100%;
+            /* Approximating the calc height for skeleton */
+            height: calc(100vh - 270px); 
+            min-height: 200px;
+            border-radius: 24px;
+            margin-bottom: 15px;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+        }
+
+        .skeleton-block {
+            display: block;
+        }
+
+        .skeleton-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-col {
+            flex: 1;
+            height: 60px;
+            border-radius: 12px;
+        }
+
+        .skeleton-btn {
+            height: 45px;
+            border-radius: 22px;
+            flex: 1;
+        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
     <!-- Import Google Fonts: Poppins -->
@@ -542,7 +596,28 @@
         </div>
     </div>
     <div id="content-section">
-        <div class="presensi-content-modern">
+        <!-- SKELETON LOADER -->
+        <div id="skeleton-loader" class="presensi-content-modern" style="background: transparent; box-shadow: none;">
+            <!-- Camera Skeleton -->
+            <div class="skeleton skeleton-camera"></div>
+            
+            <!-- Info Skeleton -->
+            <div class="info-section" style="background: white; margin-bottom: 15px;">
+                <div class="skeleton-row">
+                    <div class="skeleton skeleton-col"></div>
+                    <div class="skeleton skeleton-col"></div>
+                    <div class="skeleton skeleton-col"></div>
+                </div>
+            </div>
+
+            <!-- Button Skeleton -->
+            <div class="action-section">
+                <div class="skeleton skeleton-btn"></div>
+                <div class="skeleton skeleton-btn"></div>
+            </div>
+        </div>
+
+        <div id="real-content" class="presensi-content-modern content-hide">
             <div class="camera-section" style="position:relative;">
                 <div class="row" style="margin-top: 0;">
                     <div class="col" id="facedetection" style="position:relative;">
@@ -741,6 +816,23 @@
                 // ===============================================
 
 
+            // SKELETON LOADING LOGIC
+            $(window).on('load', function() {
+                // Determine layout readiness - waiting a bit for map/camera init if needed
+                setTimeout(function() {
+                    $("#skeleton-loader").fadeOut(300, function() {
+                        $(this).remove();
+                        $("#real-content").removeClass("content-hide").hide().fadeIn(300);
+                        
+                        // Re-trigger map resize if needed
+                        if(map) {
+                            map.invalidateSize();
+                        }
+                    });
+                }, 800); // Small delay to prevent flashing
+            });
+
+
             // Tampilkan Map
             if (navigator.geolocation) {
                 // Menggunakan geolocation untuk mendapatkan lokasi saat ini
@@ -866,13 +958,18 @@
                 isEnabled: {{ $general_setting->face_recognition }},
                 modelsUrl: '/models',
                 detection: {
-                    interval: isMobile ? 150 : 80, // Optimized interval
-                    inputSize: isMobile ? 416 : 416, // Increased for better accuracy (was 224)
-                    scoreThreshold: 0.3, // Lowered for better detection (was 0.35)
+                    // MOBILE OPTIMIZATION: increased interval for less CPU usage
+                    interval: isMobile ? 200 : 80, 
+                    // MOBILE OPTIMIZATION: reduced inputSize from 416 to 224 for faster processing
+                    inputSize: isMobile ? 224 : 416, 
+                    scoreThreshold: 0.3, 
                     minConfidence: 0.45,
-                    minStableFrames: isMobile ? 1 : 2, // Quick detection
+                    // MOBILE OPTIMIZATION: quick detection for faster response
+                    minStableFrames: isMobile ? 1 : 2, 
                     maxNoFaceFrames: isMobile ? 3 : 4,
-                    mirror: false // Disabled - use raw coordinates
+                    mirror: false,
+                    // MOBILE OPTIMIZATION: skip brightness normalization on mobile (CPU intensive)
+                    skipBrightnessNormalization: isMobile
                 },
                 retry: {
                     maxAttempts: 10,
@@ -1278,9 +1375,11 @@
                         if(!isProcessing) {
                             isProcessing = true;
                             try {
-                                // === BRIGHTNESS NORMALIZATION FOR LIVE DETECTION ===
-                                // Normalize video frame brightness before detection
-                                const normalizedCanvas = ImageProcessing.normalizeBrightness(video, 128);
+                                // === BRIGHTNESS NORMALIZATION (SKIP ON MOBILE FOR PERFORMANCE) ===
+                                // On mobile, skip brightness normalization as it's too CPU intensive
+                                const inputSource = FaceConfig.detection.skipBrightnessNormalization 
+                                    ? video 
+                                    : ImageProcessing.normalizeBrightness(video, 128);
                                 
                                 const options = isMobile 
                                     ? new faceapi.TinyFaceDetectorOptions({ 
@@ -1291,8 +1390,8 @@
                                         minConfidence: FaceConfig.detection.minConfidence 
                                     });
 
-                                // Use normalized video for detection
-                                let detection = await faceapi.detectSingleFace(normalizedCanvas, options)
+                                // Use inputSource (video or normalized canvas) for detection
+                                let detection = await faceapi.detectSingleFace(inputSource, options)
                                     .withFaceLandmarks()
                                     .withFaceDescriptor();
 
@@ -1851,8 +1950,8 @@
                                 let validFaceFound = false;
                                 const wajahFiles = [];
 
-                                // Proses semua foto secara PARALLEL (bukan sequential)
-                                const processPromises = data.slice(0, 5).map(async (faceData) => {
+                                // Proses foto referensi (Maksimal 2 foto terbaru untuk kecepatan)
+                                const processPromises = data.slice(0, 2).map(async (faceData) => {
                                     try {
                                         // Gunakan timestamp tetap untuk cache browser, hanya tambahkan versi jika file baru
                                         // Ini memungkinkan browser cache bekerja dengan baik
@@ -1884,7 +1983,7 @@
                                                 // Gunakan parameter yang sama dengan saat presensi (inputSize 224)
                                                 detections = await faceapi.detectSingleFace(
                                                     img, new faceapi.TinyFaceDetectorOptions({
-                                                        inputSize: 224, // Sama dengan saat presensi
+                                                        inputSize: 160, // Optimized dari 224 untuk kecepatan loading
                                                         scoreThreshold: 0.3 // Sama dengan saat presensi
                                                     })
                                                 ).withFaceLandmarks().withFaceDescriptor();

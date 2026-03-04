@@ -16,7 +16,7 @@
                  <small class="mt-1" style="font-size: 11px; letter-spacing: 0.5px; color: rgba(255, 255, 255, 0.7);">
                      Your Workforce, Simplified
                  </small>
-                 <small class="mt-1">Version 3.0.0</small>
+                 <small class="mt-1">Version 3.0.1</small>
              </span>
          </a>
 
@@ -67,7 +67,7 @@
                  <small class="text-uppercase"
                      style="letter-spacing: 0.5px; font-size: 11px; color: rgba(255,255,255,0.8); font-weight: 500;">{{ $userRoleText }}</small>
              </div>
-             <a href="#" class="btn btn-sm rounded-2 shadow-sm"
+             <a href="{{ route('profile.editprofile') }}" class="btn btn-sm rounded-2 shadow-sm"
                  style="background: {{ $general_setting->theme_color_1 }}; border: none; color: #fff; padding: 6px 12px;" data-bs-toggle="tooltip" title="Edit Profile">
                  <i class="ti ti-settings" style="font-size: 16px;"></i>
              </a>
@@ -298,6 +298,46 @@
                  </a>
              </li>
          @endif
+         @can('ajuanjadwal.index')
+             <li class="menu-item {{ request()->is(['ajuanjadwal', 'ajuanjadwal/*']) ? 'active' : '' }}">
+                 <a href="{{ route('ajuanjadwal.index') }}" class="menu-link">
+                     <i class="menu-icon tf-icons ti ti-calendar-stats"></i>
+                     <div>Ajuan Jadwal</div>
+                 </a>
+             </li>
+         @endcan
+         @if (auth()->user()->hasAnyPermission(['kpi.period.index', 'kpi.indicator.index', 'kpi.employee.index']))
+             <li class="menu-item {{ request()->is(['kpi', 'kpi/*']) ? 'open' : '' }}">
+                 <a href="javascript:void(0);" class="menu-link menu-toggle">
+                     <i class="menu-icon tf-icons ti ti-chart-bar"></i>
+                     <div>Manajemen KPI</div>
+                 </a>
+                 <ul class="menu-sub">
+                     @can('kpi.period.index')
+                         <li class="menu-item {{ request()->is(['kpi/periods', 'kpi/periods/*']) ? 'active' : '' }}">
+                             <a href="{{ route('kpi.periods.index') }}" class="menu-link">
+                                 <div>Periode Penilaian</div>
+                             </a>
+                         </li>
+                     @endcan
+                     @can('kpi.indicator.index')
+                        <li class="menu-item {{ request()->is(['kpi/indicators', 'kpi/indicators/*']) ? 'active' : '' }}">
+                            <a href="{{ route('kpi.indicators.index') }}" class="menu-link">
+                                <div>Indikator KPI</div>
+                            </a>
+                        </li>
+
+                    @endcan
+                     @can('kpi.employee.index')
+                         <li class="menu-item {{ request()->is(['kpi/transactions', 'kpi/transactions/*']) ? 'active' : '' }}">
+                             <a href="{{ route('kpi.transactions.index') }}" class="menu-link">
+                                 <div>Input Penilaian</div>
+                             </a>
+                         </li>
+                     @endcan
+                 </ul>
+             </li>
+         @endif
          @if (auth()->user()->hasAnyPermission(['lembur.index']))
              <li class="menu-item {{ request()->is(['lembur', 'lembur/*']) ? 'active' : '' }}">
                  <a href="{{ route('lembur.index') }}" class="menu-link">
@@ -353,18 +393,27 @@
                 </ul>
             </li>
         @endif
-         @if (auth()->user()->hasAnyPermission(['laporan.presensi']))
+         @if (auth()->user()->hasAnyPermission(['laporan.presensi', 'laporan.cuti']))
              <li class="menu-item {{ request()->is(['laporan', 'laporan/*']) ? 'open' : '' }} ">
                  <a href="javascript:void(0);" class="menu-link menu-toggle">
                      <i class="menu-icon tf-icons ti ti-adjustments-alt"></i>
                      <div>Laporan</div>
                  </a>
                  <ul class="menu-sub">
+                    @can('laporan.presensi')
                      <li class="menu-item {{ request()->is(['laporan/presensi']) ? 'active' : '' }}">
                          <a href="{{ route('laporan.presensi') }}" class="menu-link">
                              <div>Presensi & Gaji</div>
                          </a>
                      </li>
+                     @endcan
+                     @can('laporan.cuti')
+                          <li class="menu-item {{ request()->is(['laporan/cuti']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.cuti') }}" class="menu-link">
+                                  <div>Laporan Cuti</div>
+                              </a>
+                          </li>
+                      @endcan
                  </ul>
              </li>
          @endif

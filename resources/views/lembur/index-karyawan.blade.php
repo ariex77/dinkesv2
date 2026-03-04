@@ -1,14 +1,18 @@
 @extends('layouts.mobile.app')
 @section('content')
     <style>
-        .avatar {
-            position: relative;
-            width: 2.5rem;
-            height: 2.5rem;
-            cursor: pointer;
+        :root {
+            --primary-color: #003d9e;
+            --primary-light: #e0e9f5;
+            --success-color: #28a745;
+            --success-light: #d4edda;
+            --danger-color: #dc3545;
+            --danger-light: #f8d7da;
+            --warning-color: #ffc107;
+            --warning-light: #fff3cd;
         }
 
-        /* Tambahkan style untuk header dan content */
+        /* Modern Header */
         #header-section {
             position: fixed;
             top: 0;
@@ -17,280 +21,269 @@
             z-index: 1000;
         }
 
+        /* 
+           We use the standard .appHeader from the main layout. 
+           No custom .header-content needed here to ensure consistency. 
+        */
+
         #content-section {
             margin-top: 70px;
-            padding-top: 5px;
+            padding: 0 16px;
+            padding-bottom: 100px;
+        }
+
+        /* Filter Section */
+        .filter-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            margin-bottom: 20px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .form-group-custom {
+            margin-bottom: 0;
             position: relative;
-            z-index: 1;
         }
 
-        /* Custom Flatpickr Styling */
-        .flatpickr-date {
+        .input-icon-wrapper {
             position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            padding-right: 45px !important;
         }
 
-        .flatpickr-date:focus {
-            border-color: #32745e !important;
-            box-shadow: 0 0 0 3px rgba(50, 116, 94, 0.1) !important;
-        }
-
-        .flatpickr-date::after {
-            content: '';
+        .input-icon-wrapper ion-icon {
             position: absolute;
-            right: 15px;
+            left: 14px;
             top: 50%;
             transform: translateY(-50%);
-            width: 20px;
-            height: 20px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2332745e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0.7;
+            font-size: 20px;
+            color: var(--primary-color);
+        }
+
+        .custom-input {
+            width: 100%;
+            height: 48px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 0 16px 0 44px;
+            font-size: 14px;
+            color: #333;
             transition: all 0.3s ease;
         }
 
-        .flatpickr-date:hover::after,
-        .flatpickr-date:focus::after {
-            opacity: 1;
-            transform: translateY(-50%) scale(1.1);
+        .custom-input:focus {
+            background: #fff;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 61, 158, 0.1);
+            outline: none;
         }
 
-        /* Flatpickr Calendar Container */
-        .flatpickr-calendar {
-            border-radius: 16px !important;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
-            border: none !important;
+        /* Card Styles */
+        .history-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f5f5f5;
+            transition: transform 0.2s;
+            position: relative;
             overflow: hidden;
-            animation: slideDown 0.3s ease-out;
-            max-width: 100%;
-            box-sizing: border-box !important;
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .history-card:active {
+            transform: scale(0.98);
         }
 
-        /* Flatpickr Header */
-        .flatpickr-months {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
-            padding: 15px 0 !important;
-            border-radius: 16px 16px 0 0;
+        .card-header-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 10px;
         }
 
-        .flatpickr-month {
-            color: white !important;
+        .date-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .flatpickr-current-month {
-            color: white !important;
-            font-weight: 600 !important;
-            font-size: 16px !important;
-        }
-
-        .flatpickr-prev-month,
-        .flatpickr-next-month {
-            color: white !important;
-            fill: white !important;
-            padding: 8px !important;
-            border-radius: 8px !important;
-            transition: all 0.2s ease !important;
-        }
-
-        .flatpickr-prev-month:hover,
-        .flatpickr-next-month:hover {
-            background: rgba(255, 255, 255, 0.2) !important;
-            transform: scale(1.1);
-        }
-
-        /* Flatpickr Weekdays */
-        .flatpickr-weekdays {
-            background: rgba(50, 116, 94, 0.1) !important;
-            padding: 10px 0 !important;
-        }
-
-        .flatpickr-weekday {
-            color: #32745e !important;
-            font-weight: 600 !important;
-            font-size: 13px !important;
-        }
-
-        /* Flatpickr Days */
-        .flatpickr-days {
-            padding: 10px !important;
-        }
-
-        .flatpickr-day {
-            border-radius: 10px !important;
-            border: 2px solid transparent !important;
-            transition: all 0.2s ease !important;
-            font-weight: 500 !important;
-        }
-
-        .flatpickr-day:hover {
-            background: rgba(50, 116, 94, 0.1) !important;
-            border-color: #32745e !important;
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(50, 116, 94, 0.2) !important;
-        }
-
-        .flatpickr-day.selected {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
-            border-color: #32745e !important;
-            color: white !important;
-            font-weight: 600 !important;
-            box-shadow: 0 4px 12px rgba(50, 116, 94, 0.4) !important;
-        }
-
-        .flatpickr-day.today {
-            border-color: #32745e !important;
-            background: rgba(50, 116, 94, 0.1) !important;
-            color: #32745e !important;
-            font-weight: 700 !important;
-        }
-
-        .flatpickr-day.today.selected {
-            background: linear-gradient(135deg, #32745e 0%, #58907D 100%) !important;
-            color: white !important;
-        }
-
-        .flatpickr-day.flatpickr-disabled {
-            color: #ccc !important;
-            opacity: 0.5 !important;
-        }
-
-        /* Flatpickr Time Input (if enabled) */
-        .flatpickr-time {
-            border-top: 1px solid #e0e0e0 !important;
-            padding: 15px !important;
-        }
-
-        .flatpickr-time input {
-            border-radius: 8px !important;
-            border: 2px solid #e0e0e0 !important;
-            transition: all 0.2s ease !important;
-        }
-
-        .flatpickr-time input:hover {
-            border-color: #32745e !important;
-        }
-
-        /* Mobile Responsive - Enhanced */
-        @media (max-width: 576px) {
-            .flatpickr-calendar {
-                width: calc(100vw - 32px) !important;
-                max-width: calc(100vw - 32px) !important;
-                min-width: calc(100vw - 32px) !important;
-                left: 16px !important;
-                right: auto !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                box-sizing: border-box !important;
-            }
-
-            .flatpickr-calendar .flatpickr-innerContainer {
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-
-            .flatpickr-calendar .flatpickr-days {
-                width: 100% !important;
-                box-sizing: border-box !important;
-            }
-
-            .flatpickr-day {
-                height: 38px !important;
-                line-height: 38px !important;
-                font-size: 14px !important;
-            }
-
-            .flatpickr-weekday {
-                font-size: 12px !important;
-                padding: 8px 0 !important;
-            }
-
-            .flatpickr-months {
-                padding: 12px 0 !important;
-            }
-
-            .flatpickr-current-month {
-                font-size: 14px !important;
-            }
-
-            .flatpickr-prev-month,
-            .flatpickr-next-month {
-                padding: 6px !important;
-            }
-
-            .flatpickr-days {
-                padding: 8px !important;
-            }
-        }
-
-        /* Extra Small Mobile */
-        @media (max-width: 375px) {
-            .flatpickr-calendar {
-                width: calc(100vw - 24px) !important;
-                max-width: calc(100vw - 24px) !important;
-                min-width: calc(100vw - 24px) !important;
-                left: 12px !important;
-                right: auto !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                box-sizing: border-box !important;
-            }
-
-            .flatpickr-day {
-                height: 35px !important;
-                line-height: 35px !important;
-                font-size: 13px !important;
-            }
-
-            .flatpickr-weekday {
-                font-size: 11px !important;
-            }
-        }
-
-        .avatar-sm {
-            width: 2rem;
-            height: 2rem;
-        }
-
-        .avatar-sm .avatar-initial {
-            font-size: .8125rem;
-        }
-
-        .avatar .avatar-initial {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            text-transform: uppercase;
+        .date-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--primary-light);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
-            background-color: #eeedf0;
-            font-size: .9375rem;
+            color: var(--primary-color);
+            font-size: 18px;
         }
 
-        .rounded-circle {
-            border-radius: 50% !important;
+        .date-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .day-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .full-date {
+            font-size: 11px;
+            color: #888;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-pending {
+            background: var(--warning-light);
+            color: #d39e00;
+        }
+
+        .status-success {
+            background: var(--success-light);
+            color: var(--success-color);
+        }
+
+        .status-danger {
+            background: var(--danger-light);
+            color: var(--danger-color);
+        }
+
+        .card-body-custom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 10px;
+        }
+
+        .time-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .time-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .time-item ion-icon {
+            font-size: 16px;
+            opacity: 0.7;
+        }
+        
+        .duration-badge {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .keterangan-text {
+            font-size: 13px;
+            color: #777;
+            margin-top: 12px;
+            line-height: 1.5;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        /* FAB */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            z-index: 1001;
+        }
+
+        .fab-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #003d9e 0%, #0056b3 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 30px;
+            box-shadow: 0 8px 25px rgba(0, 61, 158, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: none;
+            text-decoration: none;
+        }
+
+        .fab-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 4px 15px rgba(0, 61, 158, 0.3);
+        }
+
+        /* Delete action */
+        .delete-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff0f0;
+            color: var(--danger-color);
+            border-radius: 8px;
+            font-size: 16px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .history-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            color: #ccc;
+            margin-bottom: 16px;
         }
     </style>
+
+    <!-- Header -->
     <div id="header-section">
         <div class="appHeader bg-primary text-light">
             <div class="left">
@@ -302,74 +295,161 @@
             <div class="right"></div>
         </div>
     </div>
-    <div id="content-section">
-        <div class="row" style="margin-top: 40px">
-            <div class="col">
-                <form action="{{ route('lembur.index') }}" method="GET">
-                    <input type="text" class="feedback-input dari flatpickr-date" name="dari" placeholder="Dari" id="datePicker"
-                        value="{{ Request('dari') }}" />
-                    <input type="text" class="feedback-input sampai flatpickr-date" name="sampai" placeholder="Sampai" id="datePicker2"
-                        value="{{ Request('sampai') }}" />
-                    <button class="btn btn-primary w-100" id="btnSimpan"><ion-icon
-                            name="search-circle-outline"></ion-icon>Cari</button>
-                </form>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col">
-                <div class="transactions">
-                    @foreach ($lembur as $d)
-                        <form method="POST" name="deleteform" class="deleteform me-1 mb-1"
-                            action="{{ route('lembur.delete', Crypt::encrypt($d->id)) }}">
-                            @csrf
-                            @method('DELETE')
-                            <a href="#" class="item {{ $d->status == 0 ? 'cancel-confirm' : '' }}">
-                                <div class="detail">
-                                    <div class="avatar avatar-sm me-4">
-                                        <span class="avatar-initial rounded-circle bg-success">
-                                            <ion-icon name="time-outline"></ion-icon>
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <strong>
-                                            {{ DateToIndo($d->tanggal) }}
-                                        </strong>
-                                        <p>{{ date('d-m-Y H:i', strtotime($d->lembur_mulai)) }} -
-                                            {{ date('d-m-Y H:i', strtotime($d->lembur_selesai)) }}</p>
-                                        <p>{{ $d->keterangan }}</p>
-                                    </div>
-                                </div>
-                                <div class="right">
-                                    <div class="price">
-                                        @if ($d->status == 0)
-                                            <span class="badge bg-warning">Pending</span>
-                                        @elseif ($d->status == 1)
-                                            <span class="badge bg-success">Disetujui</span>
-                                        @elseif ($d->status == 2)
-                                            <span class="badge bg-danger">Ditolak</span>
-                                        @endif
-                                    </div>
-                                    <div class="status">
 
-                                    </div>
-                                </div>
-                            </a>
-                        </form>
-                    @endforeach
+    <div id="content-section">
+        <!-- Filter Card -->
+        <div class="filter-card">
+            <form action="{{ route('lembur.index') }}" method="GET" id="filterForm">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="form-group-custom">
+                            <div class="input-icon-wrapper">
+                                <ion-icon name="calendar-outline"></ion-icon>
+                                <input type="text" class="custom-input flatpickr-date" name="dari" 
+                                    placeholder="Dari" id="datePicker" value="{{ Request('dari') }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group-custom">
+                            <div class="input-icon-wrapper">
+                                <ion-icon name="calendar-outline"></ion-icon>
+                                <input type="text" class="custom-input flatpickr-date" name="sampai" 
+                                    placeholder="Sampai" id="datePicker2" value="{{ Request('sampai') }}" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button class="btn btn-primary w-100" style="border-radius: 12px; height: 48px; font-weight: 600;">
+                            <ion-icon name="search-outline" class="me-1"></ion-icon> Filter Data
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
-        <div class="fab-button  bottom-right dropdown" style="margin-bottom:70px">
-            <a href="{{ route('lembur.create') }}" class="fab bg-primary">
-                <ion-icon name="add-outline" role="img" class="md hydrated" aria-label="add outline"></ion-icon>
-            </a>
+
+        <!-- Transaction List -->
+        <div class="transactions">
+            @forelse ($lembur as $d)
+                @php
+                    $start = strtotime($d->lembur_mulai);
+                    $end = strtotime($d->lembur_selesai);
+                    $diff = $end - $start;
+                    $hours = floor($diff / 3600);
+                    $minutes = floor(($diff % 3600) / 60);
+                    $duration = $hours . " Jam " . ($minutes > 0 ? $minutes . " Menit" : "");
+                    
+                    // Status Config
+                    $statusClass = 'status-pending';
+                    $statusText = 'Pending';
+                    $statusIcon = 'time-outline';
+                    
+                    if ($d->status == 1) {
+                        $statusClass = 'status-success';
+                        $statusText = 'Disetujui';
+                        $statusIcon = 'checkmark-circle-outline';
+                    } elseif ($d->status == 2) {
+                        $statusClass = 'status-danger';
+                        $statusText = 'Ditolak';
+                        $statusIcon = 'close-circle-outline';
+                    }
+                @endphp
+
+                <div class="history-card">
+                    <!-- Delete Button for Pending Items -->
+                    @if($d->status == 0)
+                    <form method="POST" action="{{ route('lembur.delete', Crypt::encrypt($d->id)) }}" class="delete-form">
+                        @csrf
+                        @method('DELETE')
+                        <div class="delete-btn delete-confirm">
+                            <ion-icon name="trash-outline"></ion-icon>
+                        </div>
+                    </form>
+                    @endif
+
+                    <div class="card-header-custom">
+                        <div class="date-display">
+                            <div class="date-icon">
+                                <ion-icon name="calendar-clear-outline"></ion-icon>
+                            </div>
+                            <div class="date-text">
+                                <span class="day-name">{{ date('l', strtotime($d->tanggal)) }}</span>
+                                <span class="full-date">{{ DateToIndo($d->tanggal) }}</span>
+                            </div>
+                        </div>
+                        <div class="status-badge {{ $statusClass }}">
+                            <ion-icon name="{{ $statusIcon }}"></ion-icon>
+                            {{ $statusText }}
+                        </div>
+                    </div>
+
+                    <div class="card-body-custom">
+                        <div class="time-box">
+                            <div class="time-item">
+                                <ion-icon name="play-circle-outline" style="color: var(--success-color)"></ion-icon>
+                                {{ date('H:i', strtotime($d->lembur_mulai)) }}
+                            </div>
+                            <div class="time-item">
+                                <ion-icon name="stop-circle-outline" style="color: var(--danger-color)"></ion-icon>
+                                {{ date('H:i', strtotime($d->lembur_selesai)) }}
+                            </div>
+                        </div>
+                        <div class="duration-badge">
+                            <ion-icon name="hourglass-outline"></ion-icon>
+                            {{ $duration }}
+                        </div>
+                    </div>
+
+                    @if(!empty($d->keterangan))
+                    <div class="keterangan-text">
+                        "{{ $d->keterangan }}"
+                    </div>
+                    @endif
+                </div>
+            @empty
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <ion-icon name="documents-outline"></ion-icon>
+                    </div>
+                    <h4>Belum ada data</h4>
+                    <p>Belum ada riwayat lembur yang ditemukan untuk filter ini.</p>
+                </div>
+            @endforelse
         </div>
     </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab-container">
+        <a href="{{ route('lembur.create') }}" class="fab-btn">
+            <ion-icon name="add-outline"></ion-icon>
+        </a>
+    </div>
+
 @endsection
+
 @push('myscript')
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
-        // Define Indonesian locale for flatpickr
+        // Delete Confirmation
+        $(".delete-confirm").click(function(e) {
+            var form = $(this).closest("form");
+            e.preventDefault();
+            Swal.fire({
+                title: 'Apakah Anda Yakin?',
+                text: "Data ajuan lembur ini akan dihapus permanen!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            })
+        });
+
+        // Date Picker Configuration
         const indonesianLocale = {
             firstDayOfWeek: 1,
             weekdays: {
@@ -382,97 +462,16 @@
             }
         };
 
-        // Initialize flatpickr for date inputs with enhanced styling and mobile optimization
-        const datePicker1 = flatpickr('#datePicker', {
+        const config = {
             dateFormat: 'Y-m-d',
             allowInput: false,
             monthSelectorType: 'static',
-            animate: true,
+            disableMobile: "true",
             locale: indonesianLocale,
-            clickOpens: true,
-            disableMobile: false,
-            defaultDate: "{{ Request('dari') }}" || null,
-            onOpen: function(selectedDates, dateStr, instance) {
-                instance.calendarContainer.style.animation = 'slideDown 0.3s ease-out';
-                if (window.innerWidth <= 576) {
-                    const padding = window.innerWidth <= 375 ? 12 : 16;
-                    const calendarWidth = window.innerWidth - (padding * 2);
-                    instance.calendarContainer.style.position = 'fixed';
-                    instance.calendarContainer.style.left = padding + 'px';
-                    instance.calendarContainer.style.right = 'auto';
-                    instance.calendarContainer.style.width = calendarWidth + 'px';
-                    instance.calendarContainer.style.maxWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.minWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.margin = '0';
-                    instance.calendarContainer.style.padding = '0';
-                    instance.calendarContainer.style.boxSizing = 'border-box';
-                }
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                if (window.innerWidth <= 576) {
-                    const padding = window.innerWidth <= 375 ? 12 : 16;
-                    const calendarWidth = window.innerWidth - (padding * 2);
-                    instance.calendarContainer.style.width = calendarWidth + 'px';
-                    instance.calendarContainer.style.maxWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.minWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.boxSizing = 'border-box';
-                }
-            }
-        });
+            theme: "material_blue"
+        };
 
-        const datePicker2 = flatpickr('#datePicker2', {
-            dateFormat: 'Y-m-d',
-            allowInput: false,
-            monthSelectorType: 'static',
-            animate: true,
-            locale: indonesianLocale,
-            clickOpens: true,
-            disableMobile: false,
-            defaultDate: "{{ Request('sampai') }}" || null,
-            onOpen: function(selectedDates, dateStr, instance) {
-                instance.calendarContainer.style.animation = 'slideDown 0.3s ease-out';
-                if (window.innerWidth <= 576) {
-                    const padding = window.innerWidth <= 375 ? 12 : 16;
-                    const calendarWidth = window.innerWidth - (padding * 2);
-                    instance.calendarContainer.style.position = 'fixed';
-                    instance.calendarContainer.style.left = padding + 'px';
-                    instance.calendarContainer.style.right = 'auto';
-                    instance.calendarContainer.style.width = calendarWidth + 'px';
-                    instance.calendarContainer.style.maxWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.minWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.margin = '0';
-                    instance.calendarContainer.style.padding = '0';
-                    instance.calendarContainer.style.boxSizing = 'border-box';
-                }
-            },
-            onReady: function(selectedDates, dateStr, instance) {
-                if (window.innerWidth <= 576) {
-                    const padding = window.innerWidth <= 375 ? 12 : 16;
-                    const calendarWidth = window.innerWidth - (padding * 2);
-                    instance.calendarContainer.style.width = calendarWidth + 'px';
-                    instance.calendarContainer.style.maxWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.minWidth = calendarWidth + 'px';
-                    instance.calendarContainer.style.boxSizing = 'border-box';
-                }
-            }
-        });
-
-        // Handle window resize for responsive calendar
-        $(window).on('resize', function() {
-            if (window.innerWidth <= 576) {
-                const padding = window.innerWidth <= 375 ? 12 : 16;
-                const calendarWidth = window.innerWidth - (padding * 2);
-                $('.flatpickr-calendar').css({
-                    'width': calendarWidth + 'px',
-                    'max-width': calendarWidth + 'px',
-                    'min-width': calendarWidth + 'px',
-                    'left': padding + 'px',
-                    'right': 'auto',
-                    'margin': '0',
-                    'padding': '0',
-                    'box-sizing': 'border-box'
-                });
-            }
-        });
+        flatpickr("#datePicker", config);
+        flatpickr("#datePicker2", config);
     </script>
 @endpush

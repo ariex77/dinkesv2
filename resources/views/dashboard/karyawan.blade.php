@@ -80,7 +80,8 @@
         }
 
         #section-presensi {
-            margin-top: 15px;
+            margin-top: 5px;
+            padding: 0 15px;
         }
 
         #presensi-today {
@@ -143,6 +144,124 @@
             font-size: 48px;
 
         }
+
+        /* Skeleton Loader Styles */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .skeleton-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .skeleton-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .skeleton-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+        }
+
+        .skeleton-text {
+            height: 16px;
+            margin-bottom: 8px;
+        }
+
+        .skeleton-text-short {
+            width: 60%;
+        }
+
+        .skeleton-text-long {
+            width: 90%;
+        }
+
+        .skeleton-presensi-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .skeleton-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+        }
+
+        .skeleton-hide {
+            display: none !important;
+        }
+
+        .content-hide {
+            display: none !important;
+        }
+
+        /* Additional skeleton styles */
+        .skeleton-user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 0 20px;
+            margin-bottom: 15px;
+        }
+        
+        .skeleton-section-presensi {
+            margin-top: 5px;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+
+        .skeleton-user-info {
+            flex: 1;
+        }
+
+        .skeleton-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+        }
+
+        .skeleton-menu-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .skeleton-menu-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .skeleton-menu-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            margin: 0 auto 8px;
+        }
     </style>
     <div class="bg-header-curve"></div>
     <div id="header-section">
@@ -161,7 +280,26 @@
                 </a>
             </form>
         </div>
-        <div id="section-user">
+        <!-- Skeleton Loader for Header Section -->
+        <div class="skeleton-loader">
+            <!-- User Header Skeleton -->
+            <div class="skeleton-user-header">
+                <div class="skeleton-user-info">
+                    <div class="skeleton skeleton-text" style="width: 150px; height: 24px; margin-bottom: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 120px; height: 16px; margin-bottom: 4px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 100px; height: 16px;"></div>
+                </div>
+                <div class="skeleton skeleton-avatar-large"></div>
+            </div>
+
+            <!-- Clock Skeleton -->
+            <div class="text-center mt-1 mb-2">
+                <div class="skeleton skeleton-text" style="width: 200px; height: 48px; margin: 0 auto 10px;"></div>
+                <div class="skeleton skeleton-text" style="width: 250px; height: 16px; margin: 0 auto;"></div>
+            </div>
+        </div>
+
+        <div id="section-user" class="content-hide">
             <div id="user-info">
                 <h3 id="user-name">{{ $karyawan->nama_karyawan }}👋</h3>
                 <span id="user-role">{{ $karyawan->nama_jabatan }}</span>
@@ -188,10 +326,11 @@
                 @endif
             </a>
         </div>
-        <div id="section-jam" class="text-center mt-1 mb-2">
+        <div id="section-jam" class="text-center mt-1 mb-2 content-hide">
             <h2 id="jam" class="mb-2" style="text-shadow: 0px 0px 2px var(--color-nav); line-height: 1rem"></h2>
             <span style="color: #ffffff;">Hari ini : {{ getNamaHari(date('D')) }}, {{ DateToIndo(date('Y-m-d')) }}</span>
         </div>
+        
         
         <!-- ALERT SECTION (CAROUSEL / SINGLE) -->
         @php
@@ -225,7 +364,7 @@
                         background-color: var(--bg-indicator); /* Theme color */
                     }
                 </style>
-                <div id="alertCarousel" class="carousel slide" data-ride="carousel" style="margin-top: 10px; margin-bottom: 45px;">
+                <div id="alertCarousel" class="carousel slide" data-ride="carousel" style="margin-top: 10px; margin-bottom: 10px;">
                     <ol class="carousel-indicators">
                         @foreach($activeAlerts as $index => $type)
                             <li data-target="#alertCarousel" data-slide-to="{{ $index }}" class="{{ $index == 0 ? 'active' : '' }}"></li>
@@ -341,8 +480,40 @@
                 </div>
             @endif
         @endif
+        </div>
+    </div>
 
-        <div id="section-presensi">
+        <!-- Skeleton Loader for Presensi -->
+        <div class="skeleton-loader skeleton-section-presensi">
+
+            <div class="card">
+                <div class="card-body" style="display: flex; justify-content: space-between;">
+                    <div id="presensi-data">
+                        <div id="presensi-icon">
+                            <div class="skeleton skeleton-icon"></div>
+                        </div>
+                        <div id="presensi-detail">
+                            <div class="skeleton skeleton-text" style="width: 80px; height: 16px; margin-bottom: 5px;"></div>
+                            <div class="skeleton skeleton-text" style="width: 60px; height: 24px;"></div>
+                        </div>
+                    </div>
+                    <div class="outer">
+                        <div class="inner"></div>
+                    </div>
+                    <div id="presensi-data">
+                        <div id="presensi-icon">
+                            <div class="skeleton skeleton-icon"></div>
+                        </div>
+                        <div id="presensi-detail">
+                            <div class="skeleton skeleton-text" style="width: 80px; height: 16px; margin-bottom: 5px;"></div>
+                            <div class="skeleton skeleton-text" style="width: 60px; height: 24px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-presensi" style="margin-bottom: 10px;" class="content-hide">
             <div class="card">
                 <div class="card-body" id="presensi-today">
                     <div id="presensi-data">
@@ -405,7 +576,69 @@
         </div>
     </div>
 
-    <div id="app-section">
+    <!-- Skeleton Loader for Stats and Menu -->
+    <div class="skeleton-loader" style="padding: 0 15px;">
+        <!-- Stats Card Skeleton -->
+        <div class="skeleton-card" style="margin-bottom: 15px;">
+            <div class="skeleton skeleton-text" style="width: 200px; height: 20px; margin: 0 auto 10px;"></div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
+                <div style="text-align: center;">
+                    <div class="skeleton skeleton-text" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 30px; height: 12px; margin: 0 auto;"></div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="skeleton skeleton-text" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 30px; height: 12px; margin: 0 auto;"></div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="skeleton skeleton-text" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 30px; height: 12px; margin: 0 auto;"></div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="skeleton skeleton-text" style="width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 8px;"></div>
+                    <div class="skeleton skeleton-text" style="width: 30px; height: 12px; margin: 0 auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu Grid Skeleton -->
+        <div class="skeleton-menu-grid">
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+            <div class="skeleton-menu-item">
+                <div class="skeleton skeleton-menu-icon"></div>
+                <div class="skeleton skeleton-text" style="width: 50px; height: 12px; margin: 0 auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-section" class="content-hide">
         <!-- Floating Stats Card -->
         <div class="row" style="margin-bottom: 15px;">
             <div class="col-12">
@@ -570,6 +803,7 @@
                 </a>
             </div>
 
+
             <div class="col-3">
                 <a href="{{ route('shortcut.index') }}">
                     <div class="card">
@@ -584,6 +818,7 @@
                 </a>
             </div>
         </div>
+    </div>
     </div>
 
     <div id="histori-section">
@@ -605,33 +840,69 @@
             <div class="tab-pane fade show active" id="historipresensi" role="tabpanel">
                 <div class="row mb-1">
                     <div class="col">
+                        <!-- Skeleton Loader for History Cards -->
+                        <div class="skeleton-loader">
+                            <div class="skeleton-card">
+                                <div class="skeleton-header">
+                                    <div class="skeleton skeleton-avatar"></div>
+                                    <div style="flex: 1;">
+                                        <div class="skeleton skeleton-text skeleton-text-long"></div>
+                                        <div class="skeleton skeleton-text skeleton-text-short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="skeleton-card">
+                                <div class="skeleton-header">
+                                    <div class="skeleton skeleton-avatar"></div>
+                                    <div style="flex: 1;">
+                                        <div class="skeleton skeleton-text skeleton-text-long"></div>
+                                        <div class="skeleton skeleton-text skeleton-text-short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="skeleton-card">
+                                <div class="skeleton-header">
+                                    <div class="skeleton skeleton-avatar"></div>
+                                    <div style="flex: 1;">
+                                        <div class="skeleton skeleton-text skeleton-text-long"></div>
+                                        <div class="skeleton skeleton-text skeleton-text-short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content-hide">
                         {{-- {{ $d->jam_out != null ? 'historibordergreen' : 'historiborderred' }} --}}
                         @foreach ($datapresensi as $d)
                             <div class="card mb-1 card-hover" style="border: 1px solid var(--color-nav); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                                <div class="card-body p-2 d-flex align-items-center">
+                                <div class="card-body p-1 d-flex align-items-center">
                                     <div class="icon-container mr-1 d-flex align-items-center justify-content-center" 
                                         style="width: 45px; height: 45px; border-radius: 12px; flex-shrink: 0; 
-                                        background-color: {{ $d->status == 'h' ? 'rgba(var(--color-nav-rgb), 0.1)' : ($d->status == 'i' ? 'rgba(30, 144, 255, 0.1)' : ($d->status == 's' ? 'rgba(255, 99, 132, 0.1)' : 'rgba(255, 159, 64, 0.1)')) }};">
-                                        @if ($d->status == 'h')
-                                            <ion-icon name="finger-print-outline" style="font-size: 20px; color: var(--color-nav);"></ion-icon>
-                                        @elseif ($d->status == 'i')
-                                            <ion-icon name="document-text-outline" style="font-size: 20px; color: #1e90ff;"></ion-icon>
-                                        @elseif ($d->status == 's')
-                                            <ion-icon name="medkit-outline" style="font-size: 20px; color: #ff6384;"></ion-icon>
-                                        @elseif ($d->status == 'c')
-                                            <ion-icon name="calendar-outline" style="font-size: 20px; color: #ff9f40;"></ion-icon>
-                                        @endif
+                                        background-color: {{ $d->status == 'h' ? 'rgba(var(--color-nav-rgb), 0.1)' : ($d->status == 'i' ? 'rgba(30, 144, 255, 0.1)' : ($d->status == 's' ? 'rgba(255, 99, 132, 0.1)' : ($d->status == 'c' ? 'rgba(255, 159, 64, 0.1)' : 'rgba(231, 76, 60, 0.1)'))) }};">
+                                        @php
+                                            $namahari = ['Sun' => 'Minggu', 'Mon' => 'Senin', 'Tue' => 'Selasa', 'Wed' => 'Rabu', 'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'];
+                                            $day_eng = date('D', strtotime($d->tanggal));
+                                            $day_indo = isset($namahari[$day_eng]) ? $namahari[$day_eng] : $day_eng;
+                                            $day_short = strtoupper(substr($day_indo, 0, 3));
+                                            $tgl = date('d', strtotime($d->tanggal));
+                                            
+                                            $text_color = $d->status == 'h' ? 'var(--color-nav)' : ($d->status == 'i' ? '#1e90ff' : ($d->status == 's' ? '#ff6384' : ($d->status == 'c' ? '#ff9f40' : '#e74c3c')));
+                                        @endphp
+                                        <div style="text-align: center; line-height: 1;">
+                                            <span style="font-size: 10px; font-weight: 700; display: block; color: {{ $text_color }};">{{ $day_short }}</span>
+                                            <span style="font-size: 16px; font-weight: 800; display: block; margin-top: 1px; color: {{ $text_color }};">{{ $tgl }}</span>
+                                        </div>
                                     </div>
                                     <div class="flex-grow-1 overflow-hidden">
                                         <div class="row align-items-center">
                                             <div class="col-12">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <div class="d-flex justify-content-between align-items-center mb-0">
                                                     <h5 class="mb-0 text-truncate" style="font-size: 14px; font-weight: 600; color: #333;">{{ DateToIndo($d->tanggal) }}</h5>
                                                     <span class="badge" style="background-color: #f8f9fa; color: #666; font-weight: normal; font-size: 10px; border: 1px solid #eee;">
                                                         {{ $d->nama_jam_kerja }} ({{ date('H:i', strtotime($d->jam_masuk)) }} - {{ date('H:i', strtotime($d->jam_pulang)) }})
                                                     </span>
                                                 </div>
-                                                <div class="mb-2">
+                                                <div class="mb-1">
                                                     @if ($d->status == 'h')
                                                         @php
                                                             $jam_in_ts = strtotime($d->jam_in);
@@ -639,32 +910,37 @@
                                                             $is_late = $jam_in_ts > $jam_masuk_ts;
                                                             $jam_telat = 0;
                                                             $menit_telat = 0;
+                                                            $desimal_terlambat = 0;
                                                             
                                                             if ($is_late) {
                                                                 $terlambat_selisih = $jam_in_ts - $jam_masuk_ts;
                                                                 $jam_telat = floor($terlambat_selisih / 3600);
                                                                 $sisa = $terlambat_selisih % 3600;
                                                                 $menit_telat = floor($sisa / 60);
+                                                                $desimal_terlambat = $jam_telat + round($menit_telat / 60, 2);
                                                             }
                                                             
-                                                            // Calculation Logic
+                                                            // Logic Penjagaan Konsistensi dengan Laporan Cetak
                                                             $denda_display = 0;
                                                             $potongan_jam = 0;
                                                             $potongan_jam_terlambat = 0;
                                                             $pulangcepat = 0;
                                                             $potongan_tidak_scan = 0;
+                                                            
+                                                            // Cek apakah denda sudah dikunci (ada di database)
+                                                            $denda_dari_db = !empty($d->denda) ? $d->denda : null;
 
-                                                            if (!empty($d->denda)) {
-                                                                $denda_display = $d->denda;
+                                                            if ($denda_dari_db !== null) {
+                                                                // Gunakan denda dari database
+                                                                $denda_display = $denda_dari_db;
                                                                 if ($is_late) {
-                                                                    $desimal_terlambat = $jam_telat + round($menit_telat / 60, 2);
                                                                     if ($desimal_terlambat >= 1) {
                                                                         $potongan_jam_terlambat = $desimal_terlambat > $d->total_jam ? $d->total_jam : $desimal_terlambat;
                                                                     }
                                                                 }
                                                             } else {
+                                                                // Hitung manual
                                                                 if ($is_late){
-                                                                    $desimal_terlambat = $jam_telat + round($menit_telat / 60, 2);
                                                                     if ($desimal_terlambat < 1) {
                                                                         $denda_display = hitungdenda($denda_list, $menit_telat);
                                                                         $potongan_jam_terlambat = 0;
@@ -686,6 +962,7 @@
                                                             );
                                                             $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
 
+                                                            // Khusus Dashboard: Jangan hitung tidak scan jika hari ini (presensi berjalan)
                                                             if ($d->tanggal != date('Y-m-d')) {
                                                                 if (empty($d->jam_out) || empty($d->jam_in)) {
                                                                     $potongan_tidak_scan = $d->total_jam;
@@ -696,6 +973,19 @@
                                                                 $potongan_jam = $potongan_tidak_scan;
                                                             } else {
                                                                 $potongan_jam = $pulangcepat + $potongan_jam_terlambat;
+                                                            }
+
+                                                            // Cek Status Potongan (Toggle)
+                                                            // Prioritas: Row level status > Global Setting
+                                                            $status_potongan_row = isset($d->status_potongan) ? $d->status_potongan : $namasettings->status_potongan_jam;
+                                                            
+                                                            if ($status_potongan_row == 0) {
+                                                                $potongan_jam = 0;
+                                                                $denda_display = 0; // Usually hidden if toggle off, per logic in report? Report hides PJ, does it hide Denda? 
+                                                                // Report Logic: $denda calculated regardless but logic implies hiding might be desired. 
+                                                                // Actually report only specifically zeroes $potongan_jam. Denda remains in $denda variable but maybe not shown?
+                                                                // Re-reading report: $ket_denda... shown. $pjl... shown based on toggle.
+                                                                // So Denda usually stays. But let's keep it safe.
                                                             }
                                                         @endphp
                                                         <div class="d-flex justify-content-between align-items-center">
@@ -718,11 +1008,22 @@
                                                         <span style="color: #ff6384; font-size: 12px;">Sakit: {{ $d->keterangan_izin_sakit }}</span>
                                                     @elseif ($d->status == 'c')
                                                         <span style="color: #ff9f40; font-size: 12px;">Cuti: {{ $d->keterangan_izin_cuti }}</span>
+                                                    @elseif ($d->status == 'a')
+                                                        @php
+                                                            $potongan_jam = $d->total_jam;
+                                                            $denda_display = !empty($d->denda) ? $d->denda : 0;
+                                                            
+                                                            $status_potongan_row = isset($d->status_potongan) ? $d->status_potongan : $namasettings->status_potongan_jam;
+                                                            if ($status_potongan_row == 0) {
+                                                                $potongan_jam = 0;
+                                                            }
+                                                        @endphp
+                                                        <span style="color: #e74c3c; font-size: 12px;">Alpha: Tanpa Keterangan</span>
                                                     @endif
                                                 </div>
                                                 
-                                                @if ($d->status == 'h' && $d->jam_in != null)
-                                                    <div class="d-flex flex-wrap gap-1">
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    @if ($d->status == 'h' && $d->jam_in != null)
                                                         @if ($denda_display > 0)
                                                             <span class="badge bg-danger" style="font-size: 10px;">
                                                                 Denda Rp. {{ number_format($denda_display) }}
@@ -735,19 +1036,35 @@
                                                             </span>
                                                         @endif
 
-                                                        @if ($potongan_jam > 0)
+                                                        @if ($potongan_jam > 0 && ($d->jam_out != null || $d->tanggal != date('Y-m-d')))
+                                                            @if ($namasettings->status_potongan_jam == 1 || (isset($d->status_potongan) && $d->status_potongan == 1))
+                                                                <span class="badge bg-danger" style="font-size: 10px;">
+                                                                    PJ: {{ number_format($potongan_jam, 2) }} Jam
+                                                                </span>
+                                                            @endif
+                                                        @endif
+                                                    @elseif ($d->status == 'a')
+                                                        @if ($denda_display > 0)
                                                             <span class="badge bg-danger" style="font-size: 10px;">
-                                                                PJ: {{ number_format($potongan_jam, 2) }} Jam
+                                                                Denda Rp. {{ number_format($denda_display) }}
                                                             </span>
                                                         @endif
-                                                    </div>
-                                                @endif
+                                                        @if ($potongan_jam > 0 && ($d->jam_out != null || $d->tanggal != date('Y-m-d')))
+                                                            @if ($namasettings->status_potongan_jam == 1 || (isset($d->status_potongan) && $d->status_potongan == 1))
+                                                                <span class="badge bg-danger" style="font-size: 10px;">
+                                                                    PJ: {{ number_format($potongan_jam, 2) }} Jam
+                                                                </span>
+                                                            @endif
+                                                        @endif
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1549,6 +1866,16 @@
         $("#btnDaftarkanWajah").click(function(e) {
             e.preventDefault();
             window.location.href = "{{ route('facerecognition.karyawan.create') }}";
+        });
+
+        // Hide skeleton loaders when page is fully loaded
+        $(window).on('load', function() {
+            setTimeout(function() {
+                $('.skeleton-loader').fadeOut(200, function() {
+                    $(this).remove();
+                });
+                $('.content-hide').removeClass('content-hide').hide().fadeIn(300);
+            }, 100);
         });
     </script>
 @endpush

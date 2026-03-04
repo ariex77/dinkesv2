@@ -66,7 +66,7 @@
                                 @php
                                     $lama = hitungHari($d->dari, $d->sampai);
                                 @endphp
-                                <div class="card mb-1 shadow-sm border">
+                                <div class="card mb-2 shadow-sm border">
                                     <div class="card-body p-2">
                                         <div class="row align-items-center">
                                             <!-- Avatar -->

@@ -111,7 +111,7 @@
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside"
                     aria-expanded="false">
                     <i class="ti ti-bell ti-md"></i>
-                    <span class="badge bg-danger rounded-pill badge-notifications">{{ $notifikasi_ajuan_absen + auth()->user()->unreadNotifications->count() }}</span>
+                    <span class="badge bg-danger rounded-pill badge-notifications">{{ $notifikasi_ajuan_absen + auth()->user()->unreadNotifications->where('type', '!=', 'App\Notifications\PengumumanNotification')->count() }}</span>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end py-0">
                     <li class="dropdown-menu-header border-bottom">
@@ -123,7 +123,7 @@
                     </li>
                     <li class="dropdown-notifications-list scrollable-container">
                         <ul class="list-group list-group-flush">
-                            @foreach (auth()->user()->unreadNotifications as $notification)
+                            @foreach (auth()->user()->unreadNotifications->where('type', '!=', 'App\Notifications\PengumumanNotification') as $notification)
                                 <li class="list-group-item list-group-item-action dropdown-notifications-item">
                                     <div class="d-flex">
                                         <div class="flex-shrink-0 me-3">
@@ -147,18 +147,23 @@
                             @endphp
                             @foreach ($data_izin as $d)
                                 @php
+                                    $link = '#';
                                     if ($d->status == 'i') {
                                         $keterangan = 'Izin Absen';
                                         $bgcolor = 'info';
+                                        $link = route('izinabsen.index');
                                     } elseif ($d->status == 's') {
                                         $keterangan = 'Izin Sakit';
                                         $bgcolor = 'warning';
+                                        $link = route('izinsakit.index');
                                     } elseif ($d->status == 'c') {
                                         $keterangan = 'Izin Cuti';
                                         $bgcolor = 'success';
+                                        $link = route('izincuti.index');
                                     } elseif ($d->status == 'd') {
                                         $keterangan = 'Izin Dinas';
                                         $bgcolor = 'primary';
+                                        $link = route('izindinas.index');
                                     }
                                 @endphp
                                 <li class="list-group-item list-group-item-action dropdown-notifications-item">
@@ -170,13 +175,15 @@
                                             </div>
                                         </div>
                                         <div class="flex-grow-1">
-                                            <h6 class="mb-1">{{ $d->nama_karyawan }}</h6>
+                                            <h6 class="mb-1">
+                                                <a href="{{ $link }}" class="stretched-link text-body">{{ $d->nama_karyawan }}</a>
+                                            </h6>
                                             <p class="mb-0">Mengajukan {{ $keterangan }}</p>
                                             <small class="text-muted">
                                                 {{ \Carbon\Carbon::parse($d->created_at)->diffForHumans() }}
                                             </small>
                                         </div>
-                                        <div class="flex-shrink-0 dropdown-notifications-actions">
+                                        <div class="flex-shrink-0 dropdown-notifications-actions" style="position: relative; z-index: 2;">
                                             <a href="javascript:void(0)" class="dropdown-notifications-read"><span
                                                     class="badge badge-dot"></span></a>
                                             <a href="javascript:void(0)" class="dropdown-notifications-archive"><span class="ti ti-x"></span></a>

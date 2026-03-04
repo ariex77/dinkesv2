@@ -14,6 +14,9 @@
                     <a href="javascript:void(0);" class="btn btn-primary" id="btnCreateKontrak">
                         <i class="fa fa-plus me-2"></i> Tambah Kontrak
                     </a>
+                    <a href="{{ route('kontrak.template') }}" class="btn btn-info">
+                        <i class="ti ti-settings me-2"></i> Konfigurasi Template
+                    </a>
                 @endcan
             </div>
             <div class="card-body">
@@ -70,12 +73,14 @@
                                             </div>
                                         </div>
                                         <!-- Identity -->
+                                        <!-- Identity -->
                                         <div class="col-md-4">
                                             <div class="fw-bold text-dark" style="font-size: 14px;">
                                                 {{ $kontrak->nama_karyawan ?? '-' }}
-                                                <span class="text-muted fw-normal" style="font-size: 12px;">({{ $kontrak->nik }})</span>
+                                                <span class="text-muted fw-normal" style="font-size: 12px;">({{ $kontrak->nik_show ?? $kontrak->nik }})</span>
                                             </div>
                                             <div class="mt-1">
+                                                <span class="badge bg-label-secondary" style="font-size: 10px;">{{ $kontrak->no_kontrak }}</span>
                                                 <span class="badge bg-label-primary" style="font-size: 10px;">{{ $kontrak->nama_jabatan ?? '-' }}</span>
                                                 <span class="badge bg-label-info" style="font-size: 10px;">{{ $kontrak->nama_dept ?? '-' }}</span>
                                                 <span class="badge bg-label-warning" style="font-size: 10px;">{{ $kontrak->nama_cabang ?? '-' }}</span>
@@ -84,21 +89,31 @@
                                         <!-- Period -->
                                         <div class="col-md-3 border-start border-end d-none d-md-block text-center">
                                             <div class="fw-bold text-dark" style="font-size: 13px;">
-                                                {{ date('d-m-Y', strtotime($kontrak->dari)) }} s/d {{ date('d-m-Y', strtotime($kontrak->sampai)) }}
+                                                @if ($kontrak->jenis_kontrak == 'T')
+                                                    -
+                                                @elseif($kontrak->dari && $kontrak->sampai)
+                                                    {{ date('d-m-Y', strtotime($kontrak->dari)) }} s/d {{ date('d-m-Y', strtotime($kontrak->sampai)) }}
+                                                @else
+                                                    -
+                                                @endif
                                             </div>
                                             <div class="text-muted" style="font-size: 11px;">
                                                 Masa Kontrak
                                             </div>
                                         </div>
-                                        <!-- Status & Doc No -->
+                                        <!-- Status & Type -->
                                         <div class="col-md-2 text-center">
                                             @if ($kontrak->status_kontrak == '1')
-                                                <span class="badge bg-success py-1 px-2" style="font-size: 11px;">Aktif</span>
+                                                <span class="badge bg-success py-1 px-2 mb-1" style="font-size: 11px;">Aktif</span>
                                             @else
-                                                <span class="badge bg-danger py-1 px-2" style="font-size: 11px;">Non Aktif</span>
+                                                <span class="badge bg-danger py-1 px-2 mb-1" style="font-size: 11px;">Non Aktif</span>
                                             @endif
-                                            <div class="text-muted mt-1" style="font-size: 10px;">
-                                                {{ $kontrak->no_kontrak }}
+                                            
+                                            <div class="mt-1">
+                                                @php
+                                                    $jenis_kontrak_text = $kontrak->jenis_kontrak == 'K' ? 'Kontrak' : ($kontrak->jenis_kontrak == 'T' ? 'Tetap' : $kontrak->jenis_kontrak);
+                                                @endphp
+                                                <span class="badge @if($kontrak->jenis_kontrak == 'T') bg-label-success @else bg-label-primary @endif" style="font-size: 10px;">{{ $jenis_kontrak_text }}</span>
                                             </div>
                                         </div>
                                         <!-- Actions -->
@@ -107,21 +122,23 @@
                                                 <a href="{{ route('kontrak.print', Crypt::encrypt($kontrak->id)) }}" target="_blank" class="btn btn-sm btn-outline-primary py-1 px-2" title="Cetak">
                                                     <i class="ti ti-printer"></i>
                                                 </a>
-                                                @can('kontrak.edit')
-                                                    <a href="#" class="btn btn-sm btn-outline-success btnEditKontrak py-1 px-2" data-id="{{ Crypt::encrypt($kontrak->id) }}" title="Edit">
-                                                        <i class="ti ti-edit"></i>
-                                                    </a>
-                                                @endcan
-                                                @can('kontrak.delete')
-                                                    <form method="POST" name="deleteform" class="deleteform d-inline"
-                                                        action="{{ route('kontrak.delete', Crypt::encrypt($kontrak->id)) }}">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2" title="Hapus">
-                                                            <i class="ti ti-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                @endcan
+                                                @if ($kontrak->status_kontrak == '1')
+                                                    @can('kontrak.edit')
+                                                        <a href="#" class="btn btn-sm btn-outline-success btnEditKontrak py-1 px-2" data-id="{{ Crypt::encrypt($kontrak->id) }}" title="Edit">
+                                                            <i class="ti ti-edit"></i>
+                                                        </a>
+                                                    @endcan
+                                                    @can('kontrak.delete')
+                                                        <form method="POST" name="deleteform" class="deleteform d-inline"
+                                                            action="{{ route('kontrak.delete', Crypt::encrypt($kontrak->id)) }}">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger delete-confirm rounded-0 rounded-end py-1 px-2" title="Hapus">
+                                                                <i class="ti ti-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endcan
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

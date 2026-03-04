@@ -27,6 +27,7 @@ class GeneralsettingController extends Controller
             'alamat' => 'required',
             'telepon' => 'required',
             'total_jam_bulan' => 'required',
+            'status_potongan_jam' => 'nullable',
             'periode_laporan_dari' => 'required',
             'periode_laporan_sampai' => 'required',
             'domain_email' => 'required|regex:/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/',
@@ -37,6 +38,7 @@ class GeneralsettingController extends Controller
             'nama_hrd' => 'nullable|string',
             'theme_color_1' => 'nullable|string|max:20',
             'theme_color_2' => 'nullable|string|max:20',
+            'session_time' => 'nullable|integer|min:1',
         ]);
 
         try {
@@ -50,6 +52,7 @@ class GeneralsettingController extends Controller
                 'telepon' => $request->telepon,
                 'nama_hrd' => $request->nama_hrd,
                 'total_jam_bulan' => $request->total_jam_bulan,
+                'status_potongan_jam' => $request->has('status_potongan_jam') ? 1 : 0,
                 'denda' => $request->has('denda') ? true : false,
                 'face_recognition' => $request->has('face_recognition') ? true : false,
                 'periode_laporan_dari' => $request->periode_laporan_dari,
@@ -75,6 +78,7 @@ class GeneralsettingController extends Controller
                 'theme_color_1' => $request->theme_color_1,
                 'theme_color_2' => $request->theme_color_2,
                 'mobile_theme_scheme' => $request->mobile_theme_scheme,
+                'session_time' => $request->session_time,
             ];
 
             if ($request->hasFile('logo')) {
@@ -99,6 +103,7 @@ class GeneralsettingController extends Controller
             }
 
             $oldTimezone = $setting->timezone ?? 'Asia/Jakarta';
+            $oldSessionTime = $setting->session_time;
             $setting->update($data);
             
             // Update .env file dengan timezone baru jika timezone berubah
@@ -111,6 +116,17 @@ class GeneralsettingController extends Controller
                     Artisan::call('cache:clear');
                 } catch (\Exception $e) {
                     // Jika clear cache gagal, tetap lanjutkan (bisa di-clear manual)
+                }
+            }
+
+            // Update SESSION_LIFETIME jika session_time diubah
+            if ($request->has('session_time') && $request->session_time != $oldSessionTime) {
+                // Konversi hari ke menit (1 hari = 1440 menit)
+                $sessionLifetime = $request->session_time * 1440;
+                $this->updateEnvFile('SESSION_LIFETIME', $sessionLifetime);
+                try {
+                    Artisan::call('config:clear');
+                } catch (\Exception $e) {
                 }
             }
             

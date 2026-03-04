@@ -78,32 +78,7 @@
             color: #ffffff !important;
         }
     </style>
-    <!-- OneSignal SDK -->
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-      console.log("OneSignal Debug: Loading SDK...");
-      window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(function(OneSignal) {
-        var appId = "{{ config('services.onesignal.app_id') }}";
-        console.log("OneSignal Debug: App ID from Config:", appId);
 
-        if (!appId) {
-            console.error("OneSignal Debug: CRITICAL - App ID is empty! Check config/services.php and .env");
-        }
-
-        OneSignal.init({
-          appId: appId,
-          serviceWorker: {
-              path: "/sw.js",
-          }
-        }).then(function() {
-             var perm = String(Notification.permission);
-             if (perm === 'default') {
-                 OneSignal.Slidedown.promptPush();
-             }
-        });
-      });
-    </script>
 </head>
 
 <body>
@@ -175,6 +150,8 @@
                 </div>
 
                 <div class="carousel">
+                    <h4>E-Presensi v2.0</h4>
+
                     <div class="images-wrapper">
                         <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
                         <img src="{{ asset('assets/login/images/hospital2.png') }}" class="image img-2" alt="Presensi illustration 2" />

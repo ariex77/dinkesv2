@@ -28,6 +28,14 @@ class Globalprovider extends ServiceProvider
      */
     public function boot(Guard $auth): void
     {
+        // Share general_setting globally with try-catch to prevent errors during dump-autoload
+        try {
+            $settings = Pengaturanumum::first();
+            View::share('general_setting', $settings);
+        } catch (\Exception $e) {
+            View::share('general_setting', null);
+        }
+
         view()->composer('*', function ($view) use ($auth) {
             if ($auth->check()) {
                 /** @var \App\Models\User $user */
@@ -110,7 +118,6 @@ class Globalprovider extends ServiceProvider
                 $data_izin = $data_izinabsen->unionAll($data_izinsakit)->unionAll($data_izincuti)->unionAll($data_izin_dinas)->get();
 
                 $notifikasi_ajuan_absen = $notifikasi_izinabsen + $notifikasi_izincuti + $notifikasi_izinsakit + $notifikasi_izin_dinas;
-                $general_setting = Pengaturanumum::where('id', 1)->first();
                 $shareddata = [
                     'notifikasi_izinabsen' => $notifikasi_izinabsen,
                     'notifikasi_izinsakit' => $notifikasi_izinsakit,
@@ -119,7 +126,6 @@ class Globalprovider extends ServiceProvider
                     'notifikasi_izin_dinas' => $notifikasi_izin_dinas,
                     'notifikasi_ajuan_absen' => $notifikasi_ajuan_absen,
                     'data_izin' => $data_izin,
-                    'general_setting' => $general_setting
                 ];
                 View::share($shareddata);
             }

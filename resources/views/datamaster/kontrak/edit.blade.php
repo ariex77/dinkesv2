@@ -8,10 +8,24 @@
 
         <x-input-with-icon label="Tanggal Kontrak" name="tanggal" icon="ti ti-calendar" datepicker="flatpickr-date"
             value="{{ old('tanggal', $kontrak->tanggal) }}" />
-        <x-input-with-icon label="Tanggal Mulai" name="dari" icon="ti ti-calendar" datepicker="flatpickr-date"
-            value="{{ old('dari', $kontrak->dari) }}" />
-        <x-input-with-icon label="Tanggal Selesai" name="sampai" icon="ti ti-calendar" datepicker="flatpickr-date"
-            value="{{ old('sampai', $kontrak->sampai) }}" />
+        
+        <div class="form-group mb-1">
+            <select name="jenis_kontrak" id="jenis_kontrak" class="form-select">
+                <option value="" disabled>Pilih Status Kontrak</option>
+                <option value="K" @selected(old('jenis_kontrak', $kontrak->jenis_kontrak) == 'K')>Kontrak (PKWT)</option>
+                <option value="T" @selected(old('jenis_kontrak', $kontrak->jenis_kontrak) == 'T')>Tetap (PKWTT)</option>
+            </select>
+             @error('jenis_kontrak')
+                <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div id="periode_kontrak">
+            <x-input-with-icon label="Tanggal Mulai" name="dari" icon="ti ti-calendar" datepicker="flatpickr-date"
+                value="{{ old('dari', $kontrak->dari) }}" />
+            <x-input-with-icon label="Tanggal Selesai" name="sampai" icon="ti ti-calendar" datepicker="flatpickr-date"
+                value="{{ old('sampai', $kontrak->sampai) }}" />
+        </div>
 
         <div class="form-group mb-1">
             <select name="nik" id="nik" class="form-select select2" data-placeholder="Pilih Karyawan">
@@ -239,6 +253,19 @@
             $('#nik').trigger('change');
         }
 
+        function togglePeriodeKontrak() {
+            const status = $('#jenis_kontrak').val();
+            if (status === 'T') {
+                $('#periode_kontrak').hide();
+            } else {
+                $('#periode_kontrak').show();
+            }
+        }
+        $('#jenis_kontrak').on('change', togglePeriodeKontrak);
+        
+        // Trigger on load
+        togglePeriodeKontrak();
+
         $("#formKontrakEdit").on('submit', function(e) {
             e.preventDefault();
 
@@ -250,21 +277,36 @@
             const kode_dept = $('#kode_dept').val();
             const kode_jabatan = $('#kode_jabatan').val();
             const no_kontrak = $('input[name="no_kontrak"]').val();
+            const jenis_kontrak = $('#jenis_kontrak').val();
 
             let errors = [];
 
             if (!no_kontrak) {
                 errors.push('Nomor Kontrak harus diisi');
             }
+            if (!jenis_kontrak) {
+                errors.push('Status Kontrak harus dipilih');
+            }
             if (!tanggal) {
                 errors.push('Tanggal Kontrak harus diisi');
             }
-            if (!dari) {
-                errors.push('Tanggal Mulai harus diisi');
+            
+            if (jenis_kontrak === 'K') {
+                if (!dari) {
+                    errors.push('Tanggal Mulai harus diisi');
+                }
+                if (!sampai) {
+                    errors.push('Tanggal Selesai harus diisi');
+                }
+                 if (dari && sampai) {
+                    const dateDari = new Date(dari);
+                    const dateSampai = new Date(sampai);
+                    if (dateSampai < dateDari) {
+                        errors.push('Tanggal Selesai harus lebih besar atau sama dengan Tanggal Mulai');
+                    }
+                }
             }
-            if (!sampai) {
-                errors.push('Tanggal Selesai harus diisi');
-            }
+            
             if (!nik) {
                 errors.push('Karyawan harus dipilih');
             }
@@ -277,14 +319,7 @@
             if (!kode_jabatan) {
                 errors.push('Jabatan harus dipilih');
             }
-            if (dari && sampai) {
-                const dateDari = new Date(dari);
-                const dateSampai = new Date(sampai);
-                if (dateSampai < dateDari) {
-                    errors.push('Tanggal Selesai harus lebih besar atau sama dengan Tanggal Mulai');
-                }
-            }
-
+            
             if (errors.length > 0) {
                 Swal.fire({
                     icon: 'error',

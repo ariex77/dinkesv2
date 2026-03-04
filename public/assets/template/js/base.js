@@ -10,11 +10,12 @@ if ('serviceWorker' in navigator) {
 
 ///////////////////////////////////////////////////////////////////////////
 // Page Loader with preload
-$(document).ready(function () {
-    setTimeout(() => {
-        $("#loader").fadeToggle(250);
-    }, 700); // hide delay when page load
-});
+// Disabled - using skeleton loaders instead
+// $(document).ready(function () {
+//     setTimeout(() => {
+//         $("#loader").fadeToggle(250);
+//     }, 700); // hide delay when page load
+// });
 ///////////////////////////////////////////////////////////////////////////
 
 

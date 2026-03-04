@@ -18,7 +18,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('/presensi', App\Http\Controllers\Api\PresensiController::class);
+Route::apiResource('/presensimachine', App\Http\Controllers\Api\PresensiController::class);
 Route::post('/presensi/log', [App\Http\Controllers\Api\PresensiController::class, 'log']);
 
 // Endpoint fingerprint tanpa rate limiting

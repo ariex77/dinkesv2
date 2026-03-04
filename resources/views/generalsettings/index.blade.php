@@ -242,6 +242,11 @@
                                 <option value="UTC" @selected(($setting->timezone ?? 'Asia/Jakarta') == 'UTC')>UTC</option>
                             </select>
                             <small class="text-muted">Zona waktu ini akan mengubah pengaturan timezone di file .env dan config/app.php</small>
+                            <div class="mt-3">
+                                <x-input-with-icon-label label="Durasi Sesi Login (Hari)" name="session_time"
+                                    icon="ti ti-clock" :value="$setting->session_time ?? '120'" />
+                                <small class="text-muted">Lama waktu user tetap login tanpa perlu login ulang (Default: 120 Hari)</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -294,6 +299,14 @@
                     </div>
                     <div class="card-body">
                         <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan" icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
+                        <label for="" style="font-weight: 600" class="form-label">Potongan Jam Kerja</label>
+                        <div class="checkbox-wrapper-55 mb-2">
+                            <label class="rocker rocker-small">
+                                <input type="checkbox" name="status_potongan_jam" @checked($setting->status_potongan_jam ?? true)>
+                                <span class="switch-left">Yes</span>
+                                <span class="switch-right">No</span>
+                            </label>
+                        </div>
                         <label for="" style="font-weight: 600" class="form-label">Denda</label>
                         <div class="checkbox-wrapper-55 mb-2">
                             <label class="rocker rocker-small">

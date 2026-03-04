@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AjuanJadwal;
 use App\Models\Cabang;
 use App\Models\Denda;
 use App\Models\Detailharilibur;
@@ -35,7 +36,7 @@ class PresensiController extends Controller
 
     public function index(Request $request)
     {
-        /** @var \App\Models\User $user */
+       
         $user = auth()->user();
 
         $tanggal = !empty($request->tanggal) ? $request->tanggal : date('Y-m-d');
@@ -58,7 +59,8 @@ class PresensiController extends Controller
                 'status',
                 'lintashari',
                 'total_jam',
-                'presensi.denda'
+                'presensi.denda',
+                'presensi.status_potongan'
             )
             ->where('presensi.tanggal', $tanggal);
 
@@ -87,7 +89,8 @@ class PresensiController extends Controller
             'lintashari',
             'karyawan.pin',
             'total_jam',
-            'presensi.denda'
+            'presensi.denda',
+            'presensi.status_potongan'
         );
         $query->leftjoinSub($presensi, 'presensi', function ($join) {
             $join->on('karyawan.nik', '=', 'presensi.nik');
@@ -181,39 +184,51 @@ class PresensiController extends Controller
 
 
         if ($kode_jam_kerja == null) {
-            //Cek Jam Kerja By Date
-            $jamkerja = Setjamkerjabydate::join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                ->where('nik', $karyawan->nik)
+            // PRIORITAS UTAMA: Cek Ajuan Jadwal yang sudah disetujui
+            $ajuan_jadwal = AjuanJadwal::where('nik', $karyawan->nik)
                 ->where('tanggal', $hariini)
+                ->where('status', 'a') // Approved
                 ->first();
 
-            //Jika Tidak Memiliki Jam Kerja By Date
-            if ($jamkerja == null) {
-                //Cek Jam Kerja Grup
-                $cek_group = GrupDetail::where('nik', $karyawan->nik)->first();
-                if ($cek_group) {
-                    $jamkerja = GrupJamkerjaBydate::where('kode_grup', $cek_group->kode_grup)
-                        ->where('tanggal', $hariini)
-                        ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                        ->first();
-                } else {
-                    $jamkerja = null;
-                }
+            if ($ajuan_jadwal) {
+                $jamkerja = Jamkerja::where('kode_jam_kerja', $ajuan_jadwal->kode_jam_kerja_tujuan)->first();
+            } else {
+                // Jika tidak ada ajuan, cek prioritas berikutnya
+                
+                //Cek Jam Kerja By Date
+                $jamkerja = Setjamkerjabydate::join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->where('nik', $karyawan->nik)
+                    ->where('tanggal', $hariini)
+                    ->first();
 
+                //Jika Tidak Memiliki Jam Kerja By Date
                 if ($jamkerja == null) {
-                    //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
-                    $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                        ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
-                }
+                    //Cek Jam Kerja Grup
+                    $cek_group = GrupDetail::where('nik', $karyawan->nik)->first();
+                    if ($cek_group) {
+                        $jamkerja = GrupJamkerjaBydate::where('kode_grup', $cek_group->kode_grup)
+                            ->where('tanggal', $hariini)
+                            ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                            ->first();
+                    } else {
+                        $jamkerja = null;
+                    }
+
+                    if ($jamkerja == null) {
+                        //Cek Jam Kerja harian / Jam Kerja Khusus / Jam Kerja Per Orangannya
+                        $jamkerja = Setjamkerjabyday::join('presensi_jamkerja', 'presensi_jamkerja_byday.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                            ->where('nik', $karyawan->nik)->where('hari', $namahari)->first();
+                    }
 
 
-                // Jika Jam Kerja Harian Kosong
-                if ($jamkerja == null) {
-                    $jamkerja = Detailsetjamkerjabydept::join('presensi_jamkerja_bydept', 'presensi_jamkerja_bydept_detail.kode_jk_dept', '=', 'presensi_jamkerja_bydept.kode_jk_dept')
-                        ->join('presensi_jamkerja', 'presensi_jamkerja_bydept_detail.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-                        ->where('kode_dept', $kode_dept)
-                        ->where('kode_cabang', $karyawan->kode_cabang)
-                        ->where('hari', $namahari)->first();
+                    // Jika Jam Kerja Harian Kosong
+                    if ($jamkerja == null) {
+                        $jamkerja = Detailsetjamkerjabydept::join('presensi_jamkerja_bydept', 'presensi_jamkerja_bydept_detail.kode_jk_dept', '=', 'presensi_jamkerja_bydept.kode_jk_dept')
+                            ->join('presensi_jamkerja', 'presensi_jamkerja_bydept_detail.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                            ->where('kode_dept', $kode_dept)
+                            ->where('kode_cabang', $karyawan->kode_cabang)
+                            ->where('hari', $namahari)->first();
+                    }
                 }
             }
         } else {
@@ -489,7 +504,7 @@ class PresensiController extends Controller
                                         $this->sendwa($karyawan->no_hp, $message);
                                     }
                                 } else {
-                                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Masuk pada " . $jam_presensi . "Hati Hati di Jalan";
+                                    $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Masuk pada " . $jam_presensi . "Semangat Bekerja";
                                     $this->sendwa($generalsetting->id_group_wa, $message);
                                 }
                             } catch (\Exception $waException) {
@@ -579,6 +594,9 @@ class PresensiController extends Controller
         $karyawan = Karyawan::where('nik', $nik)->first();
         $jam_kerja = Jamkerja::all();
         $presensi = Presensi::where('nik', $nik)->where('tanggal', $tanggal)->first();
+        if ($presensi && $presensi->status_potongan !== null) {
+            return '<div class="alert alert-warning">Data Presensi Sudah Dikunci, Hubungi Admin Untuk Membuka Kunci Laporan</div>';
+        }
         $data['presensi'] = $presensi;
         $data['karyawan'] = $karyawan;
         $data['jam_kerja'] = $jam_kerja;
@@ -595,6 +613,10 @@ class PresensiController extends Controller
             'kode_jam_kerja' => 'required',
             'status' => 'required',
         ]);
+        $presensi = Presensi::where('nik', $request->nik)->where('tanggal', $request->tanggal)->first();
+        if ($presensi && $presensi->status_potongan !== null) {
+            return redirect()->back()->with(['warning' => 'Data Presensi Sudah Dikunci, Hubungi Admin Untuk Membuka Kunci Laporan']);
+        }
 
         $nik = Crypt::decrypt($request->nik);
         $tanggal = $request->tanggal;
@@ -672,6 +694,14 @@ class PresensiController extends Controller
         //     $nextday =  $tanggal;
         // }
         $specific_value = $pin;
+        $karyawan = Karyawan::where('pin', $pin)->first();
+        $is_locked = false;
+        if ($karyawan) {
+            $presensi_lock = Presensi::where('nik', $karyawan->nik)->where('tanggal', $tanggal)->first();
+            if ($presensi_lock && $presensi_lock->status_potongan !== null) {
+                $is_locked = true;
+            }
+        }
 
 
         //Mesin 1
@@ -720,7 +750,7 @@ class PresensiController extends Controller
         // });
 
 
-        return view('presensi.getdatamesin', compact('filtered_array'));
+        return view('presensi.getdatamesin', compact('filtered_array', 'is_locked'));
     }
 
 
@@ -755,6 +785,10 @@ class PresensiController extends Controller
             ->orderBy('presensi.tanggal', 'desc')
             ->limit(30)
             ->get();
+            
+        $data['namasettings'] = Pengaturanumum::first();
+        $data['denda_list'] = Denda::orderBy('dari')->get()->toArray();
+        
         return view('presensi.histori', $data);
     }
 
@@ -819,6 +853,11 @@ class PresensiController extends Controller
 
         //Cek Presensi
         $presensi = Presensi::where('nik', $karyawan->nik)->where('tanggal', $tanggal_presensi)->first();
+
+        //Cek Jika Laporan Sudah Dikunci
+        if ($presensi != null && $presensi->status_potongan !== null) {
+             return Redirect::back()->with(messageError('Data Presensi Sudah Dikunci'));
+        }
 
         if ($presensi != null && $presensi->status != 'h') {
             return Redirect::back()->with(messageError('Sudah Melakukan Presesni'));
@@ -887,6 +926,27 @@ class PresensiController extends Controller
             } catch (\Exception $e) {
                 return Redirect::back()->with(messageError($e->getMessage()));
             }
+        }
+    }
+
+    public function destroy($id)
+    {
+        $presensi = Presensi::find($id);
+        if ($presensi) {
+            if ($presensi->status_potongan != null) {
+                return Redirect::back()->with(['warning' => 'Data Presensi Sudah Dikunci, Hubungi Admin Untuk Membuka Kunci Laporan']);
+            }
+            try {
+                $folderPath = "public/uploads/absensi/";
+                Storage::delete($folderPath . $presensi->foto_in);
+                Storage::delete($folderPath . $presensi->foto_out);
+                $presensi->delete();
+                return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
+            } catch (\Exception $e) {
+                return Redirect::back()->with(messageError($e->getMessage()));
+            }
+        } else {
+            return Redirect::back()->with(messageError('Data Tidak Ditemukan'));
         }
     }
 }
