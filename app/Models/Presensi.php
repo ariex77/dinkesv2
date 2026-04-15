@@ -10,4 +10,9 @@ class Presensi extends Model
     use HasFactory;
     protected $table = 'presensi';
     protected $guarded = [];
+
+    public function mesinfingerprint()
+    {
+        return $this->belongsTo(MesinFingerprint::class, 'id_mesin');
+    }
 }

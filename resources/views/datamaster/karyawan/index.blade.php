@@ -3,7 +3,31 @@
 
 @section('content')
 @section('navigasi')
-    <span>Karyawan</span>
+    <div class="d-flex justify-content-between align-items-center w-100">
+        <div>
+            Karyawan
+            <div class="text-muted mt-1" style="font-size: 0.75rem; font-weight: normal; text-transform: none; letter-spacing: 0px;">
+                Manajemen data master karyawan, unit kerja, jabatan, dan konfigurasi akses operasional.
+            </div>
+        </div>
+        <nav aria-label="breadcrumb" class="d-none d-md-block" style="font-size: 0.75rem;">
+            <ol class="breadcrumb breadcrumb-style1 mb-0">
+                <li class="breadcrumb-item">
+                    <a href="{{ route('dashboard.index') }}">
+                        <i class="ti ti-home-2 ti-xs"></i>
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="javascript:void(0);">
+                        <i class="ti ti-database ti-xs me-1"></i> Data Master
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">
+                    <i class="ti ti-users ti-xs me-1"></i> Karyawan
+                </li>
+            </ol>
+        </nav>
+    </div>
 @endsection
 
 <div class="row">
@@ -17,6 +41,7 @@
                     <a href="#" class="btn btn-success" id="btnImport"><i class="ti ti-file-import me-2"></i> Import Excel</a>
                     @can('users.create')
                         <a href="{{ route('karyawan.generatealluser') }}" class="btn btn-warning"><i class="ti ti-user-plus me-2"></i> Buat User (All)</a>
+                        <a href="{{ route('karyawan.deletealluser') }}" class="btn btn-danger delete-all-user"><i class="ti ti-user-x me-2"></i> Reset All User</a>
                     @endcan
                 @endcan
             </div>
@@ -77,11 +102,36 @@
                                                         <span class="badge bg-label-info" style="font-size: 10px;">{{ $d->nama_dept }}</span>
                                                         <span class="badge bg-label-warning" style="font-size: 10px;">{{ $d->nama_cabang }}</span>
                                                         @if ($d->status_karyawan)
+                                                        @php
+                                                            switch ($d->status_karyawan) {
+                                                                case 'K':
+                                                                    $status_karyawan_text = 'PPPK';
+                                                                    $badge_class = 'bg-label-primary';
+                                                                    break;
+                                                                case 'T':
+                                                                    $status_karyawan_text = 'PNS';
+                                                                    $badge_class = 'bg-label-success';
+                                                                    break;
+                                                                case 'N':
+                                                                    $status_karyawan_text = 'Non ASN';
+                                                                    $badge_class = 'bg-label-danger';
+                                                                    break;
+                                                                default:
+                                                                    $status_karyawan_text = $d->status_karyawan;
+                                                                    $badge_class = 'bg-label-secondary';
+                                                                    break;
+                                                            }
+                                                        @endphp
+                                                        <span class="badge {{ $badge_class }}" style="font-size: 10px;">
+                                                            {{ $status_karyawan_text }}
+                                                        </span>
+                                                    @endif
+
+                                                        @if ($d->jenis_upah)
                                                             @php
-                                                                $status_karyawan_text = $d->status_karyawan == 'K' ? 'Kontrak' : ($d->status_karyawan == 'T' ? 'Tetap' : $d->status_karyawan);
-                                                                $badge_class = $d->status_karyawan == 'T' ? 'bg-label-success' : 'bg-label-primary';
+                                                                $upah_class = $d->jenis_upah == 'Harian' ? 'bg-label-info' : 'bg-label-success';
                                                             @endphp
-                                                            <span class="badge {{ $badge_class }}" style="font-size: 10px;">{{ $status_karyawan_text }}</span>
+                                                            <span class="badge {{ $upah_class }}" style="font-size: 10px;">{{ $d->jenis_upah }}</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -280,6 +330,26 @@
 
             $("#loadmodalSetCabang").load(`/karyawan/${nik}/setcabang`);
         });
+
+        $(".delete-all-user").click(function(e) {
+            e.preventDefault();
+            var href = $(this).attr("href");
+            Swal.fire({
+                title: "Apakah Anda Yakin?",
+                text: "Semua User dengan Role Karyawan akan dihapus!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Ya, Hapus Semua!",
+                cancelButtonText: "Batal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = href;
+                }
+            });
+        });
+
 
 
     });

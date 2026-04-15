@@ -5,14 +5,14 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign in & Sign up Form</title>
+    <title>Login | {{ $general_setting->nama_aplikasi ?? 'Sign in' }}</title>
 
     <!-- PWA Meta Tags -->
-    <meta name="application-name" content="E-Presensi GPS V2">
+    <meta name="application-name" content="{{ $general_setting->nama_aplikasi ?? 'E-Presensi GPS V2' }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="E-Presensi">
-    <meta name="description" content="Aplikasi Presensi GPS untuk Karyawan">
+    <meta name="apple-mobile-web-app-title" content="{{ $general_setting->nama_aplikasi ?? 'E-Presensi' }}">
+    <meta name="description" content="Aplikasi {{ $general_setting->nama_aplikasi ?? 'Presensi GPS' }} untuk Karyawan">
     <meta name="format-detection" content="telephone=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#696cff">
@@ -94,7 +94,7 @@
                             @else
                                 <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
                             @endif
-                            <h4>E-Presensi v2.0</h4>
+                            <h4>{{ $general_setting->nama_aplikasi ?? 'E-Presensi v2.0' }}</h4>
                         </div>
 
                         <div class="heading">
@@ -150,8 +150,6 @@
                 </div>
 
                 <div class="carousel">
-                    <h4>E-Presensi v2.0</h4>
-
                     <div class="images-wrapper">
                         <img src="{{ asset('assets/login/images/hospital.png') }}" class="image img-1 show" alt="Presensi illustration 1" />
                         <img src="{{ asset('assets/login/images/hospital2.png') }}" class="image img-2" alt="Presensi illustration 2" />

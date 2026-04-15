@@ -1,121 +1,109 @@
-@extends('layouts.mobile.app')
-@section('content')
+@extends('layouts.mobile.modern')
+
+@section('title', 'Buat Izin Sakit')
+
+@section('header_left')
+    <a href="{{ route('pengajuanizin.index') }}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 text-white active:scale-95 transition-all">
+        <ion-icon name="chevron-back-outline" class="text-lg"></ion-icon>
+    </a>
+@endsection
+
+@push('mystyle')
     <style>
-        #header-section {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
+        body {
+            background: {{ $t['bg_body'] }} !important;
         }
 
-        #content-section {
-            margin-top: 70px;
-            padding-top: 5px;
-            position: relative;
-            z-index: 1;
+        .form-container {
+            padding: 10px 5px;
         }
 
-        /* Custom Floating Label CSS */
         .form-label-group {
             position: relative;
-            margin-bottom: 5px; /* Compact spacing */
+            margin-bottom: 12px;
+            background: transparent !important;
+            border: 1px solid {{ $t['primary'] }};
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
         }
 
         .form-label-group .input-icon {
             position: absolute;
-            left: 15px;
-            top: 15px; /* Align with top padding of input */
-            font-size: 22px;
-            color: #32745e;
-            z-index: 9;
-            transition: all 0.3s ease;
-            pointer-events: none; /* Ensure clicks pass through to input */
+            left: 14px;
+            top: 11px;
+            font-size: 20px;
+            color: {{ $t['primary'] }};
+            z-index: 10;
+            pointer-events: none;
         }
 
         .form-label-group input,
-        .form-label-group select,
         .form-label-group textarea {
-            border-radius: 9px;
-            height: 50px; /* Consistent height */
-            padding: 20px 15px 5px 50px; /* Left padding increased for icon */
-            font-size: 15px;
-            line-height: 1.5;
-            background-color: transparent !important; /* Transparent background */
-            border: 1px solid #32745e; /* Green border */
-            box-shadow: none;
-            width: 100%;
-            display: block;
-            transition: all .1s;
+            width: 100% !important;
+            height: 44px;
+            padding: 18px 14px 2px 42px !important;
+            font-size: 14px;
+            font-weight: 500;
+            color: {{ $t['primary'] }};
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            display: block !important;
         }
-        
+
         .form-label-group textarea {
-            height: 100px;
-            padding-top: 25px; /* More padding top for textarea */
+            height: 80px !important;
+            padding-top: 22px !important;
             resize: none;
         }
 
         .form-label-group label {
             position: absolute;
-            top: 15px;
-            left: 50px; /* Aligned with text start (after icon) */
-            font-size: 15px;
-            color: #32745e; /* Green label */
+            top: 11px;
+            left: 42px;
+            font-size: 14px;
+            color: {{ $t['primary'] }};
+            opacity: 0.8;
             pointer-events: none;
-            transition: all .2s ease-in-out;
+            transition: all 0.2s ease-in-out;
             margin-bottom: 0;
-            background: transparent;
-        }
-
-        /* Active State (Focus or Has Value) */
-        .form-label-group input:focus,
-        .form-label-group select:focus,
-        .form-label-group textarea:focus,
-        .form-label-group input:not(:placeholder-shown),
-        .form-label-group select:valid,
-        .form-label-group textarea:not(:placeholder-shown) {
-            border-color: #32745e; /* Theme color */
+            z-index: 5;
         }
 
         .form-label-group input:focus ~ label,
-        .form-label-group select:focus ~ label,
-        .form-label-group textarea:focus ~ label,
         .form-label-group input:not(:placeholder-shown) ~ label,
-        .form-label-group select:valid ~ label,
+        .form-label-group textarea:focus ~ label,
         .form-label-group textarea:not(:placeholder-shown) ~ label {
-            top: 5px;
-            font-size: 11px;
-            color: #32745e; /* Theme color */
-            font-weight: 500;
-        }
-        
-        /* Disabled Input Style */
-        .form-label-group input:disabled {
-            background-color: rgba(50, 116, 94, 0.05) !important;
-            color: #32745e;
+            top: 2px;
+            left: 42px;
+            font-size: 10px;
+            font-weight: 600;
+            color: {{ $t['primary'] }};
         }
 
-        /* Custom File Upload (Dashed Box) */
+        /* Custom File Upload (Dashed Box) matching Izin Absen style */
         .custom-file-upload {
-            border: 2px dashed #32745e;
-            border-radius: 9px;
+            border: 1.5px dashed {{ $t['primary'] }};
+            border-radius: 12px;
             padding: 20px;
             text-align: center;
             cursor: pointer;
-            margin-bottom: 5px;
+            margin-bottom: 12px;
             transition: all 0.3s ease;
-            background: rgba(50, 116, 94, 0.05);
+            background: {{ $t['primary'] }}10;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100px;
+            height:90px !important;
         }
         
         .custom-file-upload:hover {
-            background: rgba(50, 116, 94, 0.1);
-            border-color: #2a6350;
+            background: {{ $t['primary'] }}20;
+            border-color: {{ $t['primary'] }};
         }
         
         .custom-file-upload input[type="file"] {
@@ -125,187 +113,214 @@
         .custom-file-upload label {
             cursor: pointer;
             display: block;
-            color: #32745e;
+            color: {{ $t['primary'] }};
             margin: 0;
             width: 100%;
         }
         
         .custom-file-upload ion-icon {
-            font-size: 32px;
-            margin-bottom: 5px;
-            color: #32745e;
+            font-size: 38px;
+            margin-bottom: 8px;
+            color: {{ $t['primary'] }};
+        }
+
+        .custom-file-upload span {
+            font-size: 15px;
+            font-weight: 600;
+            opacity: 0.9;
         }
         
         .file-name {
             font-size: 12px;
-            color: #32745e;
-            margin-top: 5px;
+            color: {{ $t['primary'] }};
+            margin-top: 8px;
             font-weight: 500;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
+        .btn-submit-modern {
+            width: 100%;
+            height: 48px;
+            background: {{ $t['primary'] }};
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-submit-modern:active {
+            transform: scale(0.97);
+            background: {{ $t['primary'] }};
+            filter: brightness(0.9);
+        }
     </style>
-    <div id="header-section">
-        <div class="appHeader bg-primary text-light">
-            <div class="left">
-                <a href="{{ route('dashboard.index') }}" class="headerButton goBack">
-                    <ion-icon name="chevron-back-outline"></ion-icon>
-                </a>
+@endpush
+
+@section('content')
+    <div class="fade-up form-container">
+        <form action="{{ route('izinsakit.store') }}" method="POST" id="formIzin" enctype="multipart/form-data" autocomplete="off">
+            @csrf
+
+            <div class="form-label-group">
+                <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
+                <input type="text" name="dari" id="dari" placeholder=" " required readonly>
+                <label for="dari">Dari Tanggal</label>
             </div>
-            <div class="pageTitle">Izin Sakit</div>
-            <div class="right"></div>
-        </div>
-    </div>
-    <div id="content-section">
-        <div class="row" style="margin-top: 10px">
-            <div class="col pl-3 pr-3">
-                <form action="{{ route('izinsakit.store') }}" method="POST" id="formIzin" enctype="multipart/form-data" autocomplete="off">
-                    @csrf
 
-                    <div class="form-label-group">
-                        <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
-                        <input type="text" name="dari" id="dari" class="form-control" placeholder=" " required>
-                        <label for="dari">Dari Tanggal</label>
-                    </div>
-
-                    <div class="form-label-group">
-                        <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
-                        <input type="text" name="sampai" id="sampai" class="form-control" placeholder=" " required>
-                        <label for="sampai">Sampai Tanggal</label>
-                    </div>
-
-                    <div class="form-label-group">
-                        <ion-icon name="calculator-outline" class="input-icon"></ion-icon>
-                        <input type="text" name="jml_hari" id="jml_hari" class="form-control" placeholder=" " readonly>
-                        <label for="jml_hari">Jumlah Hari</label>
-                    </div>
-                    
-                    <div class="custom-file-upload" id="fileUploadBox">
-                        <input type="file" name="sid" id="sid" accept=".png, .jpg, .jpeg, .pdf">
-                        <label for="sid">
-                            <ion-icon name="cloud-upload-outline"></ion-icon>
-                            <span>Upload Surat Dokter (SID)</span>
-                            <div id="fileName" class="file-name"></div>
-                        </label>
-                    </div>
-
-                    <div class="form-label-group">
-                        <ion-icon name="document-text-outline" class="input-icon"></ion-icon>
-                        <textarea name="keterangan" id="keterangan" class="form-control" placeholder=" " required></textarea>
-                        <label for="keterangan">Keterangan</label>
-                    </div>
-
-                    <div class="form-group mt-3">
-                        <button class="btn btn-primary w-100" id="btnSimpan" style="height: 50px; border-radius: 9px;">
-                            <i class="ti ti-send me-1"></i> Kirim Izin
-                        </button>
-                    </div>
-                </form>
+            <div class="form-label-group">
+                <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
+                <input type="text" name="sampai" id="sampai" placeholder=" " required readonly>
+                <label for="sampai">Sampai Tanggal</label>
             </div>
-        </div>
+
+            <div class="form-label-group">
+                <ion-icon name="calculator-outline" class="input-icon"></ion-icon>
+                <input type="text" name="jml_hari" id="jml_hari" placeholder=" " readonly>
+                <label for="jml_hari">Jumlah Hari</label>
+            </div>
+
+            <div class="custom-file-upload" id="fileUploadBox">
+                <input type="file" name="sid" id="sid" accept=".png, .jpg, .jpeg, .pdf">
+                <label for="sid">
+                    <ion-icon name="cloud-upload-outline"></ion-icon>
+                    <br>
+                    <span>Upload Surat Dokter (SID)</span>
+                    <div id="fileName" class="file-name"></div>
+                </label>
+            </div>
+
+            <div class="form-label-group">
+                <ion-icon name="document-text-outline" class="input-icon"></ion-icon>
+                <textarea name="keterangan" id="keterangan" placeholder=" " required></textarea>
+                <label for="keterangan">Keterangan</label>
+            </div>
+
+            <button type="submit" class="btn-submit-modern" id="btnSimpan">
+                <ion-icon name="paper-plane-outline"></ion-icon>
+                <span>Kirim Izin Sakit</span>
+            </button>
+        </form>
     </div>
 @endsection
+
 @push('myscript')
-    <link href="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.0/air-datepicker.min.css" rel="stylesheet" type="text/css">
     <script src="https://cdn.jsdelivr.net/npm/air-datepicker@3.5.0/air-datepicker.min.js"></script>
     <script>
-        // Custom locale for Air Datepicker
-        const localeIndo = {
-            days: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
-            daysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-            daysMin: ['Mg', 'Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb'],
-            months: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
-            monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
-            today: 'Hari ini',
-            clear: 'Hapus',
-            dateFormat: 'yyyy-MM-dd',
-            timeFormat: 'HH:mm',
-            firstDay: 1
-        };
+        document.addEventListener('DOMContentLoaded', function() {
+            const localeIndo = {
+                days: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+                daysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                daysMin: ['Mg', 'Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb'],
+                months: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
+                monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                today: 'Hari ini',
+                clear: 'Hapus',
+                dateFormat: 'yyyy-MM-dd',
+                timeFormat: 'HH:mm',
+                firstDay: 1
+            };
 
-        const batasi_hari_izin = "{{ $general_setting->batasi_hari_izin }}";
-        const jml_hari_izin_max = "{{ $general_setting->jml_hari_izin_max }}";
+            const batasi_hari_izin = "{{ $general_setting->batasi_hari_izin ?? 0 }}";
+            const jml_hari_izin_max = "{{ $general_setting->jml_hari_izin_max ?? 0 }}";
 
-        function hitungHari(startDate, endDate) {
-            if (startDate && endDate) {
-                var start = new Date(startDate);
-                var end = new Date(endDate);
-                var timeDifference = end - start + (1000 * 3600 * 24);
-                var dayDifference = timeDifference / (1000 * 3600 * 24);
-                return dayDifference;
-            } else {
+            function hitungHari(startDate, endDate) {
+                if (startDate && endDate) {
+                    var start = new Date(startDate);
+                    var end = new Date(endDate);
+                    var timeDifference = end - start + (1000 * 3600 * 24);
+                    var dayDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+                    return dayDifference > 0 ? dayDifference : 0;
+                }
                 return 0;
             }
-        }
 
-        new AirDatepicker('#dari', {
-            locale: localeIndo,
-            autoClose: true,
-            isMobile: true,
-            buttons: ['today', 'clear'],
-            position: 'auto center',
-            onSelect: ({date, formattedDate, datepicker}) => {
-                let sampai = $('#sampai').val();
-                let jmlhari = hitungHari(formattedDate, sampai);
-                $('#jml_hari').val(jmlhari);
-            }
+            const dpDari = new AirDatepicker('#dari', {
+                locale: localeIndo,
+                autoClose: true,
+                isMobile: true,
+                buttons: ['today', 'clear'],
+                onSelect: ({date, formattedDate}) => {
+                    let sampai = document.getElementById('sampai').value;
+                    let jmlhari = hitungHari(formattedDate, sampai);
+                    document.getElementById('jml_hari').value = jmlhari;
+                }
+            });
+
+            const dpSampai = new AirDatepicker('#sampai', {
+                locale: localeIndo,
+                autoClose: true,
+                isMobile: true,
+                buttons: ['today', 'clear'],
+                onSelect: ({date, formattedDate}) => {
+                    let dari = document.getElementById('dari').value;
+                    let jmlhari = hitungHari(dari, formattedDate);
+                    document.getElementById('jml_hari').value = jmlhari;
+                }
+            });
+
+            // File Upload Handling
+            const fileInput = document.getElementById('sid');
+            fileInput.addEventListener('change', function() {
+                let file = this.files[0];
+                const fileNameDiv = document.getElementById('fileName');
+                if (file) {
+                    fileNameDiv.textContent = '📄 ' + file.name;
+                } else {
+                    fileNameDiv.textContent = '';
+                }
+            });
+
+            const form = document.getElementById('formIzin');
+            form.addEventListener('submit', function(e) {
+                let dari = document.getElementById('dari').value;
+                let sampai = document.getElementById('sampai').value;
+                let jml_hari = document.getElementById('jml_hari').value;
+                let keterangan = document.getElementById('keterangan').value;
+                let sid = document.getElementById('sid').value;
+
+                if (!dari || !sampai) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Periode Izin Harus Diisi !', icon: "warning" });
+                    return;
+                }
+
+                if (new Date(sampai) < new Date(dari)) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Periode Izin Tidak Valid !', icon: "warning" });
+                    return;
+                }
+
+                if (batasi_hari_izin == 1 && jml_hari > jml_hari_izin_max) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Maksimal Izin ' + jml_hari_izin_max + ' Hari !', icon: "warning" });
+                    return;
+                }
+
+                if (!sid) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Surat Dokter Harus Diupload !', icon: "warning" });
+                    return;
+                }
+
+                if (!keterangan.trim()) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Keterangan Harus Diisi !', icon: "warning" });
+                    return;
+                }
+
+                const btn = document.getElementById('btnSimpan');
+                btn.disabled = true;
+                btn.innerHTML = `<ion-icon name="sync-outline" class="animate-spin"></ion-icon><span>Memproses...</span>`;
+            });
         });
-
-        new AirDatepicker('#sampai', {
-            locale: localeIndo,
-            autoClose: true,
-            isMobile: true,
-            buttons: ['today', 'clear'],
-            position: 'auto center',
-            onSelect: ({date, formattedDate, datepicker}) => {
-                let dari = $('#dari').val();
-                let jmlhari = hitungHari(dari, formattedDate);
-                $('#jml_hari').val(jmlhari);
-            }
-        });
-
-        // File Upload Handling
-        $('#sid').on('change', function() {
-            let file = this.files[0];
-            if (file) {
-                 $('#fileName').text(file.name);
-            } else {
-                 $('#fileName').text('');
-            }
-        });
-
-        $("#formIzin").submit(function(e) {
-            let dari = $('#dari').val();
-            let sampai = $('#sampai').val();
-            let jml_hari = $('#jml_hari').val();
-            let keterangan = $('#keterangan').val();
-            let sid = $('#sid').val();
-
-            if (dari == "" || sampai == "") {
-                Swal.fire({title: "Oops!", text: 'Periode Izin Harus Diisi !', icon: "warning"});
-                return false;
-            } else if (jml_hari == "") {
-                 Swal.fire({title: "Oops!", text: 'Jumlah Hari Harus Diisi !', icon: "warning"});
-                 return false;
-            } else if (sampai < dari) {
-                 Swal.fire({title: "Oops!", text: 'Periode Izin Tidak Valid !', icon: "warning"});
-                 return false;
-            } else if (hitungHari(dari, sampai) > jml_hari_izin_max && batasi_hari_izin == 1) {
-                 Swal.fire({title: "Oops!", text: 'Maksimal Izin ' + jml_hari_izin_max + ' Hari !', icon: "warning"});
-                 return false;
-            } else if (sid == "") {
-                 Swal.fire({title: "Oops!", text: 'Surat Dokter Harus Diupload !', icon: "warning"});
-                 return false;
-            } else if (keterangan == "") {
-                 Swal.fire({title: "Oops!", text: 'Keterangan Harus Diisi !', icon: "warning"});
-                 return false;
-            }
-            
-            buttonDisabled();
-        });
-
-        function buttonDisabled() {
-            $("#btnSimpan").prop('disabled', true);
-            $("#btnSimpan").html(`<div class="spinner-border spinner-border-sm text-white me-2" role="status"></div> Loading..`);
-        }
     </script>
 @endpush

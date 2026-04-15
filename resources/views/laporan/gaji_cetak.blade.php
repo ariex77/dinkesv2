@@ -52,13 +52,16 @@
                     <th rowspan="2">Dept</th>
                     <th rowspan="2">Cabang</th>
                     <th rowspan="2">Gaji Pokok</th>
-                    <th colspan="{{ count($jenis_tunjangan) }}">Tunjangan</th>
+                    @if(count($jenis_tunjangan) > 0)
+                        <th colspan="{{ count($jenis_tunjangan) }}">Tunjangan</th>
+                    @endif
                     <th rowspan="2" style="background: orange; color:white">&#x3A3; Bruto</th>
                     <th rowspan="2">&#x3A3; Jam Kerja</th>
                     <th rowspan="2">Upah/Jam</th>
                     <th rowspan="2" style="background:red; color:white">Denda</th>
                     <th colspan="2" style="background:red; color:white">Pot. Jam</th>
                     <th colspan="2" style="background:red; color:white">BPJS</th>
+                    <th rowspan="2" style="background:red; color:white">Pinjaman</th>
                     <th rowspan="2" style="background:red; color:white">Potongan</th>
                     <th colspan="2" style="background:rgb(0, 113, 72); color:white">Lembur</th>
                     <th colspan="2" style="background:rgb(1, 118, 197); color:white">Penyesuaian</th>
@@ -74,7 +77,7 @@
                     <th style="background:red; color:white">Kesehatan</th>
                     <th style="background:red; color:white">Tenaga Kerja</th>
 
-                    <th style="background:rgb(0, 113, 72); color:white">Jam</th>
+                    <th style="background:rgb(0, 113, 72); color:white">Jam (A|N)</th>
                     <th style="background:rgb(0, 113, 72); color:white">Jumlah</th>
 
                     <th style="background:rgb(1, 118, 197); color:white">Penambah</th>
@@ -140,7 +143,11 @@
                         @php
                             $total_denda = 0;
                             $total_potongan_jam = 0;
-                            $total_jam_lembur = 0;
+                            $total_jam_lembur_aktual = 0;
+                            $total_jam_netto_lembur = 0;
+                            $total_nominal_lembur_snapshot = 0;
+                            $has_lembur_snapshot = false;
+                            $lemburKhusus = getLemburKhusus($d['nik']);
                         @endphp
                         @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                             @php
@@ -151,13 +158,27 @@
                                     'tanggal' => $tanggal_presensi,
                                 ];
 
-                                $ceklibur = ceklibur($datalibur, $search);
-                                $ceklembur = ceklembur($datalembur, $search);
-                                $lembur = hitungLembur($ceklembur);
-                                if (!empty($ceklembur)) {
-                                    $jml_jam_lembur = $lembur;
+                                $is_libur = isLiburKaryawan($d['nik'], $tanggal_presensi);
+                                $tipe_hari = $is_libur ? 2 : 1; // 1: Kerja, 2: Libur/Off
+
+                                // Cek apakah data lembur sudah di-snapshot (dikunci)
+                                $snapshot_lembur = isset($d[$tanggal_presensi]) && $d[$tanggal_presensi]['jam_lembur_aktual'] !== null;
+
+                                if ($snapshot_lembur) {
+                                    $has_lembur_snapshot = true;
+                                    $jml_jam_lembur = $d[$tanggal_presensi]['jam_lembur_aktual'];
+                                    $jam_netto_harian = $d[$tanggal_presensi]['jam_lembur_netto'];
+                                    $total_nominal_lembur_snapshot += $d[$tanggal_presensi]['nominal_lembur'] ?? 0;
                                 } else {
-                                    $jml_jam_lembur = 0;
+                                    $ceklembur = ceklembur($datalembur, $search);
+                                    $lembur_aktual = hitungLembur($ceklembur);
+                                    if ($lembur_aktual > 0) {
+                                        $jml_jam_lembur = $lembur_aktual;
+                                        $jam_netto_harian = hitungJamNetto($lembur_aktual, $tipe_hari);
+                                    } else {
+                                        $jml_jam_lembur = 0;
+                                        $jam_netto_harian = 0;
+                                    }
                                 }
                             @endphp
                             @if (isset($d[$tanggal_presensi]))
@@ -239,9 +260,16 @@
                                             empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
                                                 ? $d[$tanggal_presensi]['total_jam']
                                                 : 0;
+                                        $potongan_istirahat = hitungPotonganIstirahat(
+                                            $d[$tanggal_presensi]['istirahat_in'],
+                                            $d[$tanggal_presensi]['istirahat_out'],
+                                            $d[$tanggal_presensi]['jam_awal_istirahat'],
+                                            $d[$tanggal_presensi]['jam_akhir_istirahat']
+                                        );
+                                        $status_potongan_istirahat = $d[$tanggal_presensi]['status_potongan_istirahat'] ?? $generalsetting->potongan_istirahat;
                                         $potongan_jam =
                                             $potongan_tidak_absen_masuk_atau_pulang == 0
-                                                ? $pulangcepat + $potongan_jam_terlambat
+                                                ? $pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)
                                                 : $potongan_tidak_absen_masuk_atau_pulang;
 
                                         // $ket =
@@ -343,8 +371,9 @@
                                         }
 
                                         // Jika ada jadwal tapi tidak ada presensi sama sekali → potongan jam = total_jam jadwal
-                                        if ($totalJamJadwal !== null) {
-                                            $potongan_jam = $totalJamJadwal;
+                                        $is_future = strtotime($tanggal_presensi) > strtotime(date('Y-m-d'));
+                                        if ($totalJamJadwal !== null && !$is_future) {
+                                            $potongan_jam = is_array($totalJamJadwal) ? $totalJamJadwal['total_jam'] : $totalJamJadwal;
                                         }
                                     }
 
@@ -357,7 +386,8 @@
                                 }
                                 $total_denda += $denda;
                                 $total_potongan_jam += $potongan_jam;
-                                $total_jam_lembur += $jml_jam_lembur;
+                                $total_jam_lembur_aktual += $jml_jam_lembur;
+                                $total_jam_netto_lembur += $jam_netto_harian;
                             @endphp
                             {{-- <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}">
                                 {!! $ket !!}
@@ -372,10 +402,25 @@
                                 $total_potongan_jam = $generalsetting->total_jam_bulan;
                             }
                             $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-                            $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
+                            $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'] + ($d['cicilan_pinjaman'] ?? 0);
 
                             $total_all_potongan += $total_potongan;
-                            $upah_lembur = ROUND($upah_perjam) * ROUND($total_jam_lembur, 2);
+                            
+                            // Hitung Upah Lembur
+                            if ($has_lembur_snapshot) {
+                                // Gunakan nominal yang sudah di-snapshot saat kunci laporan
+                                $upah_lembur = $total_nominal_lembur_snapshot;
+                            } else {
+                                // Hitung secara live (belum dikunci)
+                                $lemburKhusus = getLemburKhusus($d['nik']);
+                                if ($lemburKhusus) {
+                                    $upah_lembur = $lemburKhusus->upah_perjam * $total_jam_lembur_aktual;
+                                } else {
+                                    $upah_perjam_lembur = ($d['gaji_pokok'] + $total_tunjangan) / ($generalsetting->total_jam_bulan ?: 173);
+                                    $upah_lembur = ROUND($upah_perjam_lembur) * $total_jam_netto_lembur;
+                                }
+                            }
+
                             $total_upah_lembur += $upah_lembur;
                             $total_gaji_pokok += $d['gaji_pokok'];
                             $total_bpjs_kesehatan += $d['bpjs_kesehatan'];
@@ -395,8 +440,18 @@
                         </td>
                         <td style="text-align: right">{{ formatAngka($d['bpjs_kesehatan']) }}</td>
                         <td style="text-align: right">{{ formatAngka($d['bpjs_tenagakerja']) }}</td>
+                        <td style="text-align: right">{{ formatAngka($d['cicilan_pinjaman'] ?? 0) }}</td>
                         <td style="text-align: right">{{ formatAngka($total_potongan) }}</td>
-                        <td style="text-align: right">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
+                        <td style="text-align: center">
+                            <a href="{{ route('laporan.lemburdetail', [$d['nik'], $periode_dari, $periode_sampai]) }}" target="_blank"
+                                style="color: #024a75; text-decoration: underline;">
+                                @if ($lemburKhusus)
+                                    {{ formatAngkaDesimal($total_jam_lembur_aktual) }} <span style="font-size: 10px; color: #ea580c;">★</span>
+                                @else
+                                    {{ formatAngkaDesimal($total_jam_netto_lembur) }}
+                                @endif
+                            </a>
+                        </td>
                         <td style="text-align: right">{{ formatAngka($upah_lembur) }}</td>
                         <td style="text-align: right">{{ formatAngka($d['penambah']) }}</td>
                         <td style="text-align: right">{{ formatAngka($d['pengurang']) }}</td>
@@ -419,6 +474,7 @@
                     <th style="text-align: right">{{ formatAngka($total_jumlah_potongan_jam) }}</th>
                     <th style="text-align: right">{{ formatAngka($total_bpjs_kesehatan) }}</th>
                     <th style="text-align: right">{{ formatAngka($total_bpjs_tenagakerja) }}</th>
+                    <th style="text-align: right">{{ formatAngka($laporan_presensi->sum('cicilan_pinjaman')) }}</th>
                     <th style="text-align: right">{{ formatAngka($total_all_potongan) }}</th>
                     <th></th>
                     <th style="text-align: right">{{ formatAngka($total_upah_lembur) }}</th>

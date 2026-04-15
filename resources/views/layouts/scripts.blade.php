@@ -41,6 +41,7 @@
  <script src="{{ asset('assets/vendor/libs/select2/select2.js') }}"></script>
  <script src="{{ asset('assets/js/jquery.mask.min.js') }}"></script>
  <script src="{{ asset('assets/vendor/js/freeze-table.js') }}"></script>
+ <script src="{{ asset('assets/vendor/libs/datatables-bs5/datatables-bootstrap5.js') }}"></script>
  <script src="{{ asset('assets/js/ui-popover.js') }}"></script>
  <script>
      $(function() {
@@ -149,6 +150,15 @@
 
  <script>
      $(".money").maskMoney();
+ </script>
+
+ <script>
+     $(document).on('show.bs.modal', '.modal', function() {
+         const zIndex = 1090 + 10 * $('.modal:visible').length;
+         $(this).css('z-index', zIndex);
+         setTimeout(() => $('.modal-backdrop').not('.modal-stack').css('z-index', zIndex - 1)
+             .addClass('modal-stack'));
+     });
  </script>
 
  <script src="{{ asset('/assets/js/main.js') }}"></script>

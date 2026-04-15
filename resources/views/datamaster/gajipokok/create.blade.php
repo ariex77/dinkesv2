@@ -27,6 +27,15 @@
         </div>
     </div>
     <div class="form-group mb-3">
+        <label for="jenis_upah" class="form-label" style="font-weight: 600;">
+            Jenis Upah <span class="text-danger">*</span>
+        </label>
+        <select name="jenis_upah" id="jenis_upah" class="form-select" required>
+            <option value="Bulanan">Bulanan</option>
+            <option value="Harian">Harian</option>
+        </select>
+    </div>
+    <div class="form-group mb-3">
         <label for="tanggal_berlaku" class="form-label" style="font-weight: 600;">
             Tanggal Berlaku <span class="text-danger">*</span>
         </label>
@@ -69,6 +78,7 @@
             const form = $(this);
             const nik = form.find("select[name=nik]").val();
             const jumlah = form.find("input[name=jumlah]").val();
+            const jenis_upah = form.find("select[name=jenis_upah]").val();
             const tanggal_berlaku = form.find("input[name=tanggal_berlaku]").val();
             
             if (!nik || nik == "") {
@@ -101,6 +111,21 @@
                 return false;
             }
             
+            if (!jenis_upah || jenis_upah == "") {
+                e.preventDefault();
+                Swal.fire({
+                    icon: "warning",
+                    title: "Peringatan!",
+                    text: 'Jenis Upah wajib dipilih',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#3085d6',
+                    didClose: () => {
+                        $("#jenis_upah").focus();
+                    }
+                });
+                return false;
+            }
+
             if (!tanggal_berlaku || tanggal_berlaku == "") {
                 e.preventDefault();
                 Swal.fire({

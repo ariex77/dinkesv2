@@ -18,6 +18,7 @@ class Laporanpermissionseeder extends Seeder
         $permissiongroup = Permission_group::firstOrCreate(['name' => 'Laporan']);
 
         Permission::firstOrCreate(['name' => 'laporan.presensi'], ['id_permission_group' => $permissiongroup->id]);
+        Permission::firstOrCreate(['name' => 'laporan.gaji'], ['id_permission_group' => $permissiongroup->id]);
 
         $permissions = Permission::where('id_permission_group', $permissiongroup->id)->get();
         $roleID = 1;

@@ -16,7 +16,7 @@ class KunjunganDummySeeder extends Seeder
     {
         // 1. Ambil data karyawan yang dibuat dari AdditionalDummyDataSeeder
         // Kita asumsikan karyawan dummy memiliki NIK yg diawali 2501
-        $karyawans = Karyawan::where('nik', 'like', '2501%')->get();
+        $karyawans = Karyawan::where('nik', 'like', '2603%')->get();
 
         if ($karyawans->isEmpty()) {
             $this->command->warn('Tidak ada data karyawan dummy (NIK 2501...). Jalankan AdditionalDummyDataSeeder terlebih dahulu.');
@@ -24,7 +24,7 @@ class KunjunganDummySeeder extends Seeder
         }
 
         $faker = \Faker\Factory::create('id_ID');
-        
+
         // Koordinat Tasikmalaya
         // Lat: -7.3274, Long: 108.2207
         $baseLat = -7.3274;
@@ -42,9 +42,9 @@ class KunjunganDummySeeder extends Seeder
 
                 $lat = $baseLat + $latOffset;
                 $lng = $baseLng + $lngOffset;
-                
+
                 $tanggal = $faker->dateTimeBetween('-2 months', 'now');
-                
+
                 Kunjungan::create([
                     'nik' => $karyawan->nik,
                     // Note: Check if destination/tujuan field exists. Migration had 'tujuan_kunjungan'.

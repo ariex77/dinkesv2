@@ -214,6 +214,9 @@
                         @if (!empty($request_params['nik']))
                             <input type="hidden" name="nik" value="{{ $request_params['nik'] }}">
                         @endif
+                        @if (!empty($request_params['jenis_upah']))
+                            <input type="hidden" name="jenis_upah" value="{{ $request_params['jenis_upah'] }}">
+                        @endif
                         <button type="submit" class="btn btn-warning" id="btnKunciLaporan" style="padding: 8px 16px; font-size: 14px;">
                             <i class="ti ti-lock"></i> Kunci Laporan
                         </button>
@@ -232,6 +235,9 @@
                         @endif
                         @if (!empty($request_params['nik']))
                             <input type="hidden" name="nik" value="{{ $request_params['nik'] }}">
+                        @endif
+                        @if (!empty($request_params['jenis_upah']))
+                            <input type="hidden" name="jenis_upah" value="{{ $request_params['jenis_upah'] }}">
                         @endif
                         <button type="submit" class="btn btn-secondary" id="btnBatalkanKunciLaporan"
                             style="padding: 8px 16px; font-size: 14px; background-color: #6c757d; border-color: #6c757d; color: #fff;">
@@ -320,6 +326,8 @@
                             $jml_pulangcepat = 0;
                             $jml_tidakscanmasuk = 0;
                             $jml_tidakscanpulang = 0;
+
+                            $lemburKhusus = getLemburKhusus($d['nik']);
                         @endphp
                         @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                             @php
@@ -330,14 +338,32 @@
                                     'tanggal' => $tanggal_presensi,
                                 ];
 
-                                $ceklibur = ceklibur($datalibur, $search);
-                                $ceklembur = ceklembur($datalembur, $search);
-                                $lembur = hitungLembur($ceklembur);
-                                if (!empty($ceklembur)) {
-                                    $jml_jam_lembur = $lembur;
+                                $is_libur = isLiburKaryawan($d['nik'], $tanggal_presensi);
+                                $tipe_hari = $is_libur ? 2 : 1;
+
+                                // Cek apakah data lembur sudah di-snapshot (dikunci)
+                                $snapshot_lembur = isset($d[$tanggal_presensi]) && $d[$tanggal_presensi]['jam_lembur_aktual'] !== null;
+
+                                if ($snapshot_lembur) {
+                                    // Gunakan data snapshot dari tabel presensi
+                                    $jml_jam_lembur = $d[$tanggal_presensi]['is_lembur_khusus']
+                                        ? $d[$tanggal_presensi]['jam_lembur_aktual']
+                                        : $d[$tanggal_presensi]['jam_lembur_netto'];
                                 } else {
-                                    $jml_jam_lembur = 0;
+                                    // Hitung secara live (belum dikunci)
+                                    $ceklembur = ceklibur($datalembur, $search);
+                                    $lembur_aktual = hitungLembur($ceklembur);
+                                    $tipe_hari = $is_libur ? 2 : 1;
+                                    $jam_netto_harian = $lembur_aktual > 0 ? hitungJamNetto($lembur_aktual, $tipe_hari) : 0;
+                                    
+                                    // Jika ada lembur khusus, gunakan JAM AKTUAL (Gross)
+                                    if ($lemburKhusus) {
+                                        $jml_jam_lembur = $lembur_aktual;
+                                    } else {
+                                        $jml_jam_lembur = $jam_netto_harian;
+                                    }
                                 }
+
                                 $nama_hari = getHari($tanggal_presensi);
                             @endphp
                             @if (isset($d[$tanggal_presensi]))
@@ -379,6 +405,34 @@
                                             '">' .
                                             $jam_out .
                                             '</span></p>';
+
+                                        $istirahat_in = !empty($d[$tanggal_presensi]['istirahat_in'])
+                                            ? date('H:i', strtotime($d[$tanggal_presensi]['istirahat_in']))
+                                            : '&#10008;';
+                                        $istirahat_out = !empty($d[$tanggal_presensi]['istirahat_out'])
+                                            ? date('H:i', strtotime($d[$tanggal_presensi]['istirahat_out']))
+                                            : '&#10008;';
+
+                                        $color_istirahat_in = !empty($d[$tanggal_presensi]['istirahat_in']) ? '#3498db' : 'red';
+                                        $color_istirahat_out = !empty($d[$tanggal_presensi]['istirahat_out']) ? '#3498db' : 'red';
+
+                                        $ket_istirahat = "";
+                                        if ($generalsetting->absen_istirahat == 1) {
+                                            $ket_istirahat =
+                                                '<p> <span
+                                                style="color:' .
+                                                $color_istirahat_in .
+                                                '">' .
+                                                $istirahat_in .
+                                                '</span> -
+                                            <span
+                                                style="color:' .
+                                                $color_istirahat_out .
+                                                '">' .
+                                                $istirahat_out .
+                                                '</span></p>';
+                                        }
+
 
                                         $terlambat = hitungjamterlambat($d[$tanggal_presensi]['jam_in'], $jam_masuk);
 
@@ -465,9 +519,17 @@
                                             empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
                                                 ? $d[$tanggal_presensi]['total_jam']
                                                 : 0;
+                                        $potongan_istirahat = hitungPotonganIstirahat(
+                                            $d[$tanggal_presensi]['istirahat_in'],
+                                            $d[$tanggal_presensi]['istirahat_out'],
+                                            $d[$tanggal_presensi]['jam_awal_istirahat'],
+                                            $d[$tanggal_presensi]['jam_akhir_istirahat']
+                                        );
+
+                                        $status_potongan_istirahat = $d[$tanggal_presensi]['status_potongan_istirahat'] ?? $generalsetting->potongan_istirahat;
                                         $potongan_jam =
                                             $potongan_tidak_absen_masuk_atau_pulang == 0
-                                                ? $pulangcepat + $potongan_jam_terlambat
+                                                ? $pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)
                                                 : $potongan_tidak_absen_masuk_atau_pulang;
                                         
                                         $status_potongan_harian = isset($d[$tanggal_presensi]['status_potongan']) ? $d[$tanggal_presensi]['status_potongan'] : $generalsetting->status_potongan_jam;
@@ -480,12 +542,13 @@
 
                                         $ket_jam_lembur =
                                             $jml_jam_lembur > 0
-                                                ? '<p><span style="color:rgb(11, 153, 179)"> Lembur :' . $jml_jam_lembur . ' Jam</span></p>'
+                                                ? '<p><a href="' . route('laporan.lemburdetail', [$d['nik'], $periode_dari, $periode_sampai]) . '" target="_blank" style="color:rgb(11, 153, 179); text-decoration: underline;"> Lembur :' . $jml_jam_lembur . ' Jam</a></p>'
                                                 : '';
                                         $ket =
                                             $ket_nama_jam_kerja .
                                             $ket_jadwal_kerja .
                                             $ket_presensi .
+                                            $ket_istirahat .
                                             $ket_terlambat .
                                             $ket_denda .
                                             $ket_pulang_cepat .
@@ -609,8 +672,9 @@
                                 @endif
                             @else
                                 @php
-                                    $bgcolor = 'red';
-                                    $textcolor = 'white';
+                                    $is_future = strtotime($tanggal_presensi) > strtotime(date('Y-m-d'));
+                                    $bgcolor = $is_future ? '' : 'red';
+                                    $textcolor = $is_future ? '' : 'white';
                                     $ket = '';
                                     $potongan_jam = 0;
 
@@ -643,20 +707,25 @@
                                         }
 
                                         if ($totalJamJadwal !== null) {
-                                            // Ada jadwal tapi tidak ada presensi sama sekali → Alpa & potong full jam kerja
-                                            $jml_alfa++;
-                                            $potongan_jam = $totalJamJadwal;
-
-                                            // Untuk alpa yang belum ada di database, denda = 0
-                                            $denda = 0;
-
-                                            $pjl_alpa_else = $generalsetting->status_potongan_jam == 1 ? '<span>PJ : ' . formatAngkaDesimal($potongan_jam) . ' Jam</span>' : '';
-                                            $ket =
-                                                '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>' .
-                                                $pjl_alpa_else;
+                                            // Handle if totalJamJadwal is an array (new format)
+                                            $tJam = is_array($totalJamJadwal) ? $totalJamJadwal['total_jam'] : $totalJamJadwal;
                                             
-                                            if ($generalsetting->status_potongan_jam == 0) {
-                                                $potongan_jam = 0;
+                                            // Ada jadwal tapi tidak ada presensi sama sekali → Alpa & potong full jam kerja
+                                            if (!$is_future) {
+                                                $jml_alfa++;
+                                                $potongan_jam = $tJam;
+    
+                                                // Untuk alpa yang belum ada di database, denda = 0
+                                                $denda = 0;
+    
+                                                $pjl_alpa_else = $generalsetting->status_potongan_jam == 1 ? '<span>PJ : ' . formatAngkaDesimal($potongan_jam) . ' Jam</span>' : '';
+                                                $ket =
+                                                    '<h4 style="font-weight: bold; margin-bottom:10px">Alpa</h4>' .
+                                                    $pjl_alpa_else;
+                                                
+                                                if ($generalsetting->status_potongan_jam == 0) {
+                                                    $potongan_jam = 0;
+                                                }
                                             }
                                         }
                                     }
@@ -675,7 +744,7 @@
                                 $total_potongan_jam += $potongan_jam;
                                 $total_jam_lembur += $jml_jam_lembur;
 
-                                $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
+                                $bgcolor = $is_libur ? 'orange' : $bgcolor;
                             @endphp
                             <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}; position: relative;">
                                 @if(isset($d[$tanggal_presensi]['status_potongan']))
@@ -711,7 +780,15 @@
                         @endphp
                         <td style="text-align: right">{{ formatAngka($total_denda) }}</td>
                         <td style="text-align: center">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
-                        <td style="text-align:center">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
+                        <td style="text-align:center">
+                            <a href="{{ route('laporan.lemburdetail', [$d['nik'], $periode_dari, $periode_sampai]) }}" target="_blank"
+                                style="color: #024a75; text-decoration: underline; font-weight: bold;">
+                                {{ formatAngkaDesimal($total_jam_lembur) }}
+                                @if ($lemburKhusus)
+                                    <span style="font-size: 10px; color: #ea580c;">★</span>
+                                @endif
+                            </a>
+                        </td>
                         <td style="text-align:center">{{ $jml_hadir }}</td>
                         <td style="text-align:center">{{ $jml_izin }}</td>
                         <td style="text-align:center">{{ $jml_sakit }}</td>

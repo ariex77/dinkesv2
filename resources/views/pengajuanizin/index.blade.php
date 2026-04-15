@@ -20,6 +20,7 @@
         #content-section {
             margin-top: 70px;
             padding-top: 5px;
+            padding-bottom: 80px;
             position: relative;
             z-index: 1;
         }

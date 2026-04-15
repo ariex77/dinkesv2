@@ -11,10 +11,20 @@
             @include('layouts.navigation.nav_pengajuan_absen')
             <div class="tab-content">
                 <div class="tab-pane fade active show" id="navs-justified-home" role="tabpanel">
-                    @can('izincuti.create')
-                        <a href="#" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i>
-                            Tambah Data</a>
-                    @endcan
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            @can('izincuti.create')
+                                <a href="#" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i>
+                                    Tambah Data</a>
+                            @endcan
+                        </div>
+                        <div>
+                            @can('approvallayer.index')
+                                <a href="{{ route('approvallayer.index') }}" class="btn btn-info"><i class="fa fa-cog me-2"></i>
+                                    Konfigurasi Approval</a>
+                            @endcan
+                        </div>
+                    </div>
                     <div class="row mt-2">
                         <div class="col-12">
                             <form action="{{ route('izincuti.index') }}">

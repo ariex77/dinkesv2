@@ -32,6 +32,27 @@ class IconGeneratorController extends Controller
 
     public function generate(Request $request)
     {
+        // 1. Cek Ekstensi GD
+        if (!extension_loaded('gd')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ekstensi PHP GD tidak ditemukan di server/VPS Anda. Silakan install dengan perintah: sudo apt install php-gd (untuk Ubuntu/Debian)'
+            ], 400);
+        }
+
+        // 2. Cek Izin Folder
+        $iconDir = public_path('assets/img/icons/pwa');
+        if (!file_exists($iconDir)) {
+            mkdir($iconDir, 0755, true);
+        }
+
+        if (!is_writable($iconDir)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Folder icons tidak bisa ditulisi. Silakan jalankan: chmod -R 775 public/assets di VPS Anda.'
+            ], 400);
+        }
+
         $request->validate([
             'icon' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240', // Max 10MB, exclude SVG for now
         ]);

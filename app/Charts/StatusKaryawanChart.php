@@ -17,56 +17,45 @@ class StatusKaryawanChart
 
     public function build($request = null): \ArielMejiaDev\LarapexCharts\PieChart
     {
-        // Ambil jumlah karyawan berdasarkan status (T, K, O)
+        // Get all statuses from the new table
+        $statuses = DB::table('status_karyawan')->get();
 
-        $query = Karyawan::query();
-        $query->select('status_karyawan', DB::raw('count(*) as total'));
-        $query->groupBy('status_karyawan');
-        
-        // Filter berdasarkan akses user jika ada di request
-        if (!empty($request->user_cabangs) && is_array($request->user_cabangs)) {
-            $query->whereIn('karyawan.kode_cabang', $request->user_cabangs);
-        } elseif (!empty($request->kode_cabang)) {
-            $query->where('karyawan.kode_cabang', $request->kode_cabang);
-        }
-
-        if (!empty($request->user_departemens) && is_array($request->user_departemens)) {
-            $query->whereIn('karyawan.kode_dept', $request->user_departemens);
-        } elseif (!empty($request->kode_dept)) {
-            $query->where('karyawan.kode_dept', $request->kode_dept);
-        }
-
-        $rawData = $query->pluck('total', 'status_karyawan')->toArray();
-
-
-
-        // Mapping status singkatan ke nama lengkap
-        $statusLabels = [
-            'T' => 'PNS',
-            'K' => 'PPPK',
-            'O' => 'Non ASN'
-        ];
-
-        // Konversi kode status ke label lengkap
         $labels = [];
         $data = [];
 
-        foreach ($statusLabels as $key => $label) {
-            $labels[] = $label;
-            $data[] = (int) ($rawData[$key] ?? 0); // Jika tidak ada data, set 0
+        foreach ($statuses as $status) {
+            $query = Karyawan::query();
+            $query->where('status_karyawan', $status->kode_status_karyawan);
+
+            // Filter by user access/request
+            if (!empty($request->user_cabangs) && is_array($request->user_cabangs)) {
+                $query->whereIn('karyawan.kode_cabang', $request->user_cabangs);
+            } elseif (!empty($request->kode_cabang)) {
+                $query->where('karyawan.kode_cabang', $request->kode_cabang);
+            }
+
+            if (!empty($request->user_departemens) && is_array($request->user_departemens)) {
+                $query->whereIn('karyawan.kode_dept', $request->user_departemens);
+            } elseif (!empty($request->kode_dept)) {
+                $query->where('karyawan.kode_dept', $request->kode_dept);
+            }
+
+            $count = $query->count();
+            
+            $labels[] = $status->nama_status_karyawan;
+            $data[] = $count;
         }
+
         return $this->chart->pieChart()
-            // ->setTitle('Data Karyawan.')
-            // ->setSubtitle('Berdasarkan Status Karyawan')
             ->addData($data)
             ->setLabels($labels)
-            ->setColors(['#FF6384', '#36A2EB', '#FFCE56'])
+            ->setColors(['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'])
             ->setDataLabels(true)
             ->setOptions([
                 'dataLabels' => [
                     'enabled' => true,
                     'formatter' => function ($val, $opts) {
-                        return round($val, 1) . '%'; // Menampilkan dalam persen
+                        return round($val, 1) . '%';
                     },
                     'dropShadow' => [
                         'enabled' => true

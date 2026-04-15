@@ -2,8 +2,10 @@
 
 use App\Models\Detailharilibur;
 use App\Models\Lembur;
+use App\Models\LemburAturan;
 use App\Models\Pengaturanumum;
 use App\Models\Tutuplaporan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redirect;
 
@@ -71,7 +73,10 @@ function getfotoKaryawan($file)
 function toNumber($value)
 {
     if (!empty($value)) {
-        return str_replace([".", ","], ["", "."], $value);
+        // Hapus semua karakter kecuali angka, koma, dan titik (untuk menangani prefix Rp dll)
+        $clean = preg_replace('/[^0-9,.]/', '', $value);
+        // Jika format Indonesia: titik adalah ribuan (dihapus), koma adalah desimal (ganti ke titik)
+        return str_replace([".", ","], ["", "."], $clean);
     } else {
         return 0;
     }
@@ -85,17 +90,19 @@ function formatRupiah($nilai)
 
 function formatAngka($nilai)
 {
-    if (!empty($nilai)) {
+    if (isset($nilai) && is_numeric($nilai)) {
         return number_format($nilai, '0', ',', '.');
     }
+    return $nilai;
 }
 
 
 function formatAngkaDesimal($nilai)
 {
-    if (!empty($nilai)) {
+    if (isset($nilai) && is_numeric($nilai)) {
         return number_format($nilai, '2', ',', '.');
     }
+    return $nilai;
 }
 
 
@@ -719,4 +726,127 @@ function singkatString($string)
 
     // Jika tidak, buat camelCase
     return ucwords(strtolower($string));
+}
+
+/**
+ * Check if a date is a holiday or off-day for a specific employee.
+ * Logic uses 4-level schedule priority.
+ */
+function isLiburKaryawan($nik, $tanggal)
+{
+    // 1. Cek Libur Nasional (Hari Libur Umum)
+    $ceklibur_nasional = DB::table('hari_libur_detail')
+        ->join('hari_libur', 'hari_libur_detail.kode_libur', '=', 'hari_libur.kode_libur')
+        ->where('tanggal', $tanggal)
+        ->first();
+
+    if ($ceklibur_nasional) {
+        return true;
+    }
+
+    // 2. Cek Jadwal Karyawan (Prioritas 4 Level)
+    $hari_en = date('D', strtotime($tanggal)); // Day name in English (3 letters)
+    $hari = getnamaHari($hari_en); // Day name in Indonesian (e.g., Jumat)
+
+    // Level 1: presensi_jamkerja_bydate
+    $jk_bydate = DB::table('presensi_jamkerja_bydate')->where('nik', $nik)->where('tanggal', $tanggal)->first();
+    if ($jk_bydate) return false;
+
+    // Level 2: grup_jamkerja_bydate
+    $jk_grup = DB::table('grup_detail')
+        ->join('grup_jamkerja_bydate', 'grup_detail.kode_grup', '=', 'grup_jamkerja_bydate.kode_grup')
+        ->where('grup_detail.nik', $nik)
+        ->where('grup_jamkerja_bydate.tanggal', $tanggal)
+        ->first();
+    if ($jk_grup) return false;
+
+    // Level 3: presensi_jamkerja_byday
+    $jk_byday = DB::table('presensi_jamkerja_byday')->where('nik', $nik)->where('hari', $hari)->first();
+    if ($jk_byday) return false;
+
+    // Level 4: presensi_jamkerja_bydept_detail (Requires dept & cabang)
+    $karyawan = DB::table('karyawan')->where('nik', $nik)->select('kode_dept', 'kode_cabang')->first();
+    if ($karyawan) {
+        $jk_bydept = DB::table('presensi_jamkerja_bydept')
+            ->join('presensi_jamkerja_bydept_detail', 'presensi_jamkerja_bydept.kode_jk_dept', '=', 'presensi_jamkerja_bydept_detail.kode_jk_dept')
+            ->where('kode_dept', $karyawan->kode_dept)
+            ->where('kode_cabang', $karyawan->kode_cabang)
+            ->where('hari', $hari)
+            ->first();
+        if ($jk_bydept) return false;
+    }
+
+    // Jika tidak ada jadwal sama sekali, maka itu hari LIBUR (Off day)
+    return true;
+}
+
+/**
+ * Calculate "Jam Netto" based on tiered multipliers from lembur_aturan.
+ */
+function hitungJamNetto($jam_aktual, $tipe_hari)
+{
+    // Fetch rules for the given day type (1: Workday, 2: Holiday) ordered by start hour
+    $rules = LemburAturan::where('tipe_hari', $tipe_hari)
+        ->orderBy('jam_dari', 'asc')
+        ->get();
+
+    $jam_netto = 0;
+    $sisa_jam = $jam_aktual;
+
+    foreach ($rules as $rule) {
+        $start = $rule->jam_dari; // Direct use of 0-based start from DB
+        $end = $rule->jam_sampai ?: 999;
+        
+        // Calculate the portion of overtime that falls within this absolute tier [start, end]
+        $jam_di_tier_ini = max(0, min($jam_aktual, $end) - $start);
+        
+        if ($jam_di_tier_ini > 0) {
+            $jam_netto += ($jam_di_tier_ini * $rule->faktor);
+        }
+    }
+
+    return round($jam_netto, 2);
+}
+
+/**
+ * Calculate excess break time deduction.
+ * Comparison between actual break duration and scheduled duration.
+ */
+function hitungPotonganIstirahat($istirahat_in, $istirahat_out, $jam_awal_istirahat, $jam_akhir_istirahat)
+{
+    if (!empty($istirahat_in) && !empty($istirahat_out)) {
+        $awal = strtotime($istirahat_in);
+        $akhir = strtotime($istirahat_out);
+        $durasi_riil = $akhir - $awal;
+
+        // Use the date from istirahat_in to build the scheduled timestamps
+        $tgl = date('Y-m-d', $awal);
+        $awal_skd = strtotime($tgl . ' ' . $jam_awal_istirahat);
+        $akhir_skd = strtotime($tgl . ' ' . $jam_akhir_istirahat);
+        
+        // Handle if scheduled break ends on next day (rare but possible)
+        if ($akhir_skd < $awal_skd) {
+             $akhir_skd = strtotime($tgl . ' ' . $jam_akhir_istirahat . ' +1 day');
+        }
+
+        $durasi_skd = $akhir_skd - $awal_skd;
+
+        if ($durasi_riil > $durasi_skd) {
+            $selisih = $durasi_riil - $durasi_skd;
+            $jam = floor($selisih / 3600);
+            $menit = floor(($selisih % 3600) / 60);
+            $desimal = $jam + round($menit / 60, 2);
+            return $desimal;
+        }
+    }
+    return 0;
+}
+
+
+/**
+ * Get active special overtime rate for an employee.
+ */
+function getLemburKhusus($nik)
+{
+    return \App\Models\LemburKaryawanKhusus::where('nik', $nik)->where('status', 1)->first();
 }

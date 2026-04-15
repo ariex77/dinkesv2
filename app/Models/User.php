@@ -138,4 +138,26 @@ class User extends Authenticatable
 
         return $this->departemens->pluck('kode_dept')->toArray();
     }
+
+    /**
+     * Relasi ke Userkaryawan (jika user ini adalah karyawan)
+     */
+    public function userkaryawan()
+    {
+        return $this->hasOne(Userkaryawan::class, 'id_user');
+    }
+
+    /**
+     * Get linked approval admin user (jika user ini karyawan dan punya approval admin)
+     *
+     * @return User|null
+     */
+    public function getApprovalAdmin()
+    {
+        $uk = $this->userkaryawan;
+        if ($uk && $uk->approval_admin_id) {
+            return User::find($uk->approval_admin_id);
+        }
+        return null;
+    }
 }

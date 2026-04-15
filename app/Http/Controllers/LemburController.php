@@ -503,8 +503,8 @@ class LemburController extends Controller
                     return response()->json(['status' => false, 'message' => 'Anda Sudah Memulai Absen Lembur', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
                 } else if ($jam_presensi < $jam_mulai_masuk) {
                     return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Masuk, Waktu Absen Dimulai Pukul ' . formatIndo3($jam_mulai_masuk), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
-                } else if ($jam_presensi > $jam_mulai_pulang) {
-                    return response()->json(['status' => false, 'message' => 'Maaf Waktu Absen Masuk Sudah Habis ', 'notifikasi' => 'notifikasi_akhirabsen'], 400);
+                } else if ($jam_presensi > $jam_pulang) {
+                    return response()->json(['status' => false, 'message' => 'Maaf Waktu Lembur Sudah Berakhir, Tidak Bisa Absen Masuk lagi ', 'notifikasi' => 'notifikasi_akhirabsen'], 400);
                 } else {
                     try {
                         Lembur::where('id', $id_lembur)->update([
@@ -522,9 +522,7 @@ class LemburController extends Controller
                 if ($lembur->lembur_out != null) {
                     return response()->json(['status' => false, 'message' => 'Anda Sudah Absen Pulang', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
                 } else if ($jam_presensi < $jam_mulai_pulang) {
-                    return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Pulang, Waktu Absen Dimulai Pukul ' . formatIndo3($jam_mulai_pulang), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
-                } else if ($jam_presensi > $jam_pulang) {
-                    return response()->json(['status' => false, 'message' => 'Maaf Waktu Absen Masuk Sudah Habis ', 'notifikasi' => 'notifikasi_akhirabsen'], 400);
+                    return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Absen Pulang, Minimal 30 Menit Setelah Jam Mulai Lembur ', 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
                 } else {
                     try {
                         Lembur::where('id', $id_lembur)->update([

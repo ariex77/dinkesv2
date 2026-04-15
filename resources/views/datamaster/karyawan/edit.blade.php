@@ -58,15 +58,8 @@
         textShow="nama_jabatan" upperCase="true" />
     <x-input-with-icon-label icon="ti ti-calendar" datepicker="flatpickr-date" label="Tanggal Masuk" name="tanggal_masuk"
         value="{{ $karyawan->tanggal_masuk }}" />
-    <div class="form-group mb-3">
-        <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Status Karyawan</label>
-        <select name="status_karyawan" id="status_karyawan" class="form-select">
-            <option value="">Status Karyawan</option>
-            <option value="K" {{ $karyawan->status_karyawan == 'K' ? 'selected' : '' }}>PPPK</option>
-            <option value="T" {{ $karyawan->status_karyawan == 'T' ? 'selected' : '' }}>PNS</option>
-            <option value="O" {{ $karyawan->status_karyawan == 'O' ? 'selected' : '' }}>Non ASN</option>
-        </select>
-    </div>
+    <x-select-label label="Status Karyawan" name="status_karyawan" :data="$status_karyawan" key="kode_status_karyawan" textShow="nama_status_karyawan"
+        selected="{{ $karyawan->status_karyawan }}" />
 
     <div class="form-group mb-3">
         <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Status Aktif Karyawan</label>
@@ -78,6 +71,7 @@
     </div>
     <x-input-file name="foto" label="Foto" />
 
+    <x-input-with-icon-label icon="ti ti-id" label="RFID UID" name="rfid_uid" value="{{ $karyawan->rfid_uid }}" />
     <x-input-with-icon icon="ti ti-fingerprint" label="PIN Finger Print" name="pin" value="{{ $karyawan->pin }}" />
     <div class="form-group">
         <button class="btn btn-primary w-100" type="submit">
@@ -94,6 +88,6 @@
     $(function() {
 
         $(".flatpickr-date").flatpickr();
-        $('#nik').mask('00000000000000000000');
+        // $('#nik_show').mask('00.00.000');
     });
 </script>

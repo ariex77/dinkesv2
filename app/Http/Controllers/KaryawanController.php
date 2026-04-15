@@ -8,10 +8,12 @@ use App\Models\Facerecognition;
 use App\Models\Jabatan;
 use App\Models\Jamkerja;
 use App\Models\Karyawan;
+use App\Models\MutasiKaryawan;
 use App\Models\Pengaturanumum;
 use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
 use App\Models\Statuskawin;
+use App\Models\Statuskaryawan;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Models\Userkaryawan;
@@ -34,11 +36,22 @@ class KaryawanController extends Controller
         $user = auth()->user();
 
         $query = Karyawan::query();
-        $query->select('karyawan.*', 'departemen.nama_dept', 'jabatan.nama_jabatan', 'cabang.nama_cabang', 'id_user');
+        $latest_gaji = DB::table('karyawan_gaji_pokok')
+            ->select('nik', 'jenis_upah')
+            ->whereIn('kode_gaji', function ($query) {
+                $query->select(DB::raw('MAX(kode_gaji)'))
+                    ->from('karyawan_gaji_pokok')
+                    ->groupBy('nik');
+            });
+
+        $query->select('karyawan.*', 'departemen.nama_dept', 'jabatan.nama_jabatan', 'cabang.nama_cabang', 'id_user', 'gaji.jenis_upah');
         $query->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
         $query->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
         $query->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
         $query->leftJoin('users_karyawan', 'karyawan.nik', '=', 'users_karyawan.nik');
+        $query->leftJoinSub($latest_gaji, 'gaji', function ($join) {
+            $join->on('karyawan.nik', '=', 'gaji.nik');
+        });
 
         // Filter berdasarkan akses cabang dan departemen jika bukan super admin
         if (!$user->isSuperAdmin()) {
@@ -98,6 +111,7 @@ class KaryawanController extends Controller
         $data['cabang'] = $user->getCabang();
         $data['departemen'] = $user->getDepartemen();
         $data['jabatan'] = Jabatan::orderBy('kode_jabatan')->get();
+        $data['status_karyawan'] = Statuskaryawan::orderBy('kode_status_karyawan')->get();
         return view('datamaster.karyawan.create', $data);
     }
 
@@ -184,6 +198,7 @@ class KaryawanController extends Controller
                 'status_karyawan' => $request->status_karyawan,
                 'lock_location' => 1,
                 'status_aktif_karyawan' => 1,
+                'rfid_uid' => $request->rfid_uid,
                 'password' => Hash::make('12345')
             ];
             $data = array_merge($data_karyawan, $data_foto);
@@ -217,6 +232,7 @@ class KaryawanController extends Controller
         $data['cabang'] = $user->getCabang();
         $data['departemen'] = $user->getDepartemen();
         $data['jabatan'] = Jabatan::orderBy('kode_jabatan')->get();
+        $data['status_karyawan'] = Statuskaryawan::orderBy('kode_status_karyawan')->get();
         return view('datamaster.karyawan.edit', $data);
     }
 
@@ -290,6 +306,7 @@ class KaryawanController extends Controller
                 'tanggal_masuk' => $request->tanggal_masuk,
                 'status_karyawan' => $request->status_karyawan,
                 'status_aktif_karyawan' => $request->status_aktif_karyawan,
+                'rfid_uid' => $request->rfid_uid,
                 'pin' => $request->pin
             ];
 
@@ -374,9 +391,15 @@ class KaryawanController extends Controller
         $user_karyawan = Userkaryawan::where('nik', $nik)->first();
         $user = $user_karyawan ? User::where('id', $user_karyawan->id_user)->first() : null;
         $karyawan_wajah = Facerecognition::where('nik', $nik)->get();
+        $mutasi = MutasiKaryawan::with(['cabangLama', 'cabangBaru', 'deptLama', 'deptBaru', 'jabatanLama', 'jabatanBaru'])
+            ->where('nik', $nik)
+            ->orderBy('tanggal_mutasi', 'desc')
+            ->get();
+            
         $data['karyawan'] = $karyawan;
         $data['user'] = $user;
         $data['karyawan_wajah'] = $karyawan_wajah;
+        $data['mutasi'] = $mutasi;
         return view('datamaster.karyawan.show', $data);
     }
 
@@ -496,11 +519,17 @@ class KaryawanController extends Controller
         // Convert tanggal to proper format (YYYY-MM-DD) to avoid timezone issues
         $tanggal = Carbon::parse($request->tanggal)->format('Y-m-d');
 
-        $cek = Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $tanggal)->first();
-        if (!empty($cek)) {
-            return response()->json(['success' => false, 'message' => 'Karyawan Sudah Memiliki Jadwal pada Tanggal Ini']);
-        }
         try {
+            $cek = Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $tanggal)->first();
+            if (!empty($cek)) {
+                // Update jika sudah ada
+                Setjamkerjabydate::where('nik', $request->nik)->where('tanggal', $tanggal)->update([
+                    'kode_jam_kerja' => $request->kode_jam_kerja
+                ]);
+                return response()->json(['success' => true, 'message' => 'Data Berhasil Diupdate']);
+            }
+
+            // Simpan baru
             Setjamkerjabydate::create([
                 'nik' => $request->nik,
                 'tanggal' => $tanggal,
@@ -619,6 +648,26 @@ class KaryawanController extends Controller
         }
     }
 
+    public function deleteAllUser()
+    {
+        DB::beginTransaction();
+        try {
+            $users = User::role('karyawan')->get();
+            $count = $users->count();
+
+            foreach ($users as $user) {
+                Userkaryawan::where('id_user', $user->id)->delete();
+                $user->delete();
+            }
+
+            DB::commit();
+            return Redirect::back()->with(messageSuccess($count . ' User Berhasil Dihapus'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return Redirect::back()->with(messageError($e->getMessage()));
+        }
+    }
+
     public function deleteuser($nik)
     {
         $nik = Crypt::decrypt($nik);
@@ -634,7 +683,8 @@ class KaryawanController extends Controller
 
     public function import()
     {
-        return view('datamaster.karyawan.import_modal');
+        $status_kawin = Statuskawin::orderBy('kode_status_kawin')->get();
+        return view('datamaster.karyawan.import_modal', compact('status_kawin'));
     }
 
     public function download_template()
@@ -672,7 +722,45 @@ class KaryawanController extends Controller
     public function getkaryawan(Request $request)
     {
         $kode_cabang = $request->kode_cabang;
-        $karyawan = Karyawan::where('kode_cabang', $kode_cabang)->get();
+        $kode_dept = $request->kode_dept;
+        $jenis_upah = $request->jenis_upah;
+        $tanggal = $request->tanggal;
+        $q = $request->q;
+
+        $query = Karyawan::query();
+
+        if (!empty($kode_cabang)) {
+            $query->where('karyawan.kode_cabang', $kode_cabang);
+        }
+
+        if (!empty($kode_dept)) {
+            $query->where('karyawan.kode_dept', $kode_dept);
+        }
+
+        if (!empty($jenis_upah)) {
+            $tanggal_filter = $tanggal ?? date('Y-m-d');
+            $latest_gaji = DB::table('karyawan_gaji_pokok as gp1')
+                ->select('nik', 'jenis_upah')
+                ->where('tanggal_berlaku', function ($sub) use ($tanggal_filter) {
+                    $sub->selectRaw('MAX(tanggal_berlaku)')
+                        ->from('karyawan_gaji_pokok as gp2')
+                        ->whereColumn('gp2.nik', 'gp1.nik')
+                        ->where('gp2.tanggal_berlaku', '<=', $tanggal_filter);
+                });
+
+            $query->joinSub($latest_gaji, 'gaji', function ($join) {
+                $join->on('karyawan.nik', '=', 'gaji.nik');
+            })->where('gaji.jenis_upah', $jenis_upah);
+        }
+
+        if (!empty($q)) {
+            $query->where(function ($query) use ($q) {
+                $query->where('nama_karyawan', 'like', '%' . $q . '%')
+                    ->orWhere('karyawan.nik', 'like', '%' . $q . '%');
+            });
+        }
+
+        $karyawan = $query->orderBy('nama_karyawan')->get();
         return response()->json($karyawan);
     }
 
@@ -687,5 +775,19 @@ class KaryawanController extends Controller
         $generalsetting = Pengaturanumum::where('id', 1)->first();
         $data['generalsetting'] = $generalsetting;
         return view('datamaster.karyawan.idcard', $data);
+    }
+
+    public function getkaryawantable(Request $request)
+    {
+        $q = $request->q;
+        $query = Karyawan::query()->with(['jabatan', 'cabang', 'departemen']);
+        if (!empty($q)) {
+            $query->where(function($query) use ($q) {
+                $query->where('nama_karyawan', 'like', '%' . $q . '%')
+                      ->orWhere('nik', 'like', '%' . $q . '%');
+            });
+        }
+        $karyawan = $query->orderBy('nama_karyawan')->limit(20)->get();
+        return view('datamaster.karyawan.getkaryawantable', compact('karyawan'));
     }
 }

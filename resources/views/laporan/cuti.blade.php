@@ -7,8 +7,14 @@
 <div class="row">
     <div class="col-lg-6 col-sm-12 col-xs-12">
         <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center py-2" style="background-color: var(--theme-color-1) !important; color: white !important; min-height: 50px;">
+                <div class="d-flex align-items-center">
+                    <i class="ti ti-printer me-2 fs-5"></i>
+                    <h6 class="card-title mb-0 text-white">Cetak Laporan Cuti</h6>
+                </div>
+            </div>
             <div class="card-body">
-                <form action="{{ route('laporan.cetakcuti') }}" method="POST" target="_blank" id="formLaporanCuti">
+                <form action="{{ route('laporan.cetakcuti') }}" method="POST" target="_blank" id="formLaporanCuti" class="mt-2">
                     @csrf
                     <div class="form-group mb-3">
                         <select name="kode_cabang" id="kode_cabang" class="form-select select2">

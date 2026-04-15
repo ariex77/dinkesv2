@@ -1,299 +1,330 @@
-@extends('layouts.mobile.app')
-@section('content')
-    <div id="header-section">
-        <div class="appHeader bg-primary text-light">
-            <div class="left">
-                <a href="{{ route('dashboard.index') }}" class="headerButton goBack">
-                    <ion-icon name="chevron-back-outline"></ion-icon>
-                </a>
-            </div>
-            <div class="pageTitle">ID Card</div>
-            <div class="right"></div>
-        </div>
-    </div>
+@extends('layouts.mobile.modern')
 
-    <div id="content-section" style="margin-top: 70px; padding-bottom: 100px; display: flex; flex-direction: column; align-items: center;">
-        
-        <!-- ID Card Wrapper -->
-        <div class="idcard-wrapper" id="idcard-area">
-            
-            <!-- Abstract Background Shapes -->
-            <div class="card-bg-shape shape-1"></div>
-            <div class="card-bg-shape shape-2"></div>
+@section('title', 'ID Card')
 
-            <!-- Header Section -->
-            <div class="idcard-header">
-                <div class="company-info">
-                    @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
-                        <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" class="company-logo" alt="Logo">
-                    @else
-                        <img src="https://placehold.co/100x100?text=Logo" class="company-logo" alt="Logo">
-                    @endif
-                    <span class="company-name">{{ $generalsetting->nama_perusahaan ?? 'Company Name' }}</span>
-                </div>
-            </div>
+@section('header_left')
+    <a href="{{ route('dashboard.index') }}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 text-white active:scale-95 transition-all">
+        <ion-icon name="chevron-back-outline" class="text-lg"></ion-icon>
+    </a>
+@endsection
 
-            <!-- Profile & Main Info -->
-            <div class="idcard-profile-section">
-                <div class="profile-frame">
-                    @if (!empty($karyawan->foto))
-                        @if (Storage::disk('public')->exists('/karyawan/' . $karyawan->foto))
-                            <img src="{{ getfotoKaryawan($karyawan->foto) }}" class="profile-pic" alt="Profile">
-                        @else
-                            <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" class="profile-pic" alt="Profile">
-                        @endif
-                    @else
-                        <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" class="profile-pic" alt="Profile">
-                    @endif
-                </div>
-                <h2 class="employee-name">{{ textUpperCase($karyawan->nama_karyawan) }}</h2>
-                <div class="employee-role-badge">{{ $karyawan->nama_jabatan }}</div>
-            </div>
-
-            <!-- Details Section -->
-            <div class="idcard-details">
-                <div class="detail-row">
-                    <div class="detail-icon"><ion-icon name="id-card-outline"></ion-icon></div>
-                    <div class="detail-content">
-                        <span class="label">NIK Identity</span>
-                        <span class="value">{{ $karyawan->nik }}</span>
-                    </div>
-                </div>
-                <div class="detail-row">
-                     <div class="detail-icon"><ion-icon name="business-outline"></ion-icon></div>
-                    <div class="detail-content">
-                        <span class="label">Department</span>
-                        <span class="value">{{ $karyawan->nama_dept }}</span>
-                    </div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-icon"><ion-icon name="calendar-outline"></ion-icon></div>
-                    <div class="detail-content">
-                        <span class="label">Joined Date</span>
-                        <span class="value">{{ date('d F Y', strtotime($karyawan->tanggal_masuk)) }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Barcode Section -->
-            <div class="barcode-section">
-                {!! DNS1D::getBarcodeHTML($karyawan->nik, 'C128', 1.8, 45, 'black') !!}
-                <span class="barcode-text">{{ $karyawan->nik }}</span>
-            </div>
-
-            <!-- Footer Decor -->
-            <div class="card-footer-decor"></div>
-        </div>
-
-        <!-- Download Button -->
-        <div class="action-buttons mt-4">
-            <button id="download-idcard" class="btn btn-primary btn-lg rounded-pill shadow-lg" style="background: linear-gradient(135deg, #32745e, #2a5d4b); border: none; padding-left: 25px; padding-right: 25px;">
-                <ion-icon name="download-outline" style="margin-right: 8px;"></ion-icon>
-                Simpan ke Galeri
-            </button>
-        </div>
-
-    </div>
-
+@push('mystyle')
     <style>
-        /* Modern ID Card CSS */
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+        /* Premium ID Card CSS v3 - Ultimate Centering & Design */
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
 
-        body {
-            background: #f0f3f8;
-            font-family: 'Outfit', sans-serif;
+        :root {
+            --id-primary: {{ $t['primary'] }};
+            --id-secondary: {{ $t['primary_light'] }};
         }
 
+        .idcard-page-layout {
+            width: 100%;
+            display: block;
+            text-align: center;
+            padding: 15px 0 40px 0; /* Reduced top padding */
+            background: {{ $t['bg_body'] }};
+        }
+
+        /* Bulletproof Centering */
         .idcard-wrapper {
-            width: 340px;
-            /* height: 580px; */
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            width: 350px; /* Increased width */
+            margin: 0 auto 20px auto !important;
             background: #ffffff;
-            border-radius: 25px;
+            border-radius: 28px;
             position: relative;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            box-shadow: 
+                0 45px 110px -20px rgba(0, 0, 0, 0.12),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
-            border: 1px solid rgba(255,255,255,0.5);
-            margin-bottom: 20px;
+            z-index: 1;
+            padding: 0;
+            overflow: hidden;
+            text-align: left;
         }
 
-        /* Abstract shapes */
-        .card-bg-shape {
+        /* Premium Visual Enhancements */
+        .card-ambient-blob {
             position: absolute;
             border-radius: 50%;
-            filter: blur(40px);
+            filter: blur(65px);
             z-index: 0;
+            opacity: 0.15;
+            pointer-events: none;
         }
-        .shape-1 {
-            width: 250px;
-            height: 250px;
-            background: rgba(50, 116, 94, 0.1);
-            top: -50px;
-            right: -50px;
-        }
-        .shape-2 {
-            width: 200px;
-            height: 200px;
-            background: rgba(88, 144, 125, 0.15);
-            bottom: -50px;
-            left: -50px;
-        }
+        .blob-1 { width: 250px; height: 250px; background: var(--id-primary); top: -80px; right: -80px; }
+        .blob-2 { width: 200px; height: 200px; background: var(--id-secondary); bottom: -60px; left: -60px; }
 
-        /* Header */
-        .idcard-header {
+        /* Card Header */
+        .idcard-top {
             position: relative;
             z-index: 2;
-            padding: 25px 25px 0 25px;
+            padding: 20px 24px 0;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
         }
-        .company-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .company-logo-img {
+            height: 38px;
+            width: auto;
+            object-fit: contain;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.1));
         }
-        .company-logo {
-            width: 40px;
-            height: auto;
-        }
-        .company-name {
-            font-weight: 600;
-            color: #32745e;
-            font-size: 0.95rem;
+        .brand-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.3px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+        }
+        .brand-subtitle {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px;
         }
 
-        /* Profile */
-        .idcard-profile-section {
+        /* Hero Profile */
+        .idcard-mid {
+            position: relative;
             z-index: 2;
             text-align: center;
-            margin-top: 30px;
+            margin-top: 15px;
+            padding: 0 24px;
         }
-        .profile-frame {
-            width: 130px;
-            height: 130px;
-            margin: 0 auto 15px;
-            padding: 4px;
-            background: white; /* linear-gradient(135deg, #32745e, #58907D); */
-            border-radius: 50%;
-            box-shadow: 0 10px 25px rgba(50, 116, 94, 0.2);
+        .avatar-container {
+            width: 115px;
+            height: 115px;
+            margin: 0 auto 12px;
             position: relative;
         }
-        /* Ring effect */
-        .profile-frame::after {
-            content: '';
+        .avatar-ring {
             position: absolute;
-            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            inset: 0;
             border-radius: 50%;
-            background: linear-gradient(135deg, #32745e, #81c7af);
-            z-index: -1;
+            padding: 3px;
+            background: linear-gradient(135deg, var(--id-primary), var(--id-secondary));
+            box-shadow: 0 10px 25px rgba(var(--color-nav-rgb), 0.2);
         }
-
-        .profile-pic {
+        .avatar-mask {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #fff;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .avatar-img {
             width: 100%;
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid #fff;
+            background: #f8fafc;
         }
-        .employee-name {
-            font-size: 1.4rem;
+        
+        .name-heading {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
             font-weight: 700;
-            color: #1a1a1a;
+            color: #1e293b;
             margin: 0;
-            line-height: 1.2;
+            line-height: 1;
+            letter-spacing: -0.5px;
         }
-        .employee-role-badge {
-            display: inline-block;
-            margin-top: 8px;
+        .job-title-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
             padding: 5px 15px;
-            background: #e8f5f1;
-            color: #32745e;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: 20px;
+            background: rgba(var(--color-nav-rgb), 0.05);
+            color: var(--id-primary);
+            font-size: 0.8rem;
+            font-weight: 800;
+            border-radius: 12px;
+            border: 1px solid rgba(var(--color-nav-rgb), 0.1);
         }
 
-        /* Details */
-        .idcard-details {
+        /* Information Grid */
+        .idcard-bottom {
+            position: relative;
             z-index: 2;
-            margin-top: 30px;
-            padding: 0 35px;
+            margin-top: 18px;
+            padding: 0 24px 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 10px;
         }
-        .detail-row {
+
+        .card-info-row {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
+            padding: 8px 14px;
+            background: #fcfdfe;
+            border-radius: 16px;
+            border: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
         }
-        .detail-icon {
-            width: 36px;
-            height: 36px;
-            background: #f8fafb;
+        .card-info-row:hover {
+            border-color: rgba(var(--color-nav-rgb), 0.2);
+            background: #fff;
+        }
+        .icon-box-modern {
+            width: 34px;
+            height: 34px;
+            background: #fff;
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #32745e;
-            font-size: 1.2rem;
+            color: var(--id-primary);
+            font-size: 1.15rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            flex-shrink: 0;
+            border: 1px solid #f1f5f9;
         }
-        .detail-content {
-            display: flex;
-            flex-direction: column;
+        .text-stack { display: flex; flex-direction: column; }
+        .text-label { font-size: 0.6rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0px; }
+        .text-value { font-size: 0.95rem; color: #334155; font-weight: 700; }
+
+        /* Barcode Excellence */
+        .barcode-footer {
+            margin-top: 10px;
+            text-align: center;
         }
-        .detail-content .label {
-            font-size: 0.75rem;
-            color: #8898aa;
-            font-weight: 500;
-            text-transform: uppercase;
+        .barcode-box {
+            background: #fff;
+            padding: 10px;
+            border-radius: 14px;
+            display: inline-block;
+            border: 1px dashed #e2e8f0;
         }
-        .detail-content .value {
-            font-size: 0.95rem;
-            color: #333;
+        .barcode-id-label {
+            display: block;
+            margin-top: 6px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 3px;
+            color: #64748b;
             font-weight: 600;
         }
 
-        /* Barcode */
-        .barcode-section {
-            z-index: 2;
-            margin-top: 35px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-        .barcode-section > div {
-            margin: 0 auto !important; /* Center the generated barcode div */
-            display: inline-block;
-        }
-        .barcode-text {
-            display: block;
-            margin-top: 5px;
-            font-size: 0.85rem;
-            letter-spacing: 2px;
-            color: #555;
-        }
-
-        /* Footer Decor */
-        .card-footer-decor {
+        /* Finishing Accents */
+        .card-bottom-line {
             height: 8px;
             width: 100%;
-            background: linear-gradient(90deg, #32745e, #58907D);
-            position: absolute;
-            bottom: 0;
-            left: 0;
+            background: linear-gradient(90deg, var(--id-primary), var(--id-secondary));
         }
 
-        @media screen and (max-width: 360px) {
-            .idcard-wrapper {
-                width: 90%;
-            }
+        /* Center the final button same as card */
+        .btn-premium-save {
+            width: 350px; /* Increased width */
+            margin: 0 auto !important;
+            background: var(--color-nav) !important; /* Forces theme color from layout */
+            color: #ffffff !important;
+            padding: 16px; 
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* Reliable shadow */
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
+        .btn-premium-save:active {
+            transform: scale(0.96);
+            opacity: 0.9;
+        }
+
+
     </style>
+@endpush
 
+@section('content')
+    <div class="idcard-page-layout">
+        <!-- THE CARD -->
+        <div class="idcard-wrapper" id="idcard-area">
+            <div class="card-ambient-blob blob-1"></div>
+            <div class="card-ambient-blob blob-2"></div>
+
+            <div class="idcard-top">
+                @if ($generalsetting->logo && Storage::exists('public/logo/' . $generalsetting->logo))
+                    <img src="{{ asset('storage/logo/' . $generalsetting->logo) }}" class="company-logo-img" alt="Logo">
+                @else
+                    <img src="https://placehold.co/100x100?text=LOGO" class="company-logo-img" alt="Logo">
+                @endif
+                <span class="brand-name">{{ $generalsetting->nama_perusahaan ?? 'E-Presensi' }}</span>
+                <span class="brand-subtitle">Employee Official Pass</span>
+            </div>
+
+            <div class="idcard-mid">
+                <div class="avatar-container">
+                    <div class="avatar-ring">
+                        <div class="avatar-mask">
+                            @if (!empty($karyawan->foto))
+                                <img src="{{ getfotoKaryawan($karyawan->foto) }}" class="avatar-img" alt="Employee Photo">
+                            @else
+                                <img src="{{ asset('assets/template/img/sample/avatar/avatar1.jpg') }}" class="avatar-img" alt="Default Photo">
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                <h2 class="name-heading">{{ textUpperCase($karyawan->nama_karyawan) }}</h2>
+                <div class="job-title-badge">
+                    <ion-icon name="ribbon-outline"></ion-icon>
+                    <span>{{ $karyawan->nama_jabatan }}</span>
+                </div>
+            </div>
+
+            <div class="idcard-bottom">
+                <div class="card-info-row">
+                    <div class="icon-box-modern"><ion-icon name="finger-print-outline"></ion-icon></div>
+                    <div class="text-stack">
+                        <span class="text-label">Personal ID / NIK</span>
+                        <span class="text-value">{{ $karyawan->nik }}</span>
+                    </div>
+                </div>
+                <div class="card-info-row">
+                    <div class="icon-box-modern"><ion-icon name="business-outline"></ion-icon></div>
+                    <div class="text-stack">
+                        <span class="text-label">Organization / Dept</span>
+                        <span class="text-value">{{ $karyawan->nama_dept }}</span>
+                    </div>
+                </div>
+                
+                <div class="barcode-footer">
+                    <div class="barcode-box">
+                        {!! DNS1D::getBarcodeHTML($karyawan->nik, 'C128', 1.8, 42, 'black') !!}
+                    </div>
+                    <span class="barcode-id-label">{{ $karyawan->nik }}</span>
+                </div>
+            </div>
+
+            <div class="card-bottom-line"></div>
+        </div>
+
+        <!-- THE BUTTON -->
+        <button id="download-idcard" class="btn-premium-save active:scale-95 transition-all">
+            <ion-icon name="cloud-download-outline" class="text-xl"></ion-icon>
+            <span>SIMPAN KE GALERI</span>
+        </button>
+    </div>
+@endsection
+
+@push('myscript')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -301,46 +332,45 @@
             if (btn) {
                 btn.addEventListener('click', function() {
                     var area = document.getElementById('idcard-area');
-                    if (!area) {
-                        alert('ID Card tidak ditemukan!');
-                        return;
-                    }
-                    if (typeof html2canvas === 'undefined') {
-                        alert('Gagal memuat html2canvas. Pastikan koneksi internet Anda stabil.');
-                        return;
-                    }
+                    if (!area) return;
                     
-                    // Show loading state
-                    var originalText = btn.innerHTML;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
+                    var initialLabel = btn.innerHTML;
+                    btn.innerHTML = '<ion-icon name="sync-outline" class="animate-spin text-xl"></ion-icon><span>MEMPROSES...</span>';
                     btn.disabled = true;
 
                     html2canvas(area, {
                         backgroundColor: null,
-                        scale: 3, // Higher scale for better quality
-                        useCORS: true, // Important for loading images
-                        logging: false
+                        scale: 4, // Ultra high quality
+                        useCORS: true,
+                        logging: false,
+                        borderRadius: 28 
                     }).then(function(canvas) {
                         var link = document.createElement('a');
-                        link.download = 'IDCard-{{ $karyawan->nama_karyawan }}.png';
+                        link.download = 'IDCard_{{ $karyawan->nik }}.png';
                         link.href = canvas.toDataURL('image/png');
                         link.click();
                         
-                        // Reset button
-                        btn.innerHTML = originalText;
+                        btn.innerHTML = initialLabel;
                         btn.disabled = false;
                         
-                        // Success feedback (optional, using available toastr if present)
-                        if(typeof toastr !== 'undefined') {
-                            toastr.success('ID Card berhasil disimpan!');
+                        if(typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Disimpan!',
+                                text: 'ID Card Anda sudah aman di galeri.',
+                                showConfirmButton: false,
+                                timer: 2000,
+                                customClass: { popup: 'rounded-[1.5rem]' }
+                            });
                         }
                     }).catch(function(e) {
-                        alert('Gagal membuat gambar: ' + e);
-                        btn.innerHTML = originalText;
+                        console.error(e);
+                        btn.innerHTML = initialLabel;
                         btn.disabled = false;
+                        alert('Gagal mengunduh ID Card: ' + e.message);
                     });
                 });
             }
         });
     </script>
-@endsection
+@endpush

@@ -166,6 +166,7 @@
                         <h6 class="mb-0">Informasi Perusahaan</h6>
                     </div>
                     <div class="card-body">
+                        <x-input-with-icon-label label="Nama Aplikasi" name="nama_aplikasi" icon="ti ti-brand-appgallery" :value="$setting->nama_aplikasi ?? ''" />
                         <x-input-with-icon-label label="Nama Perusahaan" name="nama_perusahaan" icon="ti ti-home" :value="$setting->nama_perusahaan ?? ''" />
                         <x-textarea-label label="Alamat Perusahaan" name="alamat" icon="ti ti-map-pin" :value="$setting->alamat ?? ''" />
                         <x-input-with-icon-label label="Telepon" name="telepon" icon="ti ti-phone" :value="$setting->telepon ?? ''" />
@@ -282,6 +283,7 @@
                                         <option value="red" @selected(($setting->mobile_theme_scheme ?? 'green') == 'red')>Red (Passion)</option>
                                         <option value="orange" @selected(($setting->mobile_theme_scheme ?? 'green') == 'orange')>Orange (Sunset)</option>
                                         <option value="purple" @selected(($setting->mobile_theme_scheme ?? 'green') == 'purple')>Purple (Royal)</option>
+                                        <option value="rose" @selected(($setting->mobile_theme_scheme ?? 'green') == 'rose')>Rose (Elegant)</option>
                                         <option value="dark" @selected(($setting->mobile_theme_scheme ?? 'green') == 'dark')>Dark (Night)</option>
                                     </select>
                                 </div>
@@ -299,6 +301,14 @@
                     </div>
                     <div class="card-body">
                         <x-input-with-icon-label label="Total Jam Kerja dalam 1 Bulan" name="total_jam_bulan" icon="ti ti-clock" :value="$setting->total_jam_bulan ?? ''" />
+                        <div class="form-group mb-3">
+                            <label for="sistem_hari_kerja" style="font-weight: 600" class="form-label">Sistem Hari Kerja <span class="text-danger">*</span></label>
+                            <select class="form-select" name="sistem_hari_kerja" id="sistem_hari_kerja" required>
+                                <option value="6" @selected(($setting->sistem_hari_kerja ?? '6') == '6')>6 Hari Kerja (Senin - Sabtu)</option>
+                                <option value="5" @selected(($setting->sistem_hari_kerja ?? '6') == '5')>5 Hari Kerja (Senin - Jumat)</option>
+                            </select>
+                            <small class="text-muted">Gunakan 5 Hari Kerja jika Sabtu & Minggu adalah hari libur rutin.</small>
+                        </div>
                         <label for="" style="font-weight: 600" class="form-label">Potongan Jam Kerja</label>
                         <div class="checkbox-wrapper-55 mb-2">
                             <label class="rocker rocker-small">
@@ -358,6 +368,22 @@
                         <x-input-with-icon-label label="Batas Hari Izin (Dalam Hari)" name="jml_hari_izin_max" icon="ti ti-clock" :value="$setting->jml_hari_izin_max ?? ''" />
                         <x-input-with-icon-label label="Batas Presensi Lintas Hari" name="batas_presensi_lintashari" icon="ti ti-clock"
                             :value="$setting->batas_presensi_lintashari ?? ''" />
+                        <label for="" style="font-weight: 600" class="form-label">Absen Istirahat</label>
+                        <div class="checkbox-wrapper-55 mb-2">
+                            <label class="rocker rocker-small">
+                                <input type="checkbox" name="absen_istirahat" @checked($setting->absen_istirahat ?? false)>
+                                <span class="switch-left">Yes</span>
+                                <span class="switch-right">No</span>
+                            </label>
+                        </div>
+                        <label for="" style="font-weight: 600" class="form-label">Potongan Istirahat</label>
+                        <div class="checkbox-wrapper-55 mb-2">
+                            <label class="rocker rocker-small">
+                                <input type="checkbox" name="potongan_istirahat" @checked($setting->potongan_istirahat ?? false)>
+                                <span class="switch-left">Yes</span>
+                                <span class="switch-right">No</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,7 +513,7 @@
                                     @foreach ($currentIcons as $icon)
                                         <div class="col-3 mb-2">
                                             <div class="text-center">
-                                                <img src="{{ asset($icon['path']) }}" alt="{{ $icon['size'] }}" class="img-thumbnail"
+                                                <img src="{{ asset($icon['path']) }}?v={{ time() }}" alt="{{ $icon['size'] }}" class="img-thumbnail"
                                                     style="width: 30px; height: 30px;">
                                                 <small class="d-block" style="font-size: 9px">{{ $icon['size'] }}</small>
                                             </div>
@@ -665,7 +691,7 @@
                             html += `
                                 <div class="col-2 mb-2">
                                     <div class="text-center">
-                                        <img src="${icon.url}"
+                                        <img src="${icon.url}?t=${new Date().getTime()}"
                                              alt="Icon ${icon.size}"
                                              class="img-thumbnail"
                                              style="width: 50px; height: 50px;">

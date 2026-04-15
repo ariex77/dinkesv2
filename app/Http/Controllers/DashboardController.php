@@ -15,6 +15,7 @@ use App\Models\Pengumuman;
 use App\Models\User;
 use App\Models\Userkaryawan;
 use App\Models\Pengaturanumum;
+use App\Http\Controllers\KaryawanApprovalController;
 use App\Jobs\SendWaMessage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ class DashboardController extends Controller
                     'presensi_izinsakit.keterangan as keterangan_izin_sakit',
                     'presensi_izincuti.keterangan as keterangan_izin_cuti',
                 )
-                ->orderBy('tanggal', 'desc')
+                ->orderBy('presensi.tanggal', 'desc')
                 ->limit(30)
                 ->get();
             $data['rekappresensi'] = Presensi::select(
@@ -77,15 +78,18 @@ class DashboardController extends Controller
                 ->where('presensi.nik', $userkaryawan->nik)
                 ->first();
 
-            $data['lembur'] = Lembur::where('nik', $userkaryawan->nik)->where('status', 1)
+            $data['lembur'] = Lembur::where('nik', $userkaryawan->nik)
+                ->whereIn('status', [0, 1])
                 ->orderBy('id', 'desc')
                 ->limit(10)
                 ->get();
+
             $data['notiflembur'] = Lembur::where('nik', $userkaryawan->nik)
-                ->where('status', 1)
-                ->where('lembur_in', null)
-                ->orWhere('lembur_out', null)
-                ->where('status', 1)
+                ->whereIn('status', [0, 1])
+                ->where(function($query) {
+                    $query->whereNull('lembur_in')
+                        ->orWhereNull('lembur_out');
+                })
                 ->count();
 
             // Cek apakah hari ini adalah ulang tahun karyawan
@@ -139,6 +143,9 @@ class DashboardController extends Controller
             $data['pengumuman'] = Pengumuman::orderBy('created_at', 'desc')->first();
             $data['namasettings'] = Pengaturanumum::first();
             $data['denda_list'] = Denda::orderBy('dari')->get()->toArray();
+            $data['pendingApprovalCount'] = KaryawanApprovalController::getPendingCount(auth()->user()->id);
+            $data['bulan_skrg'] = Carbon::parse($hari_ini)->translatedFormat('F');
+            $data['tahun_skrg'] = Carbon::parse($hari_ini)->year;
 
             return view('dashboard.karyawan', $data);
         } else {
@@ -287,7 +294,29 @@ class DashboardController extends Controller
             $data['kontrak_bulanini'] = $sk->getRekapkontrak(1, $userCabangs, $userDepartemens);
             $data['kontrak_bulandepan'] = $sk->getRekapkontrak(2, $userCabangs, $userDepartemens);
             $data['kontrak_duabulan'] = $sk->getRekapkontrak(3, $userCabangs, $userDepartemens);
-            // dd($data['rekappresensi']);
+            // Storage Usage Info
+            try {
+                $disk_path = base_path();
+                $total_space = @disk_total_space($disk_path);
+                $free_space = @disk_free_space($disk_path);
+
+                if ($total_space !== false && $free_space !== false) {
+                    $used_space = $total_space - $free_space;
+                    $percentage = ($total_space > 0) ? round(($used_space / $total_space) * 100, 2) : 0;
+
+                    $data['storage_info'] = [
+                        'total' => round($total_space / (1024 * 1024 * 1024), 2) . ' GB',
+                        'used' => round($used_space / (1024 * 1024 * 1024), 2) . ' GB',
+                        'free' => round($free_space / (1024 * 1024 * 1024), 2) . ' GB',
+                        'percentage' => $percentage
+                    ];
+                } else {
+                    $data['storage_info'] = null;
+                }
+            } catch (\Exception $e) {
+                $data['storage_info'] = null;
+            }
+
             return view('dashboard.dashboard', $data);
         }
     }

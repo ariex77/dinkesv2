@@ -20,21 +20,36 @@ class Karyawan extends Model
 
     function getRekapstatuskaryawan($request = null)
     {
-        $query = Karyawan::query();
-        $query->select(
-            DB::raw("SUM(IF(status_karyawan = 'K', 1, 0)) as jml_kontrak"),
-            DB::raw("SUM(IF(status_karyawan = 'T', 1, 0)) as jml_tetap"),
-            DB::raw("SUM(IF(status_karyawan = 'O', 1, 0)) as jml_outsourcing"),
-            DB::raw("SUM(IF(status_aktif_karyawan = '1', 1, 0)) as jml_aktif"),
-        );
+        // Get Total Active Employee Count
+        $queryAktif = Karyawan::query();
         if (!empty($request->kode_cabang)) {
-            $query->where('karyawan.kode_cabang', $request->kode_cabang);
+            $queryAktif->where('karyawan.kode_cabang', $request->kode_cabang);
         }
-
         if (!empty($request->kode_dept)) {
-            $query->where('karyawan.kode_dept', $request->kode_dept);
+            $queryAktif->where('karyawan.kode_dept', $request->kode_dept);
         }
-        return $query->first();
+        $jml_aktif = $queryAktif->where('status_aktif_karyawan', '1')->count();
+
+        // Get Dynamic Status Recapitulation
+        $queryRekap = DB::table('status_karyawan')
+            ->leftJoin('karyawan', function($join) use ($request) {
+                $join->on('status_karyawan.kode_status_karyawan', '=', 'karyawan.status_karyawan');
+                if (!empty($request->kode_cabang)) {
+                    $join->where('karyawan.kode_cabang', '=', $request->kode_cabang);
+                }
+                if (!empty($request->kode_dept)) {
+                    $join->where('karyawan.kode_dept', '=', $request->kode_dept);
+                }
+            })
+            ->select('status_karyawan.nama_status_karyawan', DB::raw('count(karyawan.nik) as total'))
+            ->groupBy('status_karyawan.nama_status_karyawan', 'status_karyawan.kode_status_karyawan')
+            ->orderBy('status_karyawan.kode_status_karyawan')
+            ->get();
+
+        return (object) [
+            'jml_aktif' => $jml_aktif,
+            'rekap_status' => $queryRekap
+        ];
     }
 
     // Relasi dengan Facerecognition

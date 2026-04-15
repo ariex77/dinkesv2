@@ -10,19 +10,19 @@
     <table class="datatable3" style="width: 100%; border-collapse: collapse; border: 1px solid #000000">
         <thead>
             <tr>
-                <td colspan="{{ 18 + $jmlhari }}" style="font-weight: bold; font-size: 14px">LAPORAN PRESENSI</td>
+                <td colspan="{{ 19 + $jmlhari }}" style="font-weight: bold; font-size: 14px">LAPORAN PRESENSI</td>
             </tr>
             <tr>
-                <td colspan="{{ 18 + $jmlhari }}" style="font-weight: bold; font-size: 14px">{{ $generalsetting->nama_perusahaan }}</td>
+                <td colspan="{{ 19 + $jmlhari }}" style="font-weight: bold; font-size: 14px">{{ $generalsetting->nama_perusahaan }}</td>
             </tr>
             <tr>
-                <td colspan="{{ 18 + $jmlhari }}" style="font-size: 12px">PERIODE {{ date('d-m-Y', strtotime($periode_dari)) }} - {{ date('d-m-Y', strtotime($periode_sampai)) }}</td>
+                <td colspan="{{ 19 + $jmlhari }}" style="font-size: 12px">PERIODE {{ date('d-m-Y', strtotime($periode_dari)) }} - {{ date('d-m-Y', strtotime($periode_sampai)) }}</td>
             </tr>
             <tr>
-                <td colspan="{{ 18 + $jmlhari }}" style="font-size: 12px; font-style: italic;">{{ $generalsetting->alamat }}</td>
+                <td colspan="{{ 19 + $jmlhari }}" style="font-size: 12px; font-style: italic;">{{ $generalsetting->alamat }}</td>
             </tr>
             <tr>
-                <td colspan="{{ 18 + $jmlhari }}" style="font-size: 12px; font-style: italic;">{{ $generalsetting->telepon }}</td>
+                <td colspan="{{ 19 + $jmlhari }}" style="font-size: 12px; font-style: italic;">{{ $generalsetting->telepon }}</td>
             </tr>
             <tr>
                 <td colspan="{{ 18 + $jmlhari }}"></td>
@@ -35,6 +35,7 @@
                 <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Dept</th>
                 <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Cabang</th>
                 <th colspan="{{ $jmlhari }}" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Tanggal</th>
+                <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Jam Istirahat</th>
                 <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Denda</th>
                 <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Pot. Jam</th>
                 <th rowspan="3" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Lembur</th>
@@ -102,6 +103,8 @@
                         $jml_pulangcepat = 0;
                         $jml_tidakscanmasuk = 0;
                         $jml_tidakscanpulang = 0;
+                        $total_potongan_istirahat = 0;
+                        $rekap_istirahat = [];
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                         @php
@@ -112,13 +115,17 @@
                                 'tanggal' => $tanggal_presensi,
                             ];
 
-                            $ceklibur = ceklibur($datalibur, $search);
-                            $ceklembur = ceklembur($datalembur, $search);
-                            $lembur = hitungLembur($ceklembur);
-                            if (!empty($ceklembur)) {
-                                $jml_jam_lembur = $lembur;
+                            $is_libur = isLiburKaryawan($d['nik'], $tanggal_presensi);
+                            $tipe_hari = $is_libur ? 2 : 1;
+
+                            // Cek snapshot lembur (data terkunci)
+                            $snapshot_lembur = isset($d[$tanggal_presensi]) && ($d[$tanggal_presensi]['jam_lembur_aktual'] ?? null) !== null;
+                            if ($snapshot_lembur) {
+                                $jml_jam_lembur = $d[$tanggal_presensi]['jam_lembur_aktual'];
                             } else {
-                                $jml_jam_lembur = 0;
+                                $ceklembur = ceklibur($datalembur, $search);
+                                $lembur = hitungLembur($ceklembur);
+                                $jml_jam_lembur = !empty($ceklembur) ? $lembur : 0;
                             }
                             $nama_hari = getHari($tanggal_presensi);
                         @endphp
@@ -244,10 +251,23 @@
                                         empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
                                             ? $d[$tanggal_presensi]['total_jam']
                                             : 0;
+                                    $potongan_istirahat = hitungPotonganIstirahat(
+                                        $d[$tanggal_presensi]['istirahat_in'],
+                                        $d[$tanggal_presensi]['istirahat_out'],
+                                        $d[$tanggal_presensi]['jam_awal_istirahat'],
+                                        $d[$tanggal_presensi]['jam_akhir_istirahat']
+                                    );
+                                    $status_potongan_istirahat = $d[$tanggal_presensi]['status_potongan_istirahat'] ?? $generalsetting->potongan_istirahat;
                                     $potongan_jam =
                                         $potongan_tidak_absen_masuk_atau_pulang == 0
-                                            ? $pulangcepat + $potongan_jam_terlambat
+                                            ? $pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)
                                             : $potongan_tidak_absen_masuk_atau_pulang;
+
+                                    if (!empty($d[$tanggal_presensi]['istirahat_in']) && !empty($d[$tanggal_presensi]['istirahat_out'])) {
+                                        $rekap_istirahat[] = '<span style="color:#3498db">' . date('H:i', strtotime($d[$tanggal_presensi]['istirahat_in'])) . ' - ' . date('H:i', strtotime($d[$tanggal_presensi]['istirahat_out'])) . '</span>';
+                                    } else {
+                                        $rekap_istirahat[] = '<span style="color:red">Belum Absen</span>';
+                                    }
                                     $ket_potongan_jam = !empty($potongan_jam)
                                         ? '<span style="color:red">PJ: ' . formatAngkaDesimal($potongan_jam) . ' Jam</span><br>'
                                         : '';
@@ -398,7 +418,7 @@
                                     if ($totalJamJadwal !== null) {
                                         // Ada jadwal tapi tidak ada presensi sama sekali → Alpa & potong full jam kerja
                                         $jml_alfa++;
-                                        $potongan_jam = $totalJamJadwal;
+                                        $potongan_jam = is_array($totalJamJadwal) ? $totalJamJadwal['total_jam'] : $totalJamJadwal;
 
                                         // Untuk alpa yang belum ada di database, denda = 0
                                         $denda = 0;
@@ -425,16 +445,22 @@
                             $total_potongan_jam += $potongan_jam;
                             $total_jam_lembur += $jml_jam_lembur;
 
-                            $bgcolor = $nama_hari == 'Minggu' ? 'orange' : $bgcolor;
+                            $bgcolor = $is_libur ? 'orange' : $bgcolor;
                         @endphp
                         <td style="background-color:{{ $bgcolor }}; color:{{ $textcolor }}; border: 1px solid #000000; vertical-align: middle;">
                             {!! $ket !!}
-
                         </td>
                         @php
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
                     @endwhile
+                    <td style="border: 1px solid #000000; vertical-align: middle;">
+                        @if ($generalsetting->absen_istirahat == 1)
+                            {!! implode('<br>', $rekap_istirahat) !!}
+                        @else
+                            -
+                        @endif
+                    </td>
                     <td style="text-align: right; border: 1px solid #000000; vertical-align: middle;">{{ formatAngka($total_denda) }}</td>
                     <td style="text-align: center; border: 1px solid #000000; vertical-align: middle;">{{ formatAngkaDesimal($total_potongan_jam) }}</td>
                     <td style="text-align:center; border: 1px solid #000000; vertical-align: middle;">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
@@ -451,7 +477,7 @@
             @endforeach
             {{-- LEGEND --}}
              <tr>
-                <td colspan="{{ 18 + $jmlhari }}"></td>
+                <td colspan="{{ 19 + $jmlhari }}"></td>
             </tr>
              <tr>
                 <th colspan="2" style="border: 1px solid #000000; text-align:center; background-color: #f2f2f2;">Kode</th>

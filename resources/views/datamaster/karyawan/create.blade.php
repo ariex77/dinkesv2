@@ -52,15 +52,8 @@
     </div>
     <x-select-label label="Jabatan" name="kode_jabatan" :data="$jabatan" key="kode_jabatan" textShow="nama_jabatan" upperCase="true" />
     <x-input-with-icon-label icon="ti ti-calendar" datepicker="flatpickr-date" label="Tanggal Masuk" name="tanggal_masuk" />
-    <div class="form-group mb-3">
-        <label for="exampleFormControlInput1" style="font-weight: 600" class="form-label">Status Karyawan</label>
-        <select name="status_karyawan" id="pendidikan_terakhir" class="form-select">
-            <option value="">Status Karyawan</option>
-            <option value="K">PPPK</option>
-            <option value="T">PNS</option>
-            <option value="O">Non ASN</option>
-        </select>
-    </div>
+    <x-select-label label="Status Karyawan" name="status_karyawan" :data="$status_karyawan" key="kode_status_karyawan" textShow="nama_status_karyawan" />
+    <x-input-with-icon-label icon="ti ti-id" label="RFID UID" name="rfid_uid" />
     <x-input-file name="foto" label="Foto" />
     <div class="form-group">
         <button class="btn btn-primary w-100" type="submit">
@@ -78,6 +71,6 @@
 
         $(".flatpickr-date").flatpickr();
         // mask opsional untuk nik_show jika diperlukan; nonaktifkan jika format bebas
-        $('#nik').mask('00000000000000000000');
+        // $('#nik_show').mask('00.00.000');
     });
 </script>

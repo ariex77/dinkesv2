@@ -10,7 +10,7 @@
     <table class="datatable3" style="width: 100%; border-collapse: collapse; border: 1px solid #000000">
         <thead>
             <tr>
-                <td colspan="{{ 16 + count($jenis_tunjangan) }}">
+                <td colspan="{{ 17 + count($jenis_tunjangan) }}">
                     <h4 style="line-height: 20px; margin-bottom: 5px; font-weight: bold; font-size: 14px">
                         LAPORAN GAJI<br>
                         {{ $generalsetting->nama_perusahaan }}<br>
@@ -21,7 +21,7 @@
                 </td>
             </tr>
             <tr>
-                <td colspan="{{ 16 + count($jenis_tunjangan) }}"></td>
+                <td colspan="{{ 17 + count($jenis_tunjangan) }}"></td>
             </tr>
             <tr>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">No</th>
@@ -31,13 +31,16 @@
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Dept</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Cabang</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Gaji Pokok</th>
-                <th colspan="{{ count($jenis_tunjangan) }}" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Tunjangan</th>
+                @if(count($jenis_tunjangan) > 0)
+                    <th colspan="{{ count($jenis_tunjangan) }}" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Tunjangan</th>
+                @endif
                 <th rowspan="2" style="border: 1px solid #000000; background-color: orange; color: white; vertical-align: middle;">&#x3A3; Bruto</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">&#x3A3; Jam Kerja</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: #024a75; color: white; vertical-align: middle;">Upah/Jam</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Denda</th>
                 <th colspan="2" style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Pot. Jam</th>
                 <th colspan="2" style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">BPJS</th>
+                <th rowspan="2" style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Pinjaman</th>
                 <th rowspan="2" style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Potongan</th>
                 <th colspan="2" style="border: 1px solid #000000; background-color: #007148; color: white; vertical-align: middle;">Lembur</th>
                 <th colspan="2" style="border: 1px solid #000000; background-color: #0176C5; color: white; vertical-align: middle;">Penyesuaian</th>
@@ -53,7 +56,7 @@
                 <th style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Kesehatan</th>
                 <th style="border: 1px solid #000000; background-color: red; color: white; vertical-align: middle;">Tenaga Kerja</th>
 
-                <th style="border: 1px solid #000000; background-color: #007148; color: white; vertical-align: middle;">Jam</th>
+                <th style="border: 1px solid #000000; background-color: #007148; color: white; vertical-align: middle;">Jam (A|N)</th>
                 <th style="border: 1px solid #000000; background-color: #007148; color: white; vertical-align: middle;">Jumlah</th>
 
                 <th style="border: 1px solid #000000; background-color: #0176C5; color: white; vertical-align: middle;">Penambah</th>
@@ -119,7 +122,11 @@
                     @php
                         $total_denda = 0;
                         $total_potongan_jam = 0;
-                        $total_jam_lembur = 0;
+                        $total_jam_lembur_aktual = 0;
+                        $total_jam_netto_lembur = 0;
+                        $total_nominal_lembur_snapshot = 0;
+                        $has_lembur_snapshot = false;
+                        $lemburKhusus = getLemburKhusus($d['nik']);
                     @endphp
                     @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                         @php
@@ -129,14 +136,26 @@
                                 'nik' => $d['nik'],
                                 'tanggal' => $tanggal_presensi,
                             ];
+                            $is_libur = isLiburKaryawan($d['nik'], $tanggal_presensi);
+                            $tipe_hari = $is_libur ? 2 : 1;
 
-                            $ceklibur = ceklibur($datalibur, $search);
-                            $ceklembur = ceklembur($datalembur, $search);
-                            $lembur = hitungLembur($ceklembur);
-                            if (!empty($ceklembur)) {
-                                $jml_jam_lembur = $lembur;
+                            // Cek snapshot lembur (data terkunci)
+                            $snapshot_lembur = isset($d[$tanggal_presensi]) && ($d[$tanggal_presensi]['jam_lembur_aktual'] ?? null) !== null;
+                            if ($snapshot_lembur) {
+                                $has_lembur_snapshot = true;
+                                $jml_jam_lembur = $d[$tanggal_presensi]['jam_lembur_aktual'];
+                                $jam_netto_harian = $d[$tanggal_presensi]['jam_lembur_netto'];
+                                $total_nominal_lembur_snapshot += $d[$tanggal_presensi]['nominal_lembur'] ?? 0;
                             } else {
-                                $jml_jam_lembur = 0;
+                                $ceklembur = ceklibur($datalembur, $search);
+                                $lembur_aktual = hitungLembur($ceklembur);
+                                if ($lembur_aktual > 0) {
+                                    $jml_jam_lembur = $lembur_aktual;
+                                    $jam_netto_harian = hitungJamNetto($lembur_aktual, $tipe_hari);
+                                } else {
+                                    $jml_jam_lembur = 0;
+                                    $jam_netto_harian = 0;
+                                }
                             }
                             $nama_hari = getHari($tanggal_presensi);
                         @endphp
@@ -204,9 +223,16 @@
                                         empty($d[$tanggal_presensi]['jam_out']) || empty($d[$tanggal_presensi]['jam_in'])
                                             ? $d[$tanggal_presensi]['total_jam']
                                             : 0;
+                                    $potongan_istirahat = hitungPotonganIstirahat(
+                                        $d[$tanggal_presensi]['istirahat_in'],
+                                        $d[$tanggal_presensi]['istirahat_out'],
+                                        $d[$tanggal_presensi]['jam_awal_istirahat'],
+                                        $d[$tanggal_presensi]['jam_akhir_istirahat']
+                                    );
+                                    $status_potongan_istirahat = $d[$tanggal_presensi]['status_potongan_istirahat'] ?? $generalsetting->potongan_istirahat;
                                     $potongan_jam =
                                         $potongan_tidak_absen_masuk_atau_pulang == 0
-                                            ? $pulangcepat + $potongan_jam_terlambat
+                                            ? $pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)
                                             : $potongan_tidak_absen_masuk_atau_pulang;
                                 @endphp
                             @elseif($d[$tanggal_presensi]['status'] == 'i')
@@ -269,7 +295,7 @@
                                         $totalJamJadwal = $mapDept[$nama_hari] ?? null;
                                     }
                                     if ($totalJamJadwal !== null) {
-                                        $potongan_jam = $totalJamJadwal;
+                                        $potongan_jam = is_array($totalJamJadwal) ? $totalJamJadwal['total_jam'] : $totalJamJadwal;
                                     }
                                 }
                             @endphp
@@ -281,7 +307,8 @@
                             }
                             $total_denda += $denda;
                             $total_potongan_jam += $potongan_jam;
-                            $total_jam_lembur += $jml_jam_lembur;
+                            $total_jam_lembur_aktual += $jml_jam_lembur;
+                            $total_jam_netto_lembur += $jam_netto_harian;
                             $tanggal_presensi = date('Y-m-d', strtotime('+1 day', strtotime($tanggal_presensi)));
                         @endphp
                     @endwhile
@@ -291,10 +318,20 @@
                             $total_potongan_jam = $generalsetting->total_jam_bulan;
                         }
                         $jumlah_potongan_jam = ROUND($upah_perjam) * $total_potongan_jam;
-                        $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'];
+                        $total_potongan = ROUND($jumlah_potongan_jam) + $total_denda + $d['bpjs_kesehatan'] + $d['bpjs_tenagakerja'] + ($d['cicilan_pinjaman'] ?? 0);
 
                         $total_all_potongan += $total_potongan;
-                        $upah_lembur = ROUND($upah_perjam) * ROUND($total_jam_lembur, 2);
+                        
+                        // Hitung Upah Lembur
+                        if ($has_lembur_snapshot) {
+                            $upah_lembur = $total_nominal_lembur_snapshot;
+                        } elseif ($lemburKhusus) {
+                            $upah_lembur = $lemburKhusus->upah_perjam * $total_jam_lembur_aktual;
+                        } else {
+                            $upah_perjam_lembur = ($d['gaji_pokok'] + $total_tunjangan) / ($generalsetting->total_jam_bulan ?: 173);
+                            $upah_lembur = ROUND($upah_perjam_lembur) * $total_jam_netto_lembur;
+                        }
+                        
                         $total_upah_lembur += $upah_lembur;
                         $total_gaji_pokok += $d['gaji_pokok'];
                         $total_bpjs_kesehatan += $d['bpjs_kesehatan'];
@@ -314,8 +351,11 @@
                     </td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($d['bpjs_kesehatan']) }}</td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($d['bpjs_tenagakerja']) }}</td>
+                    <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($d['cicilan_pinjaman'] ?? 0) }}</td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($total_potongan) }}</td>
-                    <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngkaDesimal($total_jam_lembur) }}</td>
+                    <td style="border: 1px solid #000000; text-align: center; vertical-align: middle;">
+                        {{ formatAngkaDesimal($total_jam_netto_lembur) }}
+                    </td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($upah_lembur) }}</td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($d['penambah']) }}</td>
                     <td style="border: 1px solid #000000; text-align: right; vertical-align: middle;">{{ formatAngka($d['pengurang']) }}</td>
@@ -336,6 +376,7 @@
                 <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($total_jumlah_potongan_jam) }}</th>
                 <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($total_bpjs_kesehatan) }}</th>
                 <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($total_bpjs_tenagakerja) }}</th>
+                <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($laporan_presensi->sum('cicilan_pinjaman')) }}</th>
                 <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($total_all_potongan) }}</th>
                 <th style="border: 1px solid #000000;"></th>
                 <th style="border: 1px solid #000000; text-align: right; vertical-align: middle; font-weight: bold;">{{ formatAngka($total_upah_lembur) }}</th>

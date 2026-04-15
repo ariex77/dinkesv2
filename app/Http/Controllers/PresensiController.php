@@ -654,11 +654,13 @@ class PresensiController extends Controller
 
     public function show($id, $status)
     {
-        $presensi = Presensi::where('id', $id)
+        $presensi = Presensi::where('presensi.id', $id)
+            ->with('mesinfingerprint')
             ->join('karyawan', 'presensi.nik', '=', 'karyawan.nik')
             ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
             ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
             ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->select('presensi.*', 'karyawan.nama_karyawan', 'karyawan.kode_cabang', 'departemen.nama_dept', 'jabatan.nama_jabatan', 'cabang.nama_cabang', 'cabang.lokasi_cabang')
             ->first();
         $cabang = Cabang::where('kode_cabang', $presensi->kode_cabang)->first();
         $lokasi = explode(',', $cabang->lokasi_cabang);
@@ -720,10 +722,13 @@ class PresensiController extends Controller
         $result = curl_exec($ch);
         curl_close($ch);
         $res = json_decode($result);
-        $datamesin1 = $res->data;
+        $datamesin1 = [];
+        if ($res && isset($res->data)) {
+            $datamesin1 = $res->data;
+        }
 
         $filtered_array = array_filter($datamesin1, function ($obj) use ($specific_value) {
-            return $obj->pin == $specific_value;
+            return isset($obj->pin) && $obj->pin == $specific_value;
         });
 
 
@@ -749,8 +754,14 @@ class PresensiController extends Controller
         //     return $obj->pin == $specific_value;
         // });
 
+        $log_lokal = \App\Models\LogMesinPresensi::select('log_mesin_presensis.*', 'mesin_fingerprints.nama_mesin', 'mesin_fingerprints.sn', 'mesin_fingerprints.lokasi')
+            ->leftJoin('mesin_fingerprints', 'log_mesin_presensis.id_mesin', '=', 'mesin_fingerprints.id')
+            ->where('pin', $pin)
+            ->whereDate('jam_absen', $tanggal)
+            ->orderBy('jam_absen', 'desc')
+            ->get();
 
-        return view('presensi.getdatamesin', compact('filtered_array', 'is_locked'));
+        return view('presensi.getdatamesin', compact('filtered_array', 'is_locked', 'log_lokal'));
     }
 
 

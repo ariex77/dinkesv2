@@ -23,6 +23,7 @@ class GeneralsettingController extends Controller
     {
         $id = Crypt::decrypt($id);
         $request->validate([
+            'nama_aplikasi' => 'required|string|max:255',
             'nama_perusahaan' => 'required',
             'alamat' => 'required',
             'telepon' => 'required',
@@ -37,8 +38,11 @@ class GeneralsettingController extends Controller
             'timezone' => 'required|string|max:50',
             'nama_hrd' => 'nullable|string',
             'theme_color_1' => 'nullable|string|max:20',
-            'theme_color_2' => 'nullable|string|max:20',
+            'mobile_theme_scheme' => 'nullable|string|max:20',
             'session_time' => 'nullable|integer|min:1',
+            'absen_istirahat' => 'nullable',
+            'potongan_istirahat' => 'nullable',
+            'sistem_hari_kerja' => 'required|in:5,6',
         ]);
 
         try {
@@ -47,6 +51,7 @@ class GeneralsettingController extends Controller
             $setting = Pengaturanumum::findOrFail($id);
 
             $data = [
+                'nama_aplikasi' => $request->nama_aplikasi,
                 'nama_perusahaan' => $request->nama_perusahaan,
                 'alamat' => $request->alamat,
                 'telepon' => $request->telepon,
@@ -79,6 +84,9 @@ class GeneralsettingController extends Controller
                 'theme_color_2' => $request->theme_color_2,
                 'mobile_theme_scheme' => $request->mobile_theme_scheme,
                 'session_time' => $request->session_time,
+                'absen_istirahat' => $request->has('absen_istirahat') ? 1 : 0,
+                'potongan_istirahat' => $request->has('potongan_istirahat') ? 1 : 0,
+                'sistem_hari_kerja' => $request->sistem_hari_kerja,
             ];
 
             if ($request->hasFile('logo')) {

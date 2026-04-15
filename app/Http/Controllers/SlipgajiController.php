@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Slipgaji;
+use App\Models\SlipgajiHarian;
 use App\Models\User;
+use App\Models\Cabang;
+use App\Models\Departemen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Redirect;
 
 class SlipgajiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = User::where('id', auth()->user()->id)->first();
 
@@ -23,6 +26,15 @@ class SlipgajiController extends Controller
             return view('payroll.slipgaji.index_mobile', $data);
         } else {
             $data['slipgaji'] = Slipgaji::orderBy('tahun')->orderBy('bulan')->get();
+
+            $queryHarian = SlipgajiHarian::withCount('detail');
+            if (!empty($request->tahun_harian)) {
+                $queryHarian->whereYear('tanggal_slip', $request->tahun_harian);
+            }
+            $data['slipgaji_harian'] = $queryHarian->orderBy('tanggal_slip', 'desc')->get();
+
+            $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
+            $data['departemen'] = Departemen::orderBy('kode_dept')->get();
             return view('payroll.slipgaji.index', $data);
         }
     }

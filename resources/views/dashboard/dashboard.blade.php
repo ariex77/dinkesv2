@@ -391,6 +391,29 @@
             'accent' => '#7c3aed',
         ],
     ];
+
+    if (isset($storage_info)) {
+        $storageColor = '#22c55e'; // Green
+        $storageBg = 'rgba(34, 197, 94, 0.1)';
+        if ($storage_info['percentage'] >= 90) {
+            $storageColor = '#ef4444'; // Red
+            $storageBg = 'rgba(239, 68, 68, 0.1)';
+        } elseif ($storage_info['percentage'] >= 70) {
+            $storageColor = '#f59e0b'; // Yellow
+            $storageBg = 'rgba(245, 158, 11, 0.1)';
+        }
+
+        $presenceStats[] = [
+            'title' => 'Server Storage',
+            'value' => $storage_info['percentage'] . '%',
+            'meta' => $storage_info['used'] . ' / ' . $storage_info['total'],
+            'trend' => $storage_info['free'] . ' Tersedia',
+            'icon' => 'ti ti-database',
+            'accent' => $storageColor,
+            'is_storage' => true,
+            'storage_bg' => $storageBg,
+        ];
+    }
 @endphp
 
 <div class="stat-grid">
@@ -406,14 +429,22 @@
                 </div>
             </div>
             <div>
-                <p class="stat-card__meta mb-1">
-                    <i class="ti ti-broadcast me-1"></i>
-                    {{ $stat['meta'] }}
-                </p>
-                {{-- <span class="stat-card__trend">
-                    <i class="ti ti-arrow-up-right"></i>
-                    {{ $stat['trend'] }}
-                </span> --}}
+                @if (isset($stat['is_storage']))
+                    <div class="progress mb-2" style="height: 8px; background: {{ $stat['storage_bg'] }}">
+                        <div class="progress-bar" role="progressbar" style="width: {{ $stat['value'] }}; background: {{ $stat['accent'] }};"
+                            aria-valuenow="{{ str_replace('%', '', $stat['value']) }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <p class="stat-card__meta mb-0 d-flex justify-content-between">
+                        <span><i class="ti ti-server me-1"></i> {{ $stat['meta'] }}</span>
+                        <span class="fw-bold" style="color: {{ $stat['accent'] }}">{{ $stat['trend'] }}</span>
+                    </p>
+                @else
+                    <p class="stat-card__meta mb-1">
+                        <i class="ti ti-broadcast me-1"></i>
+                        {{ $stat['meta'] }}
+                    </p>
+                @endif
             </div>
         </div>
     @endforeach
@@ -427,43 +458,32 @@
                     <div class="row gy-4 gy-sm-1">
                         <div class="col-sm-6 col-lg-3">
                             <div class="d-flex justify-content-between align-items-start card-widget-1 border-end pb-4 pb-sm-0">
-
                                 <div>
                                     <p class="mb-1">Data Karyawan Aktif</p>
                                     <h4 class="mb-1">{{ $status_karyawan->jml_aktif }}</h4>
                                 </div>
                                 <img src="{{ asset('assets/img/illustrations/karyawan1.png') }}" height="70" alt="view sales" class="me-3">
                             </div>
+                        </div>
 
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="d-flex justify-content-between align-items-start card-widget-2 border-end pb-4 pb-sm-0">
-                                <div>
-                                    <p class="mb-1">PNS</p>
-                                    <h4 class="mb-1">{{ $status_karyawan->jml_tetap }}</h4>
+                        @foreach ($status_karyawan->rekap_status as $rekap)
+                            @php
+                                // Cycle through images karyawan2, karyawan3, karyawan4
+                                $imgIndex = ($loop->index % 3) + 2;
+                                $ext = ($imgIndex == 2 || $imgIndex == 4) ? 'webp' : 'png';
+                                $borderClass = ($loop->last) ? '' : 'border-end';
+                                $widgetClass = 'card-widget-' . (($loop->iteration % 4) + 1);
+                            @endphp
+                            <div class="col-sm-6 col-lg-3">
+                                <div class="d-flex justify-content-between align-items-start {{ $borderClass }} pb-4 pb-sm-0 {{ $widgetClass }}">
+                                    <div>
+                                        <p class="mb-1">{{ $rekap->nama_status_karyawan }}</p>
+                                        <h4 class="mb-1">{{ $rekap->total }}</h4>
+                                    </div>
+                                    <img src="{{ asset('assets/img/illustrations/karyawan' . $imgIndex . '.' . $ext) }}" height="70" alt="view sales" class="me-3">
                                 </div>
-                                <img src="{{ asset('assets/img/illustrations/karyawan2.webp') }}" height="70" alt="view sales" class="me-3">
                             </div>
-
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="d-flex justify-content-between align-items-start border-end pb-4 pb-sm-0 card-widget-3">
-                                <div>
-                                    <p class="mb-1">PPPK</p>
-                                    <h4 class="mb-1">{{ $status_karyawan->jml_kontrak }}</h4>
-                                </div>
-                                <img src="{{ asset('assets/img/illustrations/karyawan3.png') }}" height="70" alt="view sales" class="me-3">
-                            </div>
-                        </div>
-                        <div class="col-sm-6 col-lg-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <p class="mb-1">Non ASN</p>
-                                    <h4 class="mb-1">{{ $status_karyawan->jml_outsourcing }}</h4>
-                                </div>
-                                <img src="{{ asset('assets/img/illustrations/karyawan4.webp') }}" height="70" alt="view sales" class="me-3">
-                            </div>
-                        </div>
+                        @endforeach
                     </div>
                 </div>
             </div>

@@ -1,166 +1,157 @@
-@extends('layouts.mobile.app')
-@section('content')
+@extends('layouts.mobile.modern')
+
+@section('title', 'Ubah Password')
+
+@section('header_left')
+    <a href="{{ route('dashboard.index') }}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 text-white active:scale-95 transition-all">
+        <ion-icon name="chevron-back-outline" class="text-lg"></ion-icon>
+    </a>
+@endsection
+
+@push('mystyle')
     <style>
-        #header-section {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
+        body {
+            background: {{ $t['bg_body'] }} !important;
         }
 
-        #content-section {
-            margin-top: 70px;
-            padding-top: 5px;
-            position: relative;
-            z-index: 1;
+        .form-container {
+            padding: 10px 5px;
         }
 
-        /* Custom Floating Label CSS */
         .form-label-group {
             position: relative;
-            margin-bottom: 5px;
+            margin-bottom: 12px;
+            background: transparent !important;
+            border: 1px solid {{ $t['primary'] }};
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s ease;
         }
 
         .form-label-group .input-icon {
             position: absolute;
-            left: 15px;
-            top: 15px;
-            font-size: 22px;
-            color: #32745e;
-            z-index: 9;
-            transition: all 0.3s ease;
+            left: 14px;
+            top: 11px;
+            font-size: 20px;
+            color: {{ $t['primary'] }};
+            z-index: 10;
             pointer-events: none;
         }
 
-        .form-label-group input,
-        .form-label-group select,
-        .form-label-group textarea {
-            border-radius: 9px;
-            height: 50px;
-            padding: 20px 15px 5px 50px;
-            font-size: 15px;
-            line-height: 1.5;
-            background-color: transparent !important;
-            border: 1px solid #32745e;
-            box-shadow: none;
-            width: 100%;
-            display: block;
-            transition: all .1s;
-        }
-        
-        .form-label-group textarea {
-            height: 100px;
-            padding-top: 25px;
-            resize: none;
+        .form-label-group input {
+            width: 100% !important;
+            height: 44px;
+            padding: 18px 14px 2px 42px !important;
+            font-size: 14px;
+            font-weight: 500;
+            color: {{ $t['primary'] }};
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            display: block !important;
         }
 
         .form-label-group label {
             position: absolute;
-            top: 15px;
-            left: 50px;
-            font-size: 15px;
-            color: #32745e;
+            top: 11px;
+            left: 42px;
+            font-size: 14px;
+            color: {{ $t['primary'] }};
+            opacity: 0.8;
             pointer-events: none;
-            transition: all .2s ease-in-out;
+            transition: all 0.2s ease-in-out;
             margin-bottom: 0;
-            background: transparent;
-        }
-
-        /* Active State (Focus or Has Value) */
-        .form-label-group input:focus,
-        .form-label-group select:focus,
-        .form-label-group textarea:focus,
-        .form-label-group input:not(:placeholder-shown),
-        .form-label-group select:valid,
-        .form-label-group textarea:not(:placeholder-shown) {
-            border-color: #32745e;
+            z-index: 5;
         }
 
         .form-label-group input:focus ~ label,
-        .form-label-group select:focus ~ label,
-        .form-label-group textarea:focus ~ label,
-        .form-label-group input:not(:placeholder-shown) ~ label,
-        .form-label-group select:valid ~ label,
-        .form-label-group textarea:not(:placeholder-shown) ~ label {
-            top: 5px;
-            font-size: 11px;
-            color: #32745e;
-            font-weight: 500;
-        }
-        
-        /* Disabled Input Style */
-        .form-label-group input:disabled {
-            background-color: rgba(50, 116, 94, 0.05) !important;
-            color: #32745e;
+        .form-label-group input:not(:placeholder-shown) ~ label {
+            top: 2px;
+            left: 42px;
+            font-size: 10px;
+            font-weight: 600;
+            color: {{ $t['primary'] }};
         }
 
-        .btn-primary {
-            background-color: #32745e !important;
-            border-color: #32745e !important;
+        .btn-submit-modern {
+            width: 100%;
+            height: 48px;
+            background: {{ $t['primary'] }};
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+            transition: all 0.3s;
+        }
+
+        .btn-submit-modern:active {
+            transform: scale(0.97);
+            background: {{ $t['primary'] }};
+            filter: brightness(0.9);
+        }
+
+        .custom-control-label {
+            font-size: 14px;
+            color: {{ $t['primary'] }};
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: {{ $t['primary'] }} !important;
+            border-color: {{ $t['primary'] }} !important;
         }
     </style>
-    <div id="header-section">
-        <div class="appHeader bg-primary text-light">
-            <div class="left">
-                <a href="javascript:history.back()" class="headerButton goBack">
-                    <ion-icon name="chevron-back-outline"></ion-icon>
-                </a>
+@endpush
+
+@section('content')
+    <div class="fade-up form-container">
+        <form action="{{ route('users.updatepassword', Crypt::encrypt($user->id)) }}" method="POST" id="formPassword" autocomplete="off">
+            @csrf
+            @method('PUT')
+
+            <div class="form-label-group">
+                <ion-icon name="at-outline" class="input-icon"></ion-icon>
+                <input type="text" name="username" id="username" placeholder=" " value="{{ $user->username }}" required>
+                <label for="username">Username</label>
             </div>
-            <div class="pageTitle">Ubah Password</div>
-            <div class="right"></div>
-        </div>
-    </div>
-    <div id="content-section">
-        <div class="row" style="margin-top: 10px; padding-bottom:80px">
-            <div class="col pl-3 pr-3">
-                <form action="{{ route('users.updatepassword', Crypt::encrypt($user->id)) }}" method="POST" id="formPassword" autocomplete="off">
-                    @csrf
-                    @method('PUT')
+            @error('username')
+                <div class="text-red-500 text-xs px-3 mb-2 font-semibold">
+                    {{ $message }}
+                </div>
+            @enderror
 
-                    {{-- Username --}}
-                    <div class="form-label-group">
-                        <ion-icon name="at-outline" class="input-icon"></ion-icon>
-                        <input type="text" name="username" id="username" class="form-control" placeholder=" " value="{{ $user->username }}" required>
-                        <label for="username">Username</label>
-                    </div>
-                    @error('username')
-                        <div class="text-danger small" style="margin-top: -5px; margin-bottom: 10px; margin-left: 5px;">
-                            {{ $message }}
-                        </div>
-                    @enderror
-
-                    {{-- Password Baru --}}
-                    <div class="form-label-group mt-2">
-                        <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
-                        <input type="password" name="passwordbaru" id="passwordbaru" class="form-control" placeholder=" " required>
-                        <label for="passwordbaru">Password Baru</label>
-                    </div>
-
-                    {{-- Konfirmasi Password --}}
-                    <div class="form-label-group mt-2">
-                        <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
-                        <input type="password" name="konfirmasipassword" id="konfirmasipassword" class="form-control" placeholder=" " required>
-                        <label for="konfirmasipassword">Konfirmasi Password</label>
-                    </div>
-
-                    {{-- Show Password Checkbox --}}
-                    <div class="form-group mt-2">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="show-password" onclick="tooglePassword()">
-                            <label class="custom-control-label" for="show-password" style="font-size: 14px; color: #555;">Tampilkan Password</label>
-                        </div>
-                    </div>
-
-                    {{-- Submit Button --}}
-                    <div class="form-group mt-3">
-                        <button class="btn btn-primary w-100" id="btnSimpan" style="height: 50px; border-radius: 9px;">
-                            <i class="ti ti-send me-1"></i> Update Password
-                        </button>
-                    </div>
-                </form>
+            <div class="form-label-group">
+                <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+                <input type="password" name="passwordbaru" id="passwordbaru" placeholder=" " required>
+                <label for="passwordbaru">Password Baru</label>
             </div>
-        </div>
+
+            <div class="form-label-group">
+                <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+                <input type="password" name="konfirmasipassword" id="konfirmasipassword" placeholder=" " required>
+                <label for="konfirmasipassword">Konfirmasi Password</label>
+            </div>
+
+            <div class="px-2 mb-4">
+                <div class="custom-control custom-checkbox flex items-center gap-2">
+                    <input type="checkbox" class="w-4 h-4 accent-[{{ $t['primary'] }}]" id="show-password" onclick="tooglePassword()">
+                    <label class="custom-control-label" for="show-password">Tampilkan Password</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit-modern" id="btnSimpan">
+                <ion-icon name="save-outline"></ion-icon>
+                <span>Update Password</span>
+            </button>
+        </form>
     </div>
 @endsection
 
@@ -178,25 +169,29 @@
             }
         }
         
-        $("#formPassword").submit(function() {
+        $("#formPassword").submit(function(e) {
              var passwordbaru = $("#passwordbaru").val();
              var konfirmasipassword = $("#konfirmasipassword").val();
              
              if(passwordbaru == "") {
+                 e.preventDefault();
                  Swal.fire({title: "Oops!", text: 'Password Baru Harus Diisi !', icon: "warning"});
                  return false;
              }
              if(konfirmasipassword == "") {
+                 e.preventDefault();
                  Swal.fire({title: "Oops!", text: 'Konfirmasi Password Harus Diisi !', icon: "warning"});
                  return false;
              }
              if (passwordbaru != konfirmasipassword) {
+                 e.preventDefault();
                  Swal.fire({title: "Oops!", text: 'Password Tidak Sama !', icon: "warning"});
                  return false;
              }
 
-             $("#btnSimpan").prop('disabled', true);
-             $("#btnSimpan").html(`<div class="spinner-border spinner-border-sm text-white me-2" role="status"></div> Loading..`);
+             const btn = document.getElementById('btnSimpan');
+             btn.disabled = true;
+             btn.innerHTML = `<ion-icon name="sync-outline" class="animate-spin"></ion-icon><span>Memproses...</span>`;
         });
     </script>
 @endpush
