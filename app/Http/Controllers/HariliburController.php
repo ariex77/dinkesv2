@@ -18,9 +18,22 @@ class HariliburController extends Controller
 
     public function index(Request $request)
     {
-        $data['user'] = User::where('id', '=', auth()->user()->id)->first();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $data['user'] = $user;
         $query = Harilibur::query();
         $query->join('cabang', 'hari_libur.kode_cabang', '=', 'cabang.kode_cabang');
+
+        // Filter berdasarkan akses cabang jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            if (!empty($userCabangs)) {
+                $query->whereIn('hari_libur.kode_cabang', $userCabangs);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
         if (!empty($request->kode_cabang)) {
             $query->where('hari_libur.kode_cabang', $request->kode_cabang);
         }
@@ -31,27 +44,32 @@ class HariliburController extends Controller
         $harilibur->appends($request->all());
         $data['harilibur'] = $harilibur;
 
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
+        $data['cabang'] = $user->getCabang();
 
         return view('harilibur.index', $data);
     }
 
     public function create()
     {
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['user'] = User::where('id', '=', auth()->user()->id)->first();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $data['cabang'] = $user->getCabang();
+        $data['user'] = $user;
         return view('harilibur.create', $data);
     }
 
     public function store(Request $request)
     {
-        $user = User::findorFail(auth()->user()->id);
+        /** @var \App\Models\User $user */
+        $user = User::findOrFail(auth()->user()->id);
         $role = $user->getRoleNames()->first();
         $validationRules = [
             'tanggal' => 'required|date',
             'keterangan' => 'required'
         ];
-        if ($user->hasRole(['super admin', 'admin pusat'])) {
+        
+        $userCabangs = $user->getCabangCodes();
+        if ($user->hasRole(['super admin', 'admin pusat']) || !empty($userCabangs)) {
             $validationRules['kode_cabang'] = 'required';
         }
 
@@ -76,6 +94,8 @@ class HariliburController extends Controller
 
             if ($user->hasRole(['super admin', 'admin pusat'])) {
                 $kode_cabang = $request->kode_cabang;
+            } else if (!empty($request->kode_cabang) && in_array($request->kode_cabang, $userCabangs)) {
+                $kode_cabang = $request->kode_cabang;
             } else {
                 $kode_cabang = $user->kode_cabang;
             }
@@ -95,22 +115,27 @@ class HariliburController extends Controller
 
     public function edit($kode_libur)
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
         $kode_libur = Crypt::decrypt($kode_libur);
         $data['harilibur'] = Harilibur::where('kode_libur', $kode_libur)->first();
-        $data['cabang'] = Cabang::orderBy('kode_cabang')->get();
-        $data['user'] = User::where('id', '=', auth()->user()->id)->first();
+        $data['cabang'] = $user->getCabang();
+        $data['user'] = $user;
         return view('harilibur.edit', $data);
     }
 
     public function update(Request $request, $kode_libur)
     {
-        $user = User::findorFail(auth()->user()->id);
+        /** @var \App\Models\User $user */
+        $user = User::findOrFail(auth()->user()->id);
         $kode_libur = Crypt::decrypt($kode_libur);
         $validationRules = [
             'tanggal' => 'required|date',
             'keterangan' => 'required'
         ];
-        if ($user->hasRole(['super admin', 'admin pusat'])) {
+        
+        $userCabangs = $user->getCabangCodes();
+        if ($user->hasRole(['super admin', 'admin pusat']) || !empty($userCabangs)) {
             $validationRules['kode_cabang'] = 'required';
         }
 
@@ -119,6 +144,8 @@ class HariliburController extends Controller
         try {
 
             if ($user->hasRole(['super admin', 'admin pusat'])) {
+                $kode_cabang = $request->kode_cabang;
+            } else if (!empty($request->kode_cabang) && in_array($request->kode_cabang, $userCabangs)) {
                 $kode_cabang = $request->kode_cabang;
             } else {
                 $kode_cabang = $user->kode_cabang;

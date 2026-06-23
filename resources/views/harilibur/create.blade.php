@@ -1,7 +1,7 @@
 <form action="{{ route('harilibur.store') }}" method="POST" id="formHariLibur">
     @csrf
     <x-input-with-icon icon="ti ti-calendar" label="Tanggal" name="tanggal" datepicker="flatpickr-date" />
-    @if ($user->hasRole(['super admin', 'admin pusat']))
+    @if ($user->hasRole(['super admin', 'admin pusat']) || !$cabang->isEmpty())
         <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang" select2="select2Kodecabang"
             upperCase="true" />
     @endif

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GlobalJamkerja;
+use App\Models\Jamkerja;
 use App\Models\Pengaturanumum;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
@@ -16,13 +18,15 @@ class GeneralsettingController extends Controller
     public function index()
     {
         $data['setting'] = Pengaturanumum::where('id', 1)->first();
+        $data['global_jamkerja'] = GlobalJamkerja::all()->keyBy('hari');
+        $data['jamkerja_list'] = Jamkerja::orderBy('jam_masuk')->get();
         return view('generalsettings.index', $data);
     }
 
     public function update(Request $request, $id)
     {
         $id = Crypt::decrypt($id);
-        $request->validate([
+        $rules = [
             'nama_aplikasi' => 'required|string|max:255',
             'nama_perusahaan' => 'required',
             'alamat' => 'required',
@@ -43,7 +47,13 @@ class GeneralsettingController extends Controller
             'absen_istirahat' => 'nullable',
             'potongan_istirahat' => 'nullable',
             'sistem_hari_kerja' => 'required|in:5,6',
-        ]);
+        ];
+
+        if (auth()->user()->hasRole('master admin')) {
+            $rules['expired'] = 'nullable|date';
+        }
+
+        $request->validate($rules);
 
         try {
             //dd($request->denda);
@@ -62,7 +72,7 @@ class GeneralsettingController extends Controller
                 'face_recognition' => $request->has('face_recognition') ? true : false,
                 'periode_laporan_dari' => $request->periode_laporan_dari,
                 'periode_laporan_sampai' => $request->periode_laporan_sampai,
-                'periode_laporan_next_bulan' => $request->has('periode_laporan_next_bulan') ? true : false,
+                'periode_laporan_next_bulan' => $request->periode_laporan_next_bulan,
                 'batasi_absen' => $request->has('batasi_absen') ? true : false,
                 'multi_lokasi' => $request->has('multi_lokasi') ? true : false,
                 'batas_jam_absen' => $request->batas_jam_absen,
@@ -87,7 +97,12 @@ class GeneralsettingController extends Controller
                 'absen_istirahat' => $request->has('absen_istirahat') ? 1 : 0,
                 'potongan_istirahat' => $request->has('potongan_istirahat') ? 1 : 0,
                 'sistem_hari_kerja' => $request->sistem_hari_kerja,
+                'global_jamkerja_aktif' => $request->has('global_jamkerja_aktif') ? 1 : 0,
             ];
+
+            if (auth()->user()->hasRole('master admin')) {
+                $data['expired'] = $request->expired;
+            }
 
             if ($request->hasFile('logo')) {
                 $logo = $request->file('logo');
@@ -113,6 +128,16 @@ class GeneralsettingController extends Controller
             $oldTimezone = $setting->timezone ?? 'Asia/Jakarta';
             $oldSessionTime = $setting->session_time;
             $setting->update($data);
+
+            // Update jadwal kerja global per hari
+            if ($request->has('global_jamkerja')) {
+                foreach ($request->global_jamkerja as $hari => $kode_jam_kerja) {
+                    GlobalJamkerja::updateOrCreate(
+                        ['hari' => $hari],
+                        ['kode_jam_kerja' => $kode_jam_kerja ?: null]
+                    );
+                }
+            }
             
             // Update .env file dengan timezone baru jika timezone berubah
             if ($oldTimezone != $request->timezone) {

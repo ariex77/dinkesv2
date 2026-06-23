@@ -197,21 +197,35 @@
 
                     if ($periode_laporan_lintas_bulan == 1) {
                         if ($d->bulan == 1) {
-                            $bulan = 12;
+                            $bulan_dari = 12;
                             $tahun_dari = $d->tahun - 1;
                         } else {
-                            $bulan = $d->bulan - 1;
+                            $bulan_dari = $d->bulan - 1;
                             $tahun_dari = $d->tahun;
                         }
-                    } else {
-                        $bulan = $d->bulan;
+                        $bulan_sampai = $d->bulan;
+                        $tahun_sampai = $d->tahun;
+                    } elseif ($periode_laporan_lintas_bulan == 2) {
+                        $bulan_dari = $d->bulan;
                         $tahun_dari = $d->tahun;
+                        if ($d->bulan == 12) {
+                            $bulan_sampai = 1;
+                            $tahun_sampai = $d->tahun + 1;
+                        } else {
+                            $bulan_sampai = $d->bulan + 1;
+                            $tahun_sampai = $d->tahun;
+                        }
+                    } else {
+                        $bulan_dari = $d->bulan;
+                        $tahun_dari = $d->tahun;
+                        $bulan_sampai = $d->bulan;
+                        $tahun_sampai = $d->tahun;
                     }
 
-                    $bulan_pad = str_pad($bulan, 2, '0', STR_PAD_LEFT);
-                    $bulan_next_pad = str_pad($d->bulan, 2, '0', STR_PAD_LEFT);
-                    $periode_dari = $tahun_dari . '-' . $bulan_pad . '-' . $periode_laporan_dari;
-                    $periode_sampai = $d->tahun . '-' . $bulan_next_pad . '-' . $periode_laporan_sampai;
+                    $bulan_dari_pad = str_pad($bulan_dari, 2, '0', STR_PAD_LEFT);
+                    $bulan_sampai_pad = str_pad($bulan_sampai, 2, '0', STR_PAD_LEFT);
+                    $periode_dari = $tahun_dari . '-' . $bulan_dari_pad . '-' . str_pad($periode_laporan_dari, 2, '0', STR_PAD_LEFT);
+                    $periode_sampai = $tahun_sampai . '-' . $bulan_sampai_pad . '-' . str_pad($periode_laporan_sampai, 2, '0', STR_PAD_LEFT);
                 @endphp
 
                 <a href="/laporan/cetakslipgaji?bulan={{ $d->bulan }}&tahun={{ $d->tahun }}&periode_laporan=1" class="block">

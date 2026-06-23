@@ -23,7 +23,7 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/assets/img/icons/pwa/icon-512x512.png">
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v={{ file_exists(public_path('manifest.json')) ? filemtime(public_path('manifest.json')) : time() }}">
 
     <link rel="stylesheet" href="{{ asset('assets/login/css/style.css') }}" />
     <style>
@@ -90,9 +90,9 @@
                         @csrf
                         <div class="logo">
                             @if (!empty($general_setting->logo) && Storage::disk('public')->exists('logo/' . $general_setting->logo))
-                                <img src="{{ asset('storage/logo/' . $general_setting->logo) }}" alt="Company Logo" style="height: auto; width: 80px; margin-bottom: 20px;" />
+                                <img src="{{ asset('storage/logo/' . $general_setting->logo) }}" alt="Company Logo" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; margin-bottom: 20px; background: #fff; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
                             @else
-                                <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" />
+                                <img src="{{ asset('assets/login/images/logoweb-1.png') }}" alt="easyclass" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; margin-bottom: 20px; background: #fff; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
                             @endif
                             <h4>{{ $general_setting->nama_aplikasi ?? 'E-Presensi v2.0' }}</h4>
                         </div>
@@ -186,6 +186,8 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        // Force update check to sync manifest/icons immediately
+                        registration.update();
                     })
                     .catch(function(err) {
                         console.log('ServiceWorker registration failed: ', err);

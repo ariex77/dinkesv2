@@ -39,7 +39,15 @@
                 </td>
             </tr>
             <tr>
-                <th>Keterangan</th>
+                <th>Pelimpahan Tugas</th>
+                <td class="text-end">{{ $izincuti->pelimpahan_tugas }}</td>
+            </tr>
+            <tr>
+                <th>Nama Kepala Divisi</th>
+                <td class="text-end">{{ $izincuti->nama_kepala_divisi }}</td>
+            </tr>
+            <tr>
+                <th>Alasan Cuti</th>
                 <td class="text-end">{{ $izincuti->keterangan }}</td>
             </tr>
         </table>

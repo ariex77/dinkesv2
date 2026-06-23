@@ -294,7 +294,7 @@
                                     $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
                                     if ($pulangcepat != null) $jml_pulangcepat++;
 
-                                    $potongan_istirahat = hitungPotonganIstirahat($d->istirahat_in, $d->istirahat_out, $d->jam_awal_istirahat, $d->jam_akhir_istirahat);
+                                    $potongan_istirahat = hitungPotonganIstirahat($d->istirahat_out, $d->istirahat_in, $d->jam_awal_istirahat, $d->jam_akhir_istirahat);
                                     $potongan_tidak_absen = (empty($d->jam_out) || empty($d->jam_in)) ? $d->total_jam : 0;
                                     $status_potongan_istirahat = $d->status_potongan_istirahat ?? $generalsetting->potongan_istirahat;
                                     $potongan_jam = $potongan_tidak_absen == 0 ? ($pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)) : $potongan_tidak_absen;
@@ -309,8 +309,8 @@
                                         $istirahat_in_val = (!empty($d->istirahat_in)) ? date('H:i', strtotime($d->istirahat_in)) : null;
                                         $istirahat_out_val = (!empty($d->istirahat_out)) ? date('H:i', strtotime($d->istirahat_out)) : null;
 
-                                        if ($istirahat_in_val && $istirahat_out_val) {
-                                            $ket_istirahat = '<span style="color:#3498db">' . $istirahat_in_val . ' - ' . $istirahat_out_val . '</span>';
+                                        if ($istirahat_out_val && $istirahat_in_val) {
+                                            $ket_istirahat = '<span style="color:#3498db">' . $istirahat_out_val . ' - ' . $istirahat_in_val . '</span>';
                                         } else {
                                             $ket_istirahat = '<span style="color:red">Belum Absen</span>';
                                         }
@@ -364,6 +364,9 @@
                                         $keyDeptCabang = $karyawan->kode_dept . '|' . $karyawan->kode_cabang;
                                         $mapDept = $jadwal_bydept[$keyDeptCabang] ?? [];
                                         $totalJamJadwal = $mapDept[$nama_hari] ?? null;
+                                    }
+                                    if ($totalJamJadwal === null) {
+                                        $totalJamJadwal = $jadwal_global[$nama_hari] ?? null;
                                     }
 
                                     if ($totalJamJadwal !== null && !$is_future) {

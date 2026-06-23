@@ -8,6 +8,8 @@ use App\Models\Detailtunjangan;
 use App\Models\Jenistunjangan;
 use App\Models\Karyawan;
 use App\Models\Tunjangan;
+use App\Imports\TunjanganImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +49,11 @@ class TunjanganController extends Controller
         if (!empty($request->kode_dept)) {
             $query->where('karyawan.kode_dept', $request->kode_dept);
         }
+
+        if (!empty($request->tanggal)) {
+            $query->where('karyawan_tunjangan.tanggal_berlaku', $request->tanggal);
+        }
+
         $query->groupBy(
             'karyawan_tunjangan_detail.kode_tunjangan',
             'karyawan_tunjangan.nik',
@@ -284,6 +291,85 @@ class TunjanganController extends Controller
             return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
         } catch (\Exception $e) {
             return Redirect::back()->with(messageError('Data Gagal Dihapus ' . $e->getMessage()));
+        }
+    }
+
+    public function import()
+    {
+        return view('datamaster.tunjangan.import');
+    }
+
+    public function import_proses(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new TunjanganImport, $request->file('file'));
+            return Redirect::back()->with(messageSuccess('Data Berhasil Diimport'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError('Data Gagal Diimport: ' . $e->getMessage()));
+        }
+    }
+
+    public function download_template()
+    {
+        $filename = 'template_tunjangan.xlsx';
+        $jenis_tunjangan = Jenistunjangan::orderBy('kode_jenis_tunjangan')->get();
+        
+        $header = [
+            'nik' => 'NIK',
+            'nama_karyawan' => 'NAMA KARYAWAN',
+            'tanggal_berlaku' => 'TANGGAL BERLAKU'
+        ];
+
+        foreach ($jenis_tunjangan as $jt) {
+            $header[$jt->kode_jenis_tunjangan] = $jt->jenis_tunjangan;
+        }
+
+        $karyawan = Karyawan::limit(10)->get();
+        $data = [];
+        foreach ($karyawan as $k) {
+            $row = [
+                $k->nik,
+                $k->nama_karyawan,
+                date('Y-m-d')
+            ];
+            foreach ($jenis_tunjangan as $jt) {
+                $row[] = '0';
+            }
+            $data[] = $row;
+        }
+
+        return Excel::download(new class($header, $data) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+            private $header;
+            private $data;
+            public function __construct($header, $data) {
+                $this->header = $header;
+                $this->data = $data;
+            }
+            public function collection() {
+                return collect($this->data);
+            }
+            public function headings(): array {
+                return array_values($this->header);
+            }
+        }, $filename);
+    }
+
+    public function delete_multiple(Request $request)
+    {
+        $kode_tunjangan = $request->kode_tunjangan;
+        if (empty($kode_tunjangan)) {
+            return Redirect::back()->with(messageError('Pilih data yang akan dihapus'));
+        }
+
+        try {
+            Tunjangan::whereIn('kode_tunjangan', $kode_tunjangan)->delete();
+            return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError('Data Gagal Dihapus: ' . $e->getMessage()));
         }
     }
 }

@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\DB;
 use App\Exports\PresensiExport;
 use App\Exports\GajiExport;
 use App\Exports\PresensiKaryawanExport;
+use App\Exports\CutiExport;
+use App\Exports\JadwalExport;
+use App\Exports\ReimbursementExport;
 use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
@@ -59,6 +62,11 @@ class LaporanController extends Controller
         if (!empty($kode_dept)) {
             $query->where('kode_dept', $kode_dept);
         }
+        $periode_dari = $tahun . '-01-01';
+        $query->where(function($q) use ($periode_dari) {
+            $q->where('karyawan.status_aktif_karyawan', 1)
+              ->orWhere('karyawan.tanggal_nonaktif', '>=', $periode_dari);
+        });
         $karyawan = $query->get();
 
         // Get Approved Leave Data (Days)
@@ -103,8 +111,8 @@ class LaporanController extends Controller
         $data['jenis_cuti'] = !empty($master_cuti) ? $master_cuti->jenis_cuti : 'Semua Jenis Cuti';
         $data['generalsetting'] = $generalsetting;
 
-        if(isset($_POST['exportexcel'])){
-             // Future export
+        if ($request->has('exportButton')) {
+            return Excel::download(new CutiExport($data), 'Laporan Cuti Karyawan ' . $tahun . '.xlsx');
         }
         
         return view('laporan.cetak_cuti', $data);
@@ -146,22 +154,43 @@ class LaporanController extends Controller
         if ($request->periode_laporan == 1) {
             if ($periode_laporan_lintas_bulan == 1) {
                 if ($request->bulan == 1) {
-                    $bulan = 12;
-                    $tahun = $request->tahun - 1;
+                    $bulan_dari = 12;
+                    $tahun_dari = $request->tahun - 1;
                 } else {
-                    $bulan = $request->bulan - 1;
-                    $tahun = $request->tahun;
+                    $bulan_dari = $request->bulan - 1;
+                    $tahun_dari = $request->tahun;
+                }
+                $bulan_sampai = $request->bulan;
+                $tahun_sampai = $request->tahun;
+            } elseif ($periode_laporan_lintas_bulan == 2) {
+                $bulan_dari = $request->bulan;
+                $tahun_dari = $request->tahun;
+                if ($request->bulan == 12) {
+                    $bulan_sampai = 1;
+                    $tahun_sampai = $request->tahun + 1;
+                } else {
+                    $bulan_sampai = $request->bulan + 1;
+                    $tahun_sampai = $request->tahun;
                 }
             } else {
-                $bulan = $request->bulan;
-                $tahun = $request->tahun;
+                $bulan_dari = $request->bulan;
+                $tahun_dari = $request->tahun;
+                $bulan_sampai = $request->bulan;
+                $tahun_sampai = $request->tahun;
             }
 
-            // Menambahkan nol di depan bulan jika bulan kurang dari 10
+            $bulan_dari = str_pad($bulan_dari, 2, '0', STR_PAD_LEFT);
+            $last_day_start = date('t', strtotime($tahun_dari . '-' . $bulan_dari . '-01'));
+            $p_dari_val = min($periode_laporan_dari, $last_day_start);
+            $p_dari = str_pad($p_dari_val, 2, '0', STR_PAD_LEFT);
 
-            $bulan = str_pad($bulan, 2, '0', STR_PAD_LEFT);
-            $periode_dari = $tahun . '-' . $bulan . '-' . $periode_laporan_dari;
-            $periode_sampai = $request->tahun . '-' . $request->bulan . '-' . $periode_laporan_sampai;
+            $bulan_sampai = str_pad($bulan_sampai, 2, '0', STR_PAD_LEFT);
+            $last_day_end = date('t', strtotime($tahun_sampai . '-' . $bulan_sampai . '-01'));
+            $p_sampai_val = min($periode_laporan_sampai, $last_day_end);
+            $p_sampai = str_pad($p_sampai_val, 2, '0', STR_PAD_LEFT);
+
+            $periode_dari = $tahun_dari . '-' . $bulan_dari . '-' . $p_dari;
+            $periode_sampai = $tahun_sampai . '-' . $bulan_sampai . '-' . $p_sampai;
         } elseif ($request->periode_laporan == 2) {
             // Menambahkan nol di depan bulan jika bulan kurang dari 10
 
@@ -210,8 +239,8 @@ class LaporanController extends Controller
          * lalu dikonversi menjadi array PHP sederhana yang dipakai di view.
          */
 
-        // 1) Jadwal by-date per karyawan
-        $jadwal_bydate = DB::table('presensi_jamkerja_bydate')
+        // 1) Jadwal by-date per karyawan (presensi_jamkerja_bydate)
+        $jadwal_bydate_raw = DB::table('presensi_jamkerja_bydate')
             ->join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
             ->select(
                 'presensi_jamkerja_bydate.nik',
@@ -222,7 +251,25 @@ class LaporanController extends Controller
                 'presensi_jamkerja.jam_pulang'
             )
             ->whereBetween('presensi_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
-            ->get()
+            ->get();
+
+        // 1.5) Jadwal approved from ajuan_jadwal
+        $jadwal_ajuan_raw = DB::table('ajuan_jadwal')
+            ->join('presensi_jamkerja', 'ajuan_jadwal.kode_jam_kerja_tujuan', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'ajuan_jadwal.nik',
+                'ajuan_jadwal.tanggal',
+                'presensi_jamkerja.total_jam',
+                'presensi_jamkerja.nama_jam_kerja',
+                'presensi_jamkerja.jam_masuk',
+                'presensi_jamkerja.jam_pulang'
+            )
+            ->where('ajuan_jadwal.status', 'a')
+            ->whereBetween('ajuan_jadwal.tanggal', [$periode_dari, $periode_sampai])
+            ->get();
+
+        // Merge both into jadwal_bydate map
+        $jadwal_bydate = $jadwal_bydate_raw->concat($jadwal_ajuan_raw)
             ->groupBy('nik')
             ->map(function ($rows) {
                 $result = [];
@@ -321,6 +368,31 @@ class LaporanController extends Controller
                 return $result;
             });
 
+        // 5) Jadwal Global (Jika diaktifkan)
+        $jadwal_global = [];
+        if ($generalsetting->global_jamkerja_aktif) {
+            $jadwal_global = DB::table('global_jamkerja')
+                ->join('presensi_jamkerja', 'global_jamkerja.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                ->select(
+                    'global_jamkerja.hari',
+                    'presensi_jamkerja.total_jam',
+                    'presensi_jamkerja.nama_jam_kerja',
+                    'presensi_jamkerja.jam_masuk',
+                    'presensi_jamkerja.jam_pulang'
+                )
+                ->get()
+                ->keyBy('hari')
+                ->map(function ($row) {
+                    return [
+                        'total_jam' => $row->total_jam,
+                        'nama_jam_kerja' => $row->nama_jam_kerja,
+                        'jam_masuk' => $row->jam_masuk,
+                        'jam_pulang' => $row->jam_pulang,
+                    ];
+                })
+                ->toArray();
+        }
+
 
         $gaji_pokok = Gajipokok::select(
             'nik',
@@ -384,7 +456,7 @@ class LaporanController extends Controller
         $tunjangan->groupBy('karyawan_tunjangan.nik');
 
 
-        $penyesuaian_gaji = Detailpenyesuaiangaji::select('nik', 'penambah', 'pengurang')
+        $penyesuaian_gaji = Detailpenyesuaiangaji::select('nik', 'penambah', 'pengurang', 'keterangan')
             ->join('karyawan_penyesuaian_gaji', 'karyawan_penyesuaian_gaji_detail.kode_penyesuaian_gaji', '=', 'karyawan_penyesuaian_gaji.kode_penyesuaian_gaji')
             ->where('bulan', $request->bulan)
             ->where('tahun', $request->tahun);
@@ -394,9 +466,14 @@ class LaporanController extends Controller
             ->join('pinjaman', 'pembayaran_pinjaman.pinjaman_id', '=', 'pinjaman.id')
             ->where('pembayaran_pinjaman.bulan_gaji', $request->bulan)
             ->where('pembayaran_pinjaman.tahun_gaji', $request->tahun)
+            ->where('pembayaran_pinjaman.jenis_pembayaran', 'C')
             ->groupBy('pinjaman.nik');
 
         $q_presensi = Karyawan::query();
+        $q_presensi->where(function($q) use ($periode_dari) {
+            $q->where('karyawan.status_aktif_karyawan', 1)
+              ->orWhere('karyawan.tanggal_nonaktif', '>=', $periode_dari);
+        });
         $q_presensi->select(
             'karyawan.nik',
             'karyawan.nik_show',
@@ -405,6 +482,8 @@ class LaporanController extends Controller
             'karyawan.kode_dept',
             'nama_dept',
             'karyawan.kode_cabang',
+            'karyawan.hitung_pph21',
+            'karyawan.kode_status_kawin',
             'presensi.tanggal',
             'presensi.status',
             'presensi.kode_jam_kerja',
@@ -436,6 +515,7 @@ class LaporanController extends Controller
             'bpjs_tenagakerja.jumlah as bpjs_tenagakerja',
             'penambah',
             'pengurang',
+            'penyesuaian_gaji.keterangan as keterangan_penyesuaian',
             'pinjaman_cicilan.total_cicilan',
             ...$select_field_tunjangan
         );
@@ -508,6 +588,46 @@ class LaporanController extends Controller
         $data['jadwal_grup_bydate'] = $jadwal_grup_bydate;
         $data['jadwal_byday'] = $jadwal_byday;
         $data['jadwal_bydept'] = $jadwal_bydept;
+        $data['jadwal_global'] = $jadwal_global;
+
+        // === PERFORMANCE OPTIMIZATION: Pre-load data to avoid N+1 queries in blade ===
+
+        // 1. Pre-load LemburKaryawanKhusus for all employees → O(1) lookup by NIK
+        $data['lembur_khusus_map'] = \App\Models\LemburKaryawanKhusus::where('status', 1)
+            ->get()
+            ->keyBy('nik');
+
+        // 2. Pre-load libur nasional dates as indexed set for O(1) lookup
+        $data['libur_nasional_dates'] = DB::table('hari_libur_detail')
+            ->join('hari_libur', 'hari_libur_detail.kode_libur', '=', 'hari_libur.kode_libur')
+            ->whereBetween('hari_libur.tanggal', [$periode_dari, $periode_sampai])
+            ->pluck('hari_libur.tanggal')
+            ->flip()
+            ->toArray();
+
+        // 3. Create indexed versions of datalibur for O(1) lookup (key = "nik|tanggal")
+        $datalibur_indexed = [];
+        foreach ($data['datalibur'] as $item) {
+            $key = $item['nik'] . '|' . $item['tanggal'];
+            $datalibur_indexed[$key][] = $item;
+        }
+        // Also index libur by tanggal only (for entries where nik is null = applies to all)
+        $datalibur_by_tanggal = [];
+        foreach ($data['datalibur'] as $item) {
+            if (empty($item['nik'])) {
+                $datalibur_by_tanggal[$item['tanggal']][] = $item;
+            }
+        }
+        $data['datalibur_indexed'] = $datalibur_indexed;
+        $data['datalibur_by_tanggal'] = $datalibur_by_tanggal;
+
+        // 4. Create indexed versions of datalembur for O(1) lookup (key = "nik|tanggal")
+        $datalembur_indexed = [];
+        foreach ($data['datalembur'] as $item) {
+            $key = $item['nik'] . '|' . $item['tanggal'];
+            $datalembur_indexed[$key][] = $item;
+        }
+        $data['datalembur_indexed'] = $datalembur_indexed;
         // Simpan parameter request untuk button kunci laporan
         $data['request_params'] = [
             'periode_laporan' => $request->periode_laporan,
@@ -543,12 +663,15 @@ class LaporanController extends Controller
                     'kode_dept' => $rows->first()->kode_dept,
                     'nama_dept' => $rows->first()->nama_dept,
                     'kode_cabang' => $rows->first()->kode_cabang,
+                    'hitung_pph21' => $rows->first()->hitung_pph21,
+                    'kode_status_kawin' => $rows->first()->kode_status_kawin,
                     'gaji_pokok' => $rows->first()->gaji_pokok,
                     'jenis_upah' => $rows->first()->jenis_upah,
                     'bpjs_kesehatan' => $rows->first()->bpjs_kesehatan,
                     'bpjs_tenagakerja' => $rows->first()->bpjs_tenagakerja,
                     'penambah' => $rows->first()->penambah,
                     'pengurang' => $rows->first()->pengurang,
+                    'keterangan_penyesuaian' => $rows->first()->keterangan_penyesuaian,
                     'cicilan_pinjaman' => $rows->first()->total_cicilan,
 
                 ];
@@ -592,6 +715,26 @@ class LaporanController extends Controller
             });
             $data['laporan_presensi'] = $laporan_presensi;
             $data['jenis_tunjangan'] = $jenis_tunjangan;
+            $data['bulan'] = $request->bulan;
+            $data['tahun'] = $request->tahun;
+
+            if ($request->bulan == 12) {
+                $janNovStats = DB::table('pph21_slip_detail')
+                    ->join('slip_gaji', 'pph21_slip_detail.kode_slip_gaji', '=', 'slip_gaji.kode_slip_gaji')
+                    ->select(
+                        'pph21_slip_detail.nik',
+                        DB::raw('SUM(pph21_slip_detail.penghasilan_bruto) as total_bruto'),
+                        DB::raw('SUM(pph21_slip_detail.pph21_terutang) as total_pph')
+                    )
+                    ->where('slip_gaji.tahun', $request->tahun)
+                    ->whereBetween('slip_gaji.bulan', [1, 11])
+                    ->groupBy('pph21_slip_detail.nik')
+                    ->get()
+                    ->keyBy('nik');
+                $data['janNovStatsAll'] = $janNovStats;
+            } else {
+                $data['janNovStatsAll'] = collect();
+            }
 
 
             if ($user->hasRole('karyawan')) {
@@ -602,7 +745,13 @@ class LaporanController extends Controller
             } else {
                 if ($request->format_laporan == 1) {
                     if ($request->has('exportButton')) {
-                        return Excel::download(new PresensiExport($data), 'Rekap Presensi ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+                        ini_set('memory_limit', '1024M');
+                        ini_set('max_execution_time', 300);
+                        $view_excel = $request->format_rekap == 2 ? 'laporan.presensi_excel_v2' : 'laporan.presensi_excel';
+                        if ($request->format_rekap == 2) {
+                            return Excel::download(new \App\Exports\PresensiExportV2($data), 'Rekap Presensi ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+                        }
+                        return Excel::download(new PresensiExport($data, $view_excel), 'Rekap Presensi ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
                     }
                     $view = $request->format_rekap == 2 ? 'laporan.presensi_cetak_v2' : 'laporan.presensi_cetak';
                     return view($view, $data);
@@ -643,20 +792,42 @@ class LaporanController extends Controller
             if ($request->periode_laporan == 1) {
                 if ($periode_laporan_lintas_bulan == 1) {
                     if ($request->bulan == 1) {
-                        $bulan = 12;
-                        $tahun = $request->tahun - 1;
+                        $bulan_dari = 12;
+                        $tahun_dari = $request->tahun - 1;
                     } else {
-                        $bulan = $request->bulan - 1;
-                        $tahun = $request->tahun;
+                        $bulan_dari = $request->bulan - 1;
+                        $tahun_dari = $request->tahun;
+                    }
+                    $bulan_sampai = $request->bulan;
+                    $tahun_sampai = $request->tahun;
+                } elseif ($periode_laporan_lintas_bulan == 2) {
+                    $bulan_dari = $request->bulan;
+                    $tahun_dari = $request->tahun;
+                    if ($request->bulan == 12) {
+                        $bulan_sampai = 1;
+                        $tahun_sampai = $request->tahun + 1;
+                    } else {
+                        $bulan_sampai = $request->bulan + 1;
+                        $tahun_sampai = $request->tahun;
                     }
                 } else {
-                    $bulan = $request->bulan;
-                    $tahun = $request->tahun;
+                    $bulan_dari = $request->bulan;
+                    $tahun_dari = $request->tahun;
+                    $bulan_sampai = $request->bulan;
+                    $tahun_sampai = $request->tahun;
                 }
 
-                $bulan = str_pad($bulan, 2, '0', STR_PAD_LEFT);
-                $periode_dari = $tahun . '-' . $bulan . '-' . $periode_laporan_dari;
-                $periode_sampai = $request->tahun . '-' . $request->bulan . '-' . $periode_laporan_sampai;
+                $bulan_dari = str_pad($bulan_dari, 2, '0', STR_PAD_LEFT);
+                $last_day_start = date('t', strtotime($tahun_dari . '-' . $bulan_dari . '-01'));
+                $p_dari_val = min($periode_laporan_dari, $last_day_start);
+                $p_dari = str_pad($p_dari_val, 2, '0', STR_PAD_LEFT);
+                $periode_dari = $tahun_dari . '-' . $bulan_dari . '-' . $p_dari;
+
+                $bulan_sampai = str_pad($bulan_sampai, 2, '0', STR_PAD_LEFT);
+                $last_day_end = date('t', strtotime($tahun_sampai . '-' . $bulan_sampai . '-01'));
+                $p_sampai_val = min($periode_laporan_sampai, $last_day_end);
+                $p_sampai = str_pad($p_sampai_val, 2, '0', STR_PAD_LEFT);
+                $periode_sampai = $tahun_sampai . '-' . $bulan_sampai . '-' . $p_sampai;
             } else {
                 $bulan = str_pad($request->bulan, 2, '0', STR_PAD_LEFT);
                 $periode_dari = $request->tahun . '-' . $bulan . '-01';
@@ -664,8 +835,8 @@ class LaporanController extends Controller
             }
 
             // Ambil mapping jadwal kerja (sama seperti di cetakpresensi)
-            // 1) Jadwal by-date per karyawan
-            $jadwal_bydate = DB::table('presensi_jamkerja_bydate')
+            // 1) Jadwal by-date per karyawan (presensi_jamkerja_bydate)
+            $jadwal_bydate_raw = DB::table('presensi_jamkerja_bydate')
                 ->join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
                 ->select(
                     'presensi_jamkerja_bydate.nik',
@@ -674,7 +845,23 @@ class LaporanController extends Controller
                     'presensi_jamkerja.total_jam'
                 )
                 ->whereBetween('presensi_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
-                ->get()
+                ->get();
+
+            // 1.5) Jadwal approved from ajuan_jadwal
+            $jadwal_ajuan_raw = DB::table('ajuan_jadwal')
+                ->join('presensi_jamkerja', 'ajuan_jadwal.kode_jam_kerja_tujuan', '=', 'presensi_jamkerja.kode_jam_kerja')
+                ->select(
+                    'ajuan_jadwal.nik',
+                    'ajuan_jadwal.tanggal',
+                    'presensi_jamkerja.kode_jam_kerja',
+                    'presensi_jamkerja.total_jam'
+                )
+                ->where('ajuan_jadwal.status', 'a')
+                ->whereBetween('ajuan_jadwal.tanggal', [$periode_dari, $periode_sampai])
+                ->get();
+
+            // Merge both into jadwal_bydate map
+            $jadwal_bydate = $jadwal_bydate_raw->concat($jadwal_ajuan_raw)
                 ->groupBy('nik')
                 ->map(function ($rows) {
                     $result = [];
@@ -759,6 +946,27 @@ class LaporanController extends Controller
                     return $result;
                 });
 
+            // 5) Jadwal Global (Jika diaktifkan)
+            $jadwal_global = [];
+            if ($generalsetting->global_jamkerja_aktif) {
+                $jadwal_global = DB::table('global_jamkerja')
+                    ->join('presensi_jamkerja', 'global_jamkerja.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->select(
+                        'global_jamkerja.hari',
+                        'presensi_jamkerja.kode_jam_kerja',
+                        'presensi_jamkerja.total_jam'
+                    )
+                    ->get()
+                    ->keyBy('hari')
+                    ->map(function ($row) {
+                        return [
+                            'kode_jam_kerja' => $row->kode_jam_kerja,
+                            'total_jam' => $row->total_jam
+                        ];
+                    })
+                    ->toArray();
+            }
+
             // Ambil data libur dan lembur
             $datalibur = getdatalibur($periode_dari, $periode_sampai);
             $datalembur = getlembur($periode_dari, $periode_sampai);
@@ -836,6 +1044,11 @@ class LaporanController extends Controller
             // Ambil semua karyawan yang sesuai filter
             $karyawan_query = Karyawan::query()
                 ->select('karyawan.nik', 'karyawan.kode_dept', 'karyawan.kode_cabang');
+
+            $karyawan_query->where(function($q) use ($periode_dari) {
+                $q->where('karyawan.status_aktif_karyawan', 1)
+                  ->orWhere('karyawan.tanggal_nonaktif', '>=', $periode_dari);
+            });
 
             if (!empty($request->kode_cabang)) {
                 $karyawan_query->where('karyawan.kode_cabang', $request->kode_cabang);
@@ -981,6 +1194,11 @@ class LaporanController extends Controller
                                     $jadwal_info = $mapDept[$nama_hari];
                                     $kode_jam_kerja = $jadwal_info['kode_jam_kerja'];
                                 }
+                                // 5) Cek jadwal global
+                                elseif (isset($jadwal_global[$nama_hari])) {
+                                    $jadwal_info = $jadwal_global[$nama_hari];
+                                    $kode_jam_kerja = $jadwal_info['kode_jam_kerja'];
+                                }
                             }
 
                             // Jika ada jadwal tapi tidak ada presensi → Alpa
@@ -1055,20 +1273,38 @@ class LaporanController extends Controller
             if ($request->periode_laporan == 1) {
                 if ($periode_laporan_lintas_bulan == 1) {
                     if ($request->bulan == 1) {
-                        $bulan = 12;
-                        $tahun = $request->tahun - 1;
+                        $bulan_dari = 12;
+                        $tahun_dari = $request->tahun - 1;
                     } else {
-                        $bulan = $request->bulan - 1;
-                        $tahun = $request->tahun;
+                        $bulan_dari = $request->bulan - 1;
+                        $tahun_dari = $request->tahun;
+                    }
+                    $bulan_sampai = $request->bulan;
+                    $tahun_sampai = $request->tahun;
+                } elseif ($periode_laporan_lintas_bulan == 2) {
+                    $bulan_dari = $request->bulan;
+                    $tahun_dari = $request->tahun;
+                    if ($request->bulan == 12) {
+                        $bulan_sampai = 1;
+                        $tahun_sampai = $request->tahun + 1;
+                    } else {
+                        $bulan_sampai = $request->bulan + 1;
+                        $tahun_sampai = $request->tahun;
                     }
                 } else {
-                    $bulan = $request->bulan;
-                    $tahun = $request->tahun;
+                    $bulan_dari = $request->bulan;
+                    $tahun_dari = $request->tahun;
+                    $bulan_sampai = $request->bulan;
+                    $tahun_sampai = $request->tahun;
                 }
 
-                $bulan = str_pad($bulan, 2, '0', STR_PAD_LEFT);
-                $periode_dari = $tahun . '-' . $bulan . '-' . $periode_laporan_dari;
-                $periode_sampai = $request->tahun . '-' . $request->bulan . '-' . $periode_laporan_sampai;
+                $bulan_dari = str_pad($bulan_dari, 2, '0', STR_PAD_LEFT);
+                $p_dari = str_pad($periode_laporan_dari, 2, '0', STR_PAD_LEFT); 
+                $periode_dari = $tahun_dari . '-' . $bulan_dari . '-' . $p_dari;
+
+                $bulan_sampai = str_pad($bulan_sampai, 2, '0', STR_PAD_LEFT);
+                $p_sampai = str_pad($periode_laporan_sampai, 2, '0', STR_PAD_LEFT); 
+                $periode_sampai = $tahun_sampai . '-' . $bulan_sampai . '-' . $p_sampai;
             } else {
                 $bulan = str_pad($request->bulan, 2, '0', STR_PAD_LEFT);
                 $periode_dari = $request->tahun . '-' . $bulan . '-01';
@@ -1203,8 +1439,8 @@ class LaporanController extends Controller
         $periode_dari = $request->dari;
         $periode_sampai = $request->sampai;
 
-        // 1) Jadwal by-date per karyawan
-        $jadwal_bydate = DB::table('presensi_jamkerja_bydate')
+        // 1) Jadwal by-date per karyawan (presensi_jamkerja_bydate)
+        $jadwal_bydate_raw = DB::table('presensi_jamkerja_bydate')
             ->join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
             ->select(
                 'presensi_jamkerja_bydate.nik',
@@ -1215,7 +1451,25 @@ class LaporanController extends Controller
                 'presensi_jamkerja.color'
             )
             ->whereBetween('presensi_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
-            ->get()
+            ->get();
+
+        // 1.5) Jadwal approved from ajuan_jadwal
+        $jadwal_ajuan_raw = DB::table('ajuan_jadwal')
+            ->join('presensi_jamkerja', 'ajuan_jadwal.kode_jam_kerja_tujuan', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'ajuan_jadwal.nik',
+                'ajuan_jadwal.tanggal',
+                'presensi_jamkerja.nama_jam_kerja',
+                'presensi_jamkerja.jam_masuk',
+                'presensi_jamkerja.jam_pulang',
+                'presensi_jamkerja.color'
+            )
+            ->where('ajuan_jadwal.status', 'a')
+            ->whereBetween('ajuan_jadwal.tanggal', [$periode_dari, $periode_sampai])
+            ->get();
+
+        // Merge both into jadwal_bydate map
+        $jadwal_bydate = $jadwal_bydate_raw->concat($jadwal_ajuan_raw)
             ->groupBy('nik')
             ->map(function ($rows) {
                 $result = [];
@@ -1314,7 +1568,36 @@ class LaporanController extends Controller
                 return $result;
             });
 
+        // 5) Jadwal Global (Jika diaktifkan)
+        $jadwal_global = [];
+        if ($generalsetting->global_jamkerja_aktif) {
+            $jadwal_global = DB::table('global_jamkerja')
+                ->join('presensi_jamkerja', 'global_jamkerja.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                ->select(
+                    'global_jamkerja.hari',
+                    'presensi_jamkerja.nama_jam_kerja',
+                    'presensi_jamkerja.jam_masuk',
+                    'presensi_jamkerja.jam_pulang',
+                    'presensi_jamkerja.color'
+                )
+                ->get()
+                ->keyBy('hari')
+                ->map(function ($row) {
+                    return [
+                        'nama_jam_kerja' => $row->nama_jam_kerja,
+                        'jam_masuk' => $row->jam_masuk,
+                        'jam_pulang' => $row->jam_pulang,
+                        'color' => $row->color,
+                    ];
+                })
+                ->toArray();
+        }
+
         $q_karyawan = Karyawan::query();
+        $q_karyawan->where(function($q) use ($periode_dari) {
+            $q->where('karyawan.status_aktif_karyawan', 1)
+              ->orWhere('karyawan.tanggal_nonaktif', '>=', $periode_dari);
+        });
         $q_karyawan->select('karyawan.nik', 'karyawan.nik_show', 'nama_karyawan', 'nama_jabatan', 'karyawan.kode_dept', 'nama_dept', 'karyawan.kode_cabang');
         $q_karyawan->leftJoin('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
         $q_karyawan->leftJoin('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
@@ -1341,7 +1624,11 @@ class LaporanController extends Controller
         $data['jadwal_grup_bydate'] = $jadwal_grup_bydate;
         $data['jadwal_byday'] = $jadwal_byday;
         $data['jadwal_bydept'] = $jadwal_bydept;
+        $data['jadwal_global'] = $jadwal_global;
         $data['karyawan'] = $karyawan;
+        if ($request->has('exportButton')) {
+            return Excel::download(new JadwalExport($data), 'Laporan Jadwal Karyawan ' . $periode_dari . ' - ' . $periode_sampai . '.xlsx');
+        }
 
         return view('laporan.jadwal_cetak', $data);
     }
@@ -1373,5 +1660,251 @@ class LaporanController extends Controller
         $data['generalsetting'] = $generalsetting;
 
         return view('laporan.lembur_detail_cetak', $data);
+    }
+
+    public function reimbursement()
+    {
+        $cabang = Cabang::orderBy('kode_cabang')->get();
+        $departemen = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $cabang;
+        $data['departemen'] = $departemen;
+        return view('laporan.reimbursement', $data);
+    }
+
+    public function cetakreimbursement(Request $request)
+    {
+        $generalsetting = Pengaturanumum::where('id', 1)->first();
+        $dari = $request->dari;
+        $sampai = $request->sampai;
+
+        $query = DB::table('reimbursement')
+            ->join('karyawan', 'reimbursement.nik', '=', 'karyawan.nik')
+            ->leftJoin('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->leftJoin('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->select('reimbursement.*', 'karyawan.nama_karyawan', 'departemen.nama_dept', 'cabang.nama_cabang')
+            ->whereBetween('reimbursement.tanggal_pengajuan', [$dari, $sampai]);
+
+        if (!empty($request->kode_cabang)) {
+            $query->where('karyawan.kode_cabang', $request->kode_cabang);
+        }
+
+        if (!empty($request->kode_dept)) {
+            $query->where('karyawan.kode_dept', $request->kode_dept);
+        }
+
+        if (!empty($request->nik)) {
+            $query->where('reimbursement.nik', $request->nik);
+        }
+
+        if (!empty($request->status)) {
+            $query->where('reimbursement.status', $request->status);
+        }
+
+        $reimbursement = $query->orderBy('reimbursement.tanggal_pengajuan', 'desc')->get();
+
+        // Let's load the details for each reimbursement
+        $reimbursement_ids = $reimbursement->pluck('id')->toArray();
+        $details_by_id = [];
+        $rekap = [];
+        if (!empty($reimbursement_ids)) {
+            $all_details = DB::table('reimbursement_detail')
+                ->join('jenis_reimbursement', 'reimbursement_detail.kode_jenis_reimburse', '=', 'jenis_reimbursement.kode_jenis_reimburse')
+                ->select('reimbursement_detail.*', 'jenis_reimbursement.nama_jenis')
+                ->whereIn('reimbursement_id', $reimbursement_ids)
+                ->get();
+                
+            foreach ($all_details as $det) {
+                $details_by_id[$det->reimbursement_id][] = $det;
+                
+                $nama_jenis = $det->nama_jenis;
+                if (!isset($rekap[$nama_jenis])) {
+                    $rekap[$nama_jenis] = [
+                        'nama_jenis' => $nama_jenis,
+                        'total_nominal' => 0,
+                        'total_disetujui' => 0
+                    ];
+                }
+                $rekap[$nama_jenis]['total_nominal'] += $det->nominal;
+                $rekap[$nama_jenis]['total_disetujui'] += $det->nominal_disetujui ?? 0;
+            }
+        }
+
+        $data['reimbursement'] = $reimbursement;
+        $data['details_by_id'] = $details_by_id;
+        $data['rekap'] = $rekap;
+        $data['dari'] = $dari;
+        $data['sampai'] = $sampai;
+        $data['generalsetting'] = $generalsetting;
+        $data['namacabang'] = !empty($request->kode_cabang) ? Cabang::where('kode_cabang', $request->kode_cabang)->first()->nama_cabang : 'Semua Cabang';
+        $data['namadept'] = !empty($request->kode_dept) ? Departemen::where('kode_dept', $request->kode_dept)->first()->nama_dept : 'Semua Departemen';
+
+        if ($request->has('exportButton')) {
+            return Excel::download(new ReimbursementExport($data), 'Laporan Reimbursement ' . $dari . ' - ' . $sampai . '.xlsx');
+        }
+
+        return view('laporan.reimbursement_cetak', $data);
+    }
+
+    public function pinjaman()
+    {
+        $cabang = Cabang::orderBy('kode_cabang')->get();
+        $departemen = Departemen::orderBy('kode_dept')->get();
+        $data['cabang'] = $cabang;
+        $data['departemen'] = $departemen;
+        $data['list_bulan'] = config('global.list_bulan');
+        $data['start_year'] = config('global.start_year');
+        return view('laporan.pinjaman', $data);
+    }
+
+    public function cetakpinjaman(Request $request)
+    {
+        $generalsetting = Pengaturanumum::where('id', 1)->first();
+
+        if ($request->jenis_laporan == 'rekap') {
+            $bulan = $request->bulan;
+            $tahun = $request->tahun;
+            
+            $start_date = "$tahun-" . str_pad($bulan, 2, '0', STR_PAD_LEFT) . "-01";
+            $end_date = date('Y-m-t', strtotime($start_date));
+            
+            // Get employees filtered
+            $employees_query = DB::table('karyawan')
+                ->leftJoin('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+                ->leftJoin('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
+
+            if (!empty($request->kode_cabang)) {
+                $employees_query->where('karyawan.kode_cabang', $request->kode_cabang);
+            }
+            if (!empty($request->kode_dept)) {
+                $employees_query->where('karyawan.kode_dept', $request->kode_dept);
+            }
+            if (!empty($request->nik)) {
+                $employees_query->where('karyawan.nik', $request->nik);
+            }
+
+            $karyawan = $employees_query->select(
+                'karyawan.nik', 
+                'karyawan.nama_karyawan', 
+                'departemen.nama_dept', 
+                'cabang.nama_cabang'
+            )
+            ->orderBy('karyawan.nama_karyawan')
+            ->get();
+            
+            $rekap = [];
+            foreach ($karyawan as $k) {
+                // 1. Saldo Awal (semua pinjaman yang dibuat sebelum $start_date dikurangi semua pembayaran sebelum $start_date)
+                $total_pinjaman_awal = DB::table('pinjaman')
+                    ->where('nik', $k->nik)
+                    ->where('status', '!=', 'B')
+                    ->where('tanggal_pinjaman', '<', $start_date)
+                    ->sum('jumlah_pinjaman');
+                    
+                $total_bayar_awal = DB::table('pembayaran_pinjaman')
+                    ->join('pinjaman', 'pembayaran_pinjaman.pinjaman_id', '=', 'pinjaman.id')
+                    ->where('pinjaman.nik', $k->nik)
+                    ->where('pinjaman.status', '!=', 'B')
+                    ->where('pembayaran_pinjaman.tanggal_bayar', '<', $start_date)
+                    ->sum('pembayaran_pinjaman.jumlah_bayar');
+                    
+                $saldo_awal = $total_pinjaman_awal - $total_bayar_awal;
+                
+                // 2. Penambah (pinjaman baru pada bulan ini)
+                $penambah = DB::table('pinjaman')
+                    ->where('nik', $k->nik)
+                    ->where('status', '!=', 'B')
+                    ->whereBetween('tanggal_pinjaman', [$start_date, $end_date])
+                    ->sum('jumlah_pinjaman');
+                    
+                // 3. Pembayaran Potong Gaji (jenis_pembayaran = 'C' pada bulan ini)
+                $potong_gaji = DB::table('pembayaran_pinjaman')
+                    ->join('pinjaman', 'pembayaran_pinjaman.pinjaman_id', '=', 'pinjaman.id')
+                    ->where('pinjaman.nik', $k->nik)
+                    ->where('pinjaman.status', '!=', 'B')
+                    ->where('pembayaran_pinjaman.jenis_pembayaran', 'C')
+                    ->whereBetween('pembayaran_pinjaman.tanggal_bayar', [$start_date, $end_date])
+                    ->sum('pembayaran_pinjaman.jumlah_bayar');
+                    
+                // 4. Pembayaran Bayar Cash (jenis_pembayaran IN ('M', 'P') pada bulan ini)
+                $bayar_cash = DB::table('pembayaran_pinjaman')
+                    ->join('pinjaman', 'pembayaran_pinjaman.pinjaman_id', '=', 'pinjaman.id')
+                    ->where('pinjaman.nik', $k->nik)
+                    ->where('pinjaman.status', '!=', 'B')
+                    ->whereIn('pembayaran_pinjaman.jenis_pembayaran', ['M', 'P'])
+                    ->whereBetween('pembayaran_pinjaman.tanggal_bayar', [$start_date, $end_date])
+                    ->sum('pembayaran_pinjaman.jumlah_bayar');
+                    
+                $saldo_akhir = $saldo_awal + $penambah - $potong_gaji - $bayar_cash;
+                
+                // Hanya tampilkan jika memiliki transaksi atau saldo
+                if ($saldo_awal > 0 || $penambah > 0 || $potong_gaji > 0 || $bayar_cash > 0) {
+                    $rekap[] = (object)[
+                        'nik' => $k->nik,
+                        'nama_karyawan' => $k->nama_karyawan,
+                        'nama_dept' => $k->nama_dept,
+                        'nama_cabang' => $k->nama_cabang,
+                        'saldo_awal' => $saldo_awal,
+                        'penambah' => $penambah,
+                        'potong_gaji' => $potong_gaji,
+                        'bayar_cash' => $bayar_cash,
+                        'saldo_akhir' => $saldo_akhir
+                    ];
+                }
+            }
+            
+            $data['rekap'] = collect($rekap);
+            $data['bulan'] = $bulan;
+            $data['tahun'] = $tahun;
+            $data['generalsetting'] = $generalsetting;
+            $data['namacabang'] = !empty($request->kode_cabang) ? Cabang::where('kode_cabang', $request->kode_cabang)->first()->nama_cabang : 'Semua Cabang';
+            $data['namadept'] = !empty($request->kode_dept) ? Departemen::where('kode_dept', $request->kode_dept)->first()->nama_dept : 'Semua Departemen';
+            
+            if ($request->has('exportButton')) {
+                return Excel::download(new \App\Exports\PinjamanExport($data, 'laporan.pinjaman_rekap_excel'), 'Laporan Rekap Pinjaman Bulanan ' . $bulan . '-' . $tahun . '.xlsx');
+            }
+            
+            return view('laporan.pinjaman_rekap_cetak', $data);
+        }
+
+        $dari = $request->dari;
+        $sampai = $request->sampai;
+
+        $query = DB::table('pinjaman')
+            ->join('karyawan', 'pinjaman.nik', '=', 'karyawan.nik')
+            ->leftJoin('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->leftJoin('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->select('pinjaman.*', 'karyawan.nama_karyawan', 'departemen.nama_dept', 'cabang.nama_cabang')
+            ->whereBetween('pinjaman.tanggal_pinjaman', [$dari, $sampai]);
+
+        if (!empty($request->kode_cabang)) {
+            $query->where('karyawan.kode_cabang', $request->kode_cabang);
+        }
+
+        if (!empty($request->kode_dept)) {
+            $query->where('karyawan.kode_dept', $request->kode_dept);
+        }
+
+        if (!empty($request->nik)) {
+            $query->where('pinjaman.nik', $request->nik);
+        }
+
+        if (!empty($request->status)) {
+            $query->where('pinjaman.status', $request->status);
+        }
+
+        $pinjaman = $query->orderBy('pinjaman.tanggal_pinjaman', 'desc')->get();
+
+        $data['pinjaman'] = $pinjaman;
+        $data['dari'] = $dari;
+        $data['sampai'] = $sampai;
+        $data['generalsetting'] = $generalsetting;
+        $data['namacabang'] = !empty($request->kode_cabang) ? Cabang::where('kode_cabang', $request->kode_cabang)->first()->nama_cabang : 'Semua Cabang';
+        $data['namadept'] = !empty($request->kode_dept) ? Departemen::where('kode_dept', $request->kode_dept)->first()->nama_dept : 'Semua Departemen';
+
+        if ($request->has('exportButton')) {
+            return Excel::download(new \App\Exports\PinjamanExport($data), 'Laporan Pinjaman ' . $dari . ' - ' . $sampai . '.xlsx');
+        }
+
+        return view('laporan.pinjaman_cetak', $data);
     }
 }

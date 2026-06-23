@@ -6,6 +6,7 @@ use App\Models\Izinabsen;
 use App\Models\Izinsakit;
 use App\Models\Izincuti;
 use App\Models\Izindinas;
+use App\Models\Reimbursement;
 use App\Models\Userkaryawan;
 use App\Models\User;
 use App\Models\ApprovalLayer;
@@ -52,6 +53,7 @@ class KaryawanApprovalController extends Controller
         $pendingIzinSakit = collect();
         $pendingIzinCuti = collect();
         $pendingIzinDinas = collect();
+        $pendingReimbursement = collect();
 
         foreach ($featureLevels as $fl) {
             if ($fl['feature'] === 'IZIN') {
@@ -140,6 +142,28 @@ class KaryawanApprovalController extends Controller
                 }
                 $pendingIzinDinas = $pendingIzinDinas->merge($q4->get());
             }
+
+            if ($fl['feature'] === 'REIMBURSEMENT') {
+                $q5 = Reimbursement::where('reimbursement.status', 'P')
+                    ->where('reimbursement.approval_step', $fl['level'])
+                    ->join('karyawan', 'reimbursement.nik', '=', 'karyawan.nik')
+                    ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+                    ->select('reimbursement.*', 'karyawan.nama_karyawan', 'karyawan.kode_dept', 'karyawan.kode_jabatan', 'departemen.nama_dept');
+
+                if ($fl['kode_dept']) {
+                    $q5->where('karyawan.kode_dept', $fl['kode_dept']);
+                }
+                if ($fl['kode_jabatan']) {
+                    $q5->where('karyawan.kode_jabatan', $fl['kode_jabatan']);
+                }
+                if (!empty($adminDeptCodes)) {
+                    $q5->whereIn('karyawan.kode_dept', $adminDeptCodes);
+                }
+                if (!empty($adminCabangCodes)) {
+                    $q5->whereIn('karyawan.kode_cabang', $adminCabangCodes);
+                }
+                $pendingReimbursement = $pendingReimbursement->merge($q5->get());
+            }
         }
 
         // Deduplicate
@@ -152,8 +176,9 @@ class KaryawanApprovalController extends Controller
         $data['pendingIzinSakit'] = $pendingIzinSakit;
         $data['pendingIzinCuti'] = $pendingIzinCuti;
         $data['pendingIzinDinas'] = $pendingIzinDinas;
+        $data['pendingReimbursement'] = $pendingReimbursement->unique('no_reimbursement');
         $data['admin'] = $admin;
-        $data['totalPending'] = $pendingIzinAbsen->count() + $pendingIzinSakit->count() + $pendingIzinCuti->count() + $pendingIzinDinas->count();
+        $data['totalPending'] = $pendingIzinAbsen->count() + $pendingIzinSakit->count() + $pendingIzinCuti->count() + $pendingIzinDinas->count() + $pendingReimbursement->count();
 
         return view('karyawanapproval.index', $data);
     }
@@ -212,6 +237,22 @@ class KaryawanApprovalController extends Controller
                 }
 
                 $count += $q1->count() + $q2->count() + $q3->count() + $q4->count();
+            }
+
+            if ($l->feature === 'REIMBURSEMENT') {
+                $q5 = Reimbursement::where('reimbursement.status', 'P')->where('reimbursement.approval_step', $l->level)
+                    ->join('karyawan', 'reimbursement.nik', '=', 'karyawan.nik');
+
+                if ($l->kode_dept) {
+                    $q5->where('karyawan.kode_dept', $l->kode_dept);
+                }
+                if (!empty($adminDeptCodes)) {
+                    $q5->whereIn('karyawan.kode_dept', $adminDeptCodes);
+                }
+                if (!empty($adminCabangCodes)) {
+                    $q5->whereIn('karyawan.kode_cabang', $adminCabangCodes);
+                }
+                $count += $q5->count();
             }
         }
 
@@ -378,6 +419,50 @@ class KaryawanApprovalController extends Controller
     {
         $this->validateDelegationAccess();
         app(IzindinasController::class)->cancelapprove($kode_izin_dinas);
+        return redirect()->route('karyawan-approval.index');
+    }
+
+    // ==================== REIMBURSEMENT ====================
+    public function approveReimbursement($no_reimbursement)
+    {
+        $admin = $this->validateDelegationAccess();
+        $no_reimbursement = Crypt::decrypt($no_reimbursement);
+        $reimbursement = Reimbursement::where('no_reimbursement', $no_reimbursement)
+            ->join('karyawan', 'reimbursement.nik', '=', 'karyawan.nik')
+            ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
+            ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->select('reimbursement.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'karyawan.kode_cabang', 'karyawan.kode_dept', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang')
+            ->first();
+
+        // Check admin's access
+        $adminCabangs = $admin->getCabangCodes();
+        $adminDepts = $admin->getDepartemenCodes();
+        if (!in_array($reimbursement->kode_cabang, $adminCabangs) || !in_array($reimbursement->kode_dept, $adminDepts)) {
+            abort(403, 'Admin tidak memiliki akses ke pengajuan reimbursement ini.');
+        }
+
+        $details = \App\Models\ReimbursementDetail::where('reimbursement_id', $reimbursement->id)
+            ->join('jenis_reimbursement', 'reimbursement_detail.kode_jenis_reimburse', '=', 'jenis_reimbursement.kode_jenis_reimburse')
+            ->select('reimbursement_detail.*', 'jenis_reimbursement.nama_jenis')
+            ->get();
+
+        $data['reimbursement'] = $reimbursement;
+        $data['details'] = $details;
+        return view('karyawanapproval.approve_reimbursement', $data);
+    }
+
+    public function storeApproveReimbursement(Request $request, $no_reimbursement)
+    {
+        $this->validateDelegationAccess();
+        app(ReimbursementController::class)->storeapprove($request, $no_reimbursement);
+        return redirect()->route('karyawan-approval.index');
+    }
+
+    public function cancelApproveReimbursement($no_reimbursement)
+    {
+        $this->validateDelegationAccess();
+        app(ReimbursementController::class)->cancelapprove($no_reimbursement);
         return redirect()->route('karyawan-approval.index');
     }
 }

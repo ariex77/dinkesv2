@@ -3,6 +3,7 @@
     <div class="row">
 
         <x-input-with-icon label="No Kontrak" name="no_kontrak" icon="ti ti-file-certificate" :disabled="true" placeholder="Auto" />
+        <x-input-with-icon label="No. Dokumen" name="no_dokumen" icon="ti ti-file-description" placeholder="No. Dokumen (Opsional)" value="{{ old('no_dokumen') }}" />
         <x-input-with-icon label="Tanggal Kontrak" name="tanggal" icon="ti ti-calendar" datepicker="flatpickr-date" value="{{ old('tanggal') }}" />
         
         <div class="form-group mb-1">

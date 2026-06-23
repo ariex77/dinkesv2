@@ -246,6 +246,25 @@
                 <label for="email">Email</label>
             </div>
 
+            {{-- Push Notification Setting Toggle --}}
+            <div class="flex items-center justify-between p-3 mb-3 border rounded-xl" style="border-color: #32745e; background: rgba(50, 116, 94, 0.02);">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white" style="background: #32745e;">
+                        <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-800" style="color: #2a6350;">Notifikasi Push PWA</div>
+                        <small class="text-xs text-gray-500" id="push-status-text">Memeriksa status...</small>
+                    </div>
+                </div>
+                <div class="position-relative" style="z-index: 10;">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="push-notification-toggle" class="sr-only peer" disabled>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#32745e]"></div>
+                    </label>
+                </div>
+            </div>
+
             {{-- Upload Foto --}}
             <div class="custom-file-upload" onclick="document.getElementById('foto').click()">
                 <input type="file" name="foto" id="foto" accept=".jpg, .jpeg, .png">
@@ -283,7 +302,7 @@
                 let no_hp = $('input[name="no_hp"]').val();
                 let alamat = $('textarea[name="alamat"]').val();
                 let username = $('input[name="username"]').val();
-               let email = $('input[name="email"]').val();
+                let email = $('input[name="email"]').val();
 
                 if (nama_karyawan == "" || no_ktp == "" || no_hp == "" || alamat == "" || username == "" || email == "") {
                     e.preventDefault();
@@ -294,6 +313,169 @@
                 const btn = document.getElementById('btnSimpan');
                 btn.disabled = true;
                 btn.innerHTML = `<ion-icon name="sync-outline" class="animate-spin"></ion-icon><span>Menyimpan...</span>`;
+            });
+
+            // PWA Push Notification Toggle Logic
+            const toggle = $('#push-notification-toggle');
+            const statusText = $('#push-status-text');
+
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                statusText.text('Tidak didukung di browser ini.');
+                toggle.prop('disabled', true);
+                return;
+            }
+
+            navigator.serviceWorker.ready.then(function(registration) {
+                return registration.pushManager.getSubscription().then(function(subscription) {
+                    toggle.prop('disabled', false);
+
+                    if (Notification.permission === 'denied') {
+                        statusText.text('Izin notifikasi diblokir.');
+                        toggle.prop('checked', false);
+                        return;
+                    }
+
+                    if (subscription) {
+                        statusText.text('Aktif di perangkat ini.');
+                        toggle.prop('checked', true);
+                    } else {
+                        statusText.text('Tidak aktif. Klik untuk mengaktifkan.');
+                        toggle.prop('checked', false);
+                    }
+                });
+            }).catch(function(err) {
+                console.error('SW ready error:', err);
+                statusText.text('Gagal memuat status.');
+            });
+
+            toggle.on('change', function() {
+                const isChecked = $(this).is(':checked');
+                toggle.prop('disabled', true);
+
+                if (isChecked) {
+                    if (Notification.permission === 'denied') {
+                        toggle.prop('checked', false);
+                        toggle.prop('disabled', false);
+                        Swal.fire({
+                            title: 'Izin Diblokir',
+                            text: 'Izin notifikasi diblokir di browser Anda. Harap aktifkan Notifikasi melalui pengaturan browser atau ikon gembok di sebelah alamat web.',
+                            icon: 'warning'
+                        });
+                        return;
+                    }
+
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        return Notification.requestPermission().then(function(permission) {
+                            if (permission !== 'granted') {
+                                throw new Error('Izin notifikasi ditolak oleh user.');
+                            }
+
+                            const VAPID_PUBLIC_KEY = "{{ config('webpush.vapid.public_key') }}";
+                            if (!VAPID_PUBLIC_KEY) {
+                                throw new Error('VAPID_PUBLIC_KEY belum didefinisikan.');
+                            }
+
+                            const subscribeOptions = {
+                                userVisibleOnly: true,
+                                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                            };
+
+                            return registration.pushManager.subscribe(subscribeOptions);
+                        });
+                    })
+                    .then(function(pushSubscription) {
+                        return fetch("{{ route('push.store') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                            },
+                            body: JSON.stringify(pushSubscription)
+                        });
+                    })
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('HTTP ' + response.status + ': Server error');
+                        }
+                        return response.json();
+                    })
+                    .then(function(data) {
+                        toggle.prop('disabled', false);
+                        if (data && data.success) {
+                            statusText.text('Aktif di perangkat ini.');
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Notifikasi push berhasil diaktifkan.',
+                                icon: 'success',
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        } else {
+                            throw new Error('Gagal menyimpan subscription ke server.');
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Subscription error:', error);
+                        toggle.prop('checked', false);
+                        toggle.prop('disabled', false);
+                        statusText.text('Tidak aktif. Klik untuk mengaktifkan.');
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: 'Gagal mengaktifkan notifikasi push. Error: ' + error.message,
+                            icon: 'error'
+                        });
+                    });
+
+                } else {
+                    navigator.serviceWorker.ready.then(function(registration) {
+                        return registration.pushManager.getSubscription();
+                    })
+                    .then(function(subscription) {
+                        if (subscription) {
+                            const endpoint = subscription.endpoint;
+                            return subscription.unsubscribe().then(function() {
+                                return fetch("{{ route('push.destroy') }}", {
+                                    method: 'DELETE',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                                    },
+                                    body: JSON.stringify({ endpoint: endpoint })
+                                });
+                            });
+                        }
+                    })
+                    .then(function(response) {
+                        if (response) {
+                            if (!response.ok) {
+                                throw new Error('HTTP ' + response.status + ': Server error');
+                            }
+                            return response.json();
+                        }
+                    })
+                    .then(function(data) {
+                        toggle.prop('disabled', false);
+                        statusText.text('Tidak aktif. Klik untuk mengaktifkan.');
+                        Swal.fire({
+                            title: 'Dinonaktifkan!',
+                            text: 'Notifikasi push telah dinonaktifkan.',
+                            icon: 'info',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Unsubscribe error:', error);
+                        toggle.prop('checked', true);
+                        toggle.prop('disabled', false);
+                        statusText.text('Aktif di perangkat ini.');
+                        Swal.fire({
+                            title: 'Gagal!',
+                            text: 'Gagal menonaktifkan notifikasi push. Error: ' + error.message,
+                            icon: 'error'
+                        });
+                    });
+                }
             });
         });
     </script>

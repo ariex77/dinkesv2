@@ -35,11 +35,20 @@
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-header bg-white border-bottom p-3 d-flex align-items-center">
                     <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                        <i class="ti ti-target"></i>
+                        <i class="ti ti-settings"></i>
                     </div>
-                    <h6 class="mb-0 fw-bold">Target Karyawan</h6>
+                    <h6 class="mb-0 fw-bold">Modul & Target</h6>
                 </div>
                 <div class="card-body p-4 bg-light" style="background-color: #fcfcfc !important;">
+                    <div class="form-group mb-3">
+                        <label for="feature" class="form-label fw-bold text-dark" style="font-size: 13px;">Fitur / Modul</label>
+                        <select name="feature" id="feature" class="form-select border-primary" required>
+                            <option value="IZIN" {{ $feature === 'IZIN' ? 'selected' : '' }}>IZIN / ABSEN</option>
+                            <option value="REIMBURSEMENT" {{ $feature === 'REIMBURSEMENT' ? 'selected' : '' }}>REIMBURSEMENT</option>
+                        </select>
+                        <small class="text-muted" style="font-size: 11px;">Tentukan modul mana yang akan menggunakan alur ini.</small>
+                    </div>
+
                     <div class="form-group mb-3">
                         <label for="kode_cabang" class="form-label fw-bold text-dark" style="font-size: 13px;">Cabang</label>
                         <select name="kode_cabang" id="kode_cabang" class="form-select">

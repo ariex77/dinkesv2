@@ -1,254 +1,248 @@
-@extends('layouts.mobile.app')
+@extends('layouts.mobile.modern')
+
+
+@section('title', 'Ajuan Izin')
+
+@section('header_left')
+    <a href="{{ route('dashboard.index') }}"
+        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 text-white active:scale-90 transition-transform">
+        <ion-icon name="chevron-back-outline" class="text-base"></ion-icon>
+    </a>
+@endsection
+
 @section('content')
-    <style>
-        .avatar {
-            position: relative;
-            width: 2.5rem;
-            height: 2.5rem;
-            cursor: pointer;
-        }
 
-        /* Tambahkan style untuk header dan content */
-        #header-section {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-        }
+    {{-- ===== HISTORY LIST ===== --}}
+    <div id="showhistori">
+        {{-- Skeleton synced with dashboard & histori --}}
+        <div id="skeleton-container" class="space-y-2">
+            @for ($i = 0; $i < 5; $i++)
+                <div class="rounded-[10px] p-1 border shadow-sm" style="background: #fff; border-color: #f1f5f9;">
 
-        #content-section {
-            margin-top: 70px;
-            padding-top: 5px;
-            padding-bottom: 80px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .avatar-sm {
-            width: 2rem;
-            height: 2rem;
-        }
-
-        .avatar-sm .avatar-initial {
-            font-size: .8125rem;
-        }
-
-        .avatar .avatar-initial {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            background-color: #eeedf0;
-            font-size: .9375rem;
-        }
-
-        .rounded-circle {
-            border-radius: 50% !important;
-        }
-
-        /* Skeleton Loader Styles */
-        .skeleton {
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .skeleton::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            transform: translateX(-100%);
-            background-image: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0) 0,
-                rgba(255, 255, 255, 0.2) 20%,
-                rgba(255, 255, 255, 0.5) 60%,
-                rgba(255, 255, 255, 0)
-            );
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            100% {
-                transform: translateX(100%);
-            }
-        }
-
-        .skeleton-circle {
-            border-radius: 50%;
-        }
-
-        .skeleton-text {
-            height: 10px;
-            margin-bottom: 6px;
-        }
-
-        .skeleton-badge {
-            height: 20px;
-            border-radius: 10px;
-        }
-
-        .content-hide {
-            display: none;
-        }
-    </style>
-    <div id="header-section">
-        <div class="appHeader bg-primary text-light">
-            <div class="left">
-                <a href="{{ route('dashboard.index') }}" class="headerButton goBack">
-                    <ion-icon name="chevron-back-outline"></ion-icon>
-                </a>
-            </div>
-            <div class="pageTitle">Pengajuan Izin</div>
-            <div class="right"></div>
-        </div>
-    </div>
-    <div id="content-section">
-        <!-- Skeleton Loader -->
-        <div id="skeleton-loader">
-            <div class="row" style="margin-top:10px">
-                <div class="col">
-                    <div class="transactions">
-                        @for ($i = 0; $i < 5; $i++)
-                            <div class="item mb-2" style="padding: 10px; border-bottom: 1px solid #f0f0f0;">
-                                <div class="detail">
-                                    <div class="skeleton skeleton-circle me-4" style="width: 2.5rem; height: 2.5rem;"></div>
-                                    <div style="flex: 1;">
-                                        <div class="skeleton skeleton-text" style="width: 40%; height: 14px; margin-bottom: 8px;"></div>
-                                        <div class="skeleton skeleton-text" style="width: 60%;"></div>
-                                        <div class="skeleton skeleton-text" style="width: 80%;"></div>
-                                    </div>
-                                </div>
-                                <div class="right">
-                                    <div class="skeleton skeleton-badge" style="width: 60px;"></div>
-                                </div>
+                    <div class="flex items-center gap-2">
+                        <div class="skeleton-avatar sk flex-shrink-0"></div>
+                        <div class="flex-1 space-y-2 pr-2">
+                            <div class="flex justify-between items-center">
+                                <div class="skeleton-text w-24 sk"></div>
+                                <div class="skeleton-text w-12 sk"></div>
                             </div>
-                        @endfor
+                            <div class="skeleton-text w-32 sk"></div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            @endfor
         </div>
 
-        <!-- Real Content -->
-        <div id="real-content" class="content-hide">
-            <div class="row" style="margin-top: 10px">
-                <div class="col">
-                    @foreach ($pengajuan_izin as $d)
-                        @php
-                            if ($d->ket == 'i') {
-                                $route = 'izinabsen.delete';
-                                $ket_text = 'Izin Absen';
-                            } elseif ($d->ket == 's') {
-                                $route = 'izinsakit.delete';
-                                $ket_text = 'Izin Sakit';
-                            } elseif ($d->ket == 'c') {
-                                $route = 'izincuti.delete';
-                                $ket_text = 'Izin Cuti';
-                            } elseif ($d->ket == 'd') {
-                                $route = 'izindinas.delete';
-                                $ket_text = 'Izin Dinas';
-                            }
-                            
-                            $namahari = ['Sun' => 'Minggu', 'Mon' => 'Senin', 'Tue' => 'Selasa', 'Wed' => 'Rabu', 'Thu' => 'Kamis', 'Fri' => 'Jumat', 'Sat' => 'Sabtu'];
-                            $day_eng = date('D', strtotime($d->dari));
-                            $day_indo = isset($namahari[$day_eng]) ? $namahari[$day_eng] : $day_eng;
-                            $day_short = strtoupper(substr($day_indo, 0, 3));
-                            $tgl = date('d', strtotime($d->dari));
-                            $jml_hari = date_diff(date_create($d->dari), date_create($d->sampai))->format('%a') + 1;
-                            
-                            $text_color = $d->status_izin == 0 ? '#ff9f40' : ($d->status_izin == 1 ? 'var(--color-nav)' : '#e74c3c');
-                            $bg_color = $d->status_izin == 0 ? 'rgba(255, 159, 64, 0.1)' : ($d->status_izin == 1 ? 'rgba(var(--color-nav-rgb), 0.1)' : 'rgba(231, 76, 60, 0.1)');
-                            
-                            $badge_bg = $d->status_izin == 0 ? '#fff3cd' : ($d->status_izin == 1 ? '#d1e7dd' : '#f8d7da');
-                            $badge_color = $d->status_izin == 0 ? '#856404' : ($d->status_izin == 1 ? '#0f5132' : '#721c24');
-                            $badge_border = $d->status_izin == 0 ? '#ffeeba' : ($d->status_izin == 1 ? '#badbcc' : '#f5c6cb');
-                            $status_text = $d->status_izin == 0 ? 'Pending' : ($d->status_izin == 1 ? 'Disetujui' : 'Ditolak');
-                        @endphp
-                        <form method="POST" name="deleteform" class="deleteform"
-                            action="{{ route($route, Crypt::encrypt($d->kode)) }}">
-                            @csrf
-                            @method('DELETE')
-                            <div class="card mb-1 {{ $d->status_izin == 0 ? 'cancel-confirm' : '' }}" 
-                                style="border: 1px solid var(--color-nav); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                                <div class="card-body p-2 d-flex align-items-center" style="gap: 10px;">
-                                    {{-- Date Badge --}}
-                                    <div class="d-flex align-items-center justify-content-center" 
-                                        style="width: 45px; height: 45px; min-width: 45px; border-radius: 12px; background-color: {{ $bg_color }};">
-                                        <div style="text-align: center; line-height: 1;">
-                                            <span style="font-size: 10px; font-weight: 700; display: block; color: {{ $text_color }};">{{ $day_short }}</span>
-                                            <span style="font-size: 16px; font-weight: 800; display: block; margin-top: 1px; color: {{ $text_color }};">{{ $tgl }}</span>
-                                        </div>
-                                    </div>
-                                    {{-- Content --}}
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span style="font-size: 14px; font-weight: 600; color: #333;">{{ $ket_text }}</span>
-                                            <span class="badge" style="background-color: {{ $badge_bg }}; color: {{ $badge_color }}; font-size: 10px; border: 1px solid {{ $badge_border }}; white-space: nowrap;">
-                                                {{ $status_text }}
-                                            </span>
-                                        </div>
-                                        <div style="font-size: 11px; color: #555; margin-top: 2px;">
-                                            {{ DateToIndo($d->dari) }} - {{ DateToIndo($d->sampai) }}
-                                            <span class="badge bg-secondary" style="font-size: 9px; vertical-align: middle; margin-left: 4px;">{{ $jml_hari }} Hari</span>
-                                        </div>
-                                        <p class="text-muted mb-0 text-truncate" style="font-size: 11px; margin-top: 2px;">
-                                            {{ $d->keterangan }}
-                                        </p>
+        {{-- Data synced with dashboard & histori --}}
+        <div id="data-container" style="display:none;" class="space-y-2">
+            @foreach ($pengajuan_izin as $index => $d)
+                @php
+                    if ($d->ket == 'i') {
+                        $route = 'izinabsen.delete';
+                        $ket_text = 'Izin Absen';
+                        $icon = 'document-text-outline';
+                    } elseif ($d->ket == 's') {
+                        $route = 'izinsakit.delete';
+                        $ket_text = 'Izin Sakit';
+                        $icon = 'medkit-outline';
+                    } elseif ($d->ket == 'c') {
+                        $route = 'izincuti.delete';
+                        $ket_text = 'Izin Cuti';
+                        $icon = 'calendar-outline';
+                    } elseif ($d->ket == 'd') {
+                        $route = 'izindinas.delete';
+                        $ket_text = 'Izin Dinas';
+                        $icon = 'airplane-outline';
+                    } elseif ($d->ket == 'k') {
+                        $route = 'koreksi.delete';
+                        $ket_text = 'Koreksi Absen';
+                        $icon = 'create-outline';
+                    }
+
+                    $namahari = [
+                        'Sun' => 'Minggu',
+                        'Mon' => 'Senin',
+                        'Tue' => 'Selasa',
+                        'Wed' => 'Rabu',
+                        'Thu' => 'Kamis',
+                        'Fri' => 'Jumat',
+                        'Sat' => 'Sabtu'
+                    ];
+                    $day_eng = date('D', strtotime($d->dari));
+                    $day_indo = $namahari[$day_eng] ?? $day_eng;
+                    $day_short = strtoupper(substr($day_indo, 0, 3));
+                    $tgl = date('d', strtotime($d->dari));
+                    $jml_hari = date_diff(date_create($d->dari), date_create($d->sampai))->format('%a') + 1;
+
+                    // Status styles synced with histori but adapted for approval status
+                    $statusStyles = [
+                        '0' => ['label' => 'Pending', 'color' => '#ff9f40', 'rgb' => '255, 159, 64'],
+                        '1' => ['label' => 'Disetujui', 'color' => $t['primary'], 'rgb' => '50, 116, 94'],
+                        '2' => ['label' => 'Ditolak', 'color' => '#e74c3c', 'rgb' => '231, 76, 60'],
+                    ];
+
+                    $st = $statusStyles[$d->status_izin] ?? $statusStyles['0'];
+                    $bgColor = "rgba({$st['rgb']}, 0.1)";
+                @endphp
+
+                <form method="POST" name="deleteform" class="deleteform" action="{{ route($route, Crypt::encrypt($d->kode)) }}">
+                    @csrf
+                    @method('DELETE')
+                    <div class="fade-up card press mb-1 overflow-hidden cursor-pointer {{ $d->status_izin == 0 ? 'cancel-confirm' : '' }}"
+                        style="border: 1px solid {{ $t['primary'] }}; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); background: #fff; animation-delay: {{ $index * 0.04 }}s;">
+
+                        <div class="card-body p-1 flex items-center gap-2">
+                            {{-- Date Badge --}}
+                            <div class="flex-shrink-0 w-[45px] h-[45px] flex flex-col items-center justify-center rounded-[12px]"
+                                style="background: {{ $bgColor }}; color: {{ $st['color'] }};">
+                                <span class="text-[10px] font-bold leading-none">{{ $day_short }}</span>
+                                <span class="text-[16px] font-extrabold leading-tight mt-0.5">{{ $tgl }}</span>
+                            </div>
+
+                            {{-- Info --}}
+                            <div class="flex-1 min-w-0 pr-1">
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <h3 class="text-[14px] font-semibold truncate" style="color: #333;">
+                                        {{ $ket_text }}
+                                    </h3>
+                                    <span class="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                                        style="background: {{ $bgColor }}; color: {{ $st['color'] }};">
+                                        {{ $st['label'] }}
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center justify-between mb-0.5">
+                                    <div class="flex items-center gap-1.5 text-[11px] font-medium" style="color: #666;">
+                                        <ion-icon name="calendar-clear-outline"></ion-icon>
+                                        <span>{{ DateToIndo($d->dari) }} - {{ DateToIndo($d->sampai) }}</span>
+                                        <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-bold"
+                                            style="font-size: 9px;">{{ $jml_hari }} Hari</span>
                                     </div>
                                 </div>
+
+                                <p class="text-[11px] leading-tight text-gray-400 truncate" style="max-width: 90%;">
+                                    {{ $d->keterangan }}
+                                </p>
                             </div>
-                        </form>
-                    @endforeach
+                        </div>
+                    </div>
+                </form>
+            @endforeach
+
+            @if ($pengajuan_izin->isEmpty())
+                <div class="flex flex-col items-center justify-center py-12 px-6 text-center">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center mb-4" style="background: #f1f5f9;">
+                        <ion-icon name="document-text-outline" class="text-3xl" style="color: #cbd5e1;"></ion-icon>
+                    </div>
+                    <h3 class="text-[14px] font-bold mb-1" style="color: #334155;">Belum Ada Pengajuan</h3>
+                    <p class="text-[12px] leading-relaxed max-w-[220px]" style="color: #94a3b8;">Klik tombol tambah di bawah
+                        untuk membuat pengajuan izin baru.</p>
                 </div>
-            </div>
-        </div>
-
-        <div class="fab-button animate bottom-left dropdown" style="margin-bottom:70px">
-            <a href="#" class="fab bg-primary" data-toggle="dropdown">
-                <ion-icon name="add-outline" role="img" class="md hydrated" aria-label="add outline"></ion-icon>
-            </a>
-            <div class="dropdown-menu">
-                <a class="dropdown-item bg-primary" href="{{ route('izinabsen.create') }}">
-                    <ion-icon name="document-outline" role="img" class="md hydrated"
-                        aria-label="image outline"></ion-icon>
-                    <p>Izin Absen</p>
-                </a>
-
-                <a class="dropdown-item bg-primary" href="{{ route('izinsakit.create') }}">
-                    <ion-icon name="bag-add-outline"></ion-icon>
-                    <p>Izin Sakit</p>
-                </a>
-                <a class="dropdown-item bg-primary" href="{{ route('izincuti.create') }}">
-                    <ion-icon name="document-outline" role="img" class="md hydrated"
-                        aria-label="videocam outline"></ion-icon>
-                    <p>Izin Cuti</p>
-                </a>
-                <a class="dropdown-item bg-primary" href="{{ route('izindinas.create') }}">
-                    <ion-icon name="airplane-outline"></ion-icon>
-                    <p>Izin Dinas</p>
-                </a>
-            </div>
+            @endif
         </div>
     </div>
+
+    {{-- Floating Action Button - Modern Style --}}
+    <div class="fixed bottom-24 right-6 z-50">
+        <div class="relative group">
+            {{-- Menu Items (Appears on click/hover) --}}
+            <div id="fab-menu"
+                class="absolute bottom-16 right-0 space-y-3 pointer-events-none opacity-0 translate-y-4 transition-all duration-300">
+                <a href="{{ route('izinabsen.create') }}" class="flex items-center gap-3 justify-end group/item">
+                    <span class="bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-gray-700 whitespace-nowrap">Izin Absen</span>
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                        style="background: {{ $t['primary'] }};">
+                        <ion-icon name="document-text-outline" class="text-xl"></ion-icon>
+                    </div>
+                </a>
+                <a href="{{ route('izinsakit.create') }}" class="flex items-center gap-3 justify-end group/item">
+                    <span class="bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-gray-700 whitespace-nowrap">Izin Sakit</span>
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                        style="background: #ff6384;">
+                        <ion-icon name="medkit-outline" class="text-xl"></ion-icon>
+                    </div>
+                </a>
+                <a href="{{ route('izincuti.create') }}" class="flex items-center gap-3 justify-end group/item">
+                    <span class="bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-gray-700 whitespace-nowrap">Izin Cuti</span>
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                        style="background: #ff9f40;">
+                        <ion-icon name="calendar-outline" class="text-xl"></ion-icon>
+                    </div>
+                </a>
+                <a href="{{ route('izindinas.create') }}" class="flex items-center gap-3 justify-end group/item">
+                    <span class="bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-gray-700 whitespace-nowrap">Izin Dinas</span>
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                        style="background: #4bc0c0;">
+                        <ion-icon name="airplane-outline" class="text-xl"></ion-icon>
+                    </div>
+                </a>
+                <a href="{{ route('koreksi.create') }}" class="flex items-center gap-3 justify-end group/item">
+                    <span class="bg-white px-3 py-1.5 rounded-lg shadow-md text-xs font-bold text-gray-700 whitespace-nowrap">Koreksi Absen</span>
+                    <div class="w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform"
+                        style="background: #9966ff;">
+                        <ion-icon name="create-outline" class="text-xl"></ion-icon>
+                    </div>
+                </a>
+            </div>
+
+            {{-- Main Toggle Button --}}
+            <button id="fab-main"
+                class="w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl active:scale-90 transition-all duration-300"
+                style="background: {{ $t['primary'] }};">
+                <ion-icon name="add-outline" id="fab-icon" class="text-3xl transition-transform duration-300"></ion-icon>
+            </button>
+        </div>
+    </div>
+
 @endsection
+
 @push('myscript')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(function() {
-                document.getElementById('skeleton-loader').style.display = 'none';
-                document.getElementById('real-content').classList.remove('content-hide');
-            }, 500); // 0.5s delay for smooth effect
+        function showSkeleton() { $('#data-container').hide(); $('#skeleton-container').show(); }
+        function hideSkeleton() { $('#skeleton-container').fadeOut(200, function () { $('#data-container').fadeIn(300); }); }
+        $(document).ready(function () {
+            setTimeout(hideSkeleton, 400);
+
+            // FAB Toggle logic
+            let fabOpen = false;
+            $('#fab-main').on('click', function () {
+                fabOpen = !fabOpen;
+                if (fabOpen) {
+                    $('#fab-menu').removeClass('pointer-events-none opacity-0 translate-y-4').addClass('opacity-100 translate-y-0 pointer-events-auto');
+                    $('#fab-icon').addClass('rotate-45');
+                } else {
+                    $('#fab-menu').removeClass('opacity-100 translate-y-0 pointer-events-auto').addClass('pointer-events-none opacity-0 translate-y-4');
+                    $('#fab-icon').removeClass('rotate-45');
+                }
+            });
+
+            // Close FAB when clicking outside
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#fab-main, #fab-menu').length && fabOpen) {
+                    $('#fab-main').trigger('click');
+                }
+            });
+
+            // Delete confirmation
+            $(".cancel-confirm").click(function (e) {
+                var form = $(this).closest('form');
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Batalkan Pengajuan?',
+                    text: "Data pengajuan ini akan dihapus permanen",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '{{ $t['primary'] }}',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, Batalkan!',
+                    cancelButtonText: 'Tutup',
+                    borderRadius: '20px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                })
+            });
         });
     </script>
 @endpush

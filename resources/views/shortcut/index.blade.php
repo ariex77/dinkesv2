@@ -142,6 +142,21 @@
                     <ion-icon name="chevron-forward-outline" class="text-slate-300 text-lg mr-2"></ion-icon>
                 </div>
             </a>
+
+            <a href="{{ route('pengajuanreimbursement.index') }}" class="card press fade-up" style="animation-delay: 0.33s">
+                <div class="card-body p-1.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-shrink-0 w-[42px] h-[42px] flex items-center justify-center rounded-[10px]" style="background: #fdf2f8; color: #db2777;">
+                            <ion-icon name="receipt-outline" class="text-2xl"></ion-icon>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-[14px] font-bold text-slate-800 leading-tight">Reimbursement</h3>
+                            <span class="text-[11px] text-slate-500 font-medium">Ajukan Klaim Biaya Mandiri</span>
+                        </div>
+                    </div>
+                    <ion-icon name="chevron-forward-outline" class="text-slate-300 text-lg mr-2"></ion-icon>
+                </div>
+            </a>
             
             {{-- Presensi & Daily --}}
             <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase px-2 pt-3 pb-1 fade-up" style="animation-delay: 0.35s">Absensi & Harian</div>
@@ -230,6 +245,21 @@
                         <div class="flex flex-col">
                             <h3 class="text-[14px] font-bold text-slate-800 leading-tight">Daftar Face ID</h3>
                             <span class="text-[11px] text-slate-500 font-medium">Rekam Data Wajah Presensi</span>
+                        </div>
+                    </div>
+                    <ion-icon name="chevron-forward-outline" class="text-slate-300 text-lg mr-2"></ion-icon>
+                </div>
+            </a>
+
+            <a href="{{ route('myproject.index') }}" class="card press fade-up" style="animation-delay: 0.62s">
+                <div class="card-body p-1.5 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-shrink-0 w-[42px] h-[42px] flex items-center justify-center rounded-[10px]" style="background: #e0f2fe; color: #0284c7;">
+                            <ion-icon name="briefcase-outline" class="text-2xl"></ion-icon>
+                        </div>
+                        <div class="flex flex-col">
+                            <h3 class="text-[14px] font-bold text-slate-800 leading-tight">Project Board</h3>
+                            <span class="text-[11px] text-slate-500 font-medium">Pantau tugas & progress project</span>
                         </div>
                     </div>
                     <ion-icon name="chevron-forward-outline" class="text-slate-300 text-lg mr-2"></ion-icon>

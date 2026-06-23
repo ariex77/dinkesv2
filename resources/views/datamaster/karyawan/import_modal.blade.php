@@ -29,6 +29,10 @@
                                     <td>Wajib diisi</td>
                                 </tr>
                                 <tr>
+                                    <td>npwp</td>
+                                    <td>Opsional</td>
+                                </tr>
+                                <tr>
                                     <td>nama_karyawan</td>
                                     <td>Wajib diisi</td>
                                 </tr>
@@ -43,6 +47,10 @@
                                 <tr>
                                     <td>alamat</td>
                                     <td>Wajib diisi</td>
+                                </tr>
+                                <tr>
+                                    <td>alamat_sesuai_ktp</td>
+                                    <td>Opsional</td>
                                 </tr>
                                 <tr>
                                     <td>no_hp</td>
@@ -64,6 +72,10 @@
                                 <tr>
                                     <td>pendidikan_terakhir</td>
                                     <td>Wajib diisi</td>
+                                </tr>
+                                <tr>
+                                    <td>jurusan</td>
+                                    <td>Opsional</td>
                                 </tr>
                                 <tr>
                                     <td>kode_cabang</td>

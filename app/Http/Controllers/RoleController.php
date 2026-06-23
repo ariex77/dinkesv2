@@ -18,6 +18,9 @@ class RoleController extends Controller
     public function index(Request $request)
     {
         $query = Role::query();
+        if (!auth()->user()->hasRole('master admin')) {
+            $query->where('name', '!=', 'master admin');
+        }
         if (!empty($request->name)) {
             $query->where('name', 'like', '%' . $request->name . '%');
         }
@@ -63,6 +66,9 @@ class RoleController extends Controller
     public function edit($id)
     {
         $role = Role::findorFail($id);
+        if ($role->name === 'master admin' && !auth()->user()->hasRole('master admin')) {
+            abort(403, 'Unauthorized action.');
+        }
         return view('settings.roles.edit', compact('role'));
     }
 
@@ -73,6 +79,10 @@ class RoleController extends Controller
     {
         $id = Crypt::decrypt($id);
         try {
+            $role = Role::findOrFail($id);
+            if ($role->name === 'master admin' && !auth()->user()->hasRole('master admin')) {
+                abort(403, 'Unauthorized action.');
+            }
             Role::where('id', $id)->update(['name' => strtolower($request->name)]);
 
             return Redirect::back()->with(['success' => 'Data Berhasil Diupdate']);
@@ -88,6 +98,10 @@ class RoleController extends Controller
     {
         $id = Crypt::decrypt($id);
         try {
+            $role = Role::findOrFail($id);
+            if ($role->name === 'master admin' && !auth()->user()->hasRole('master admin')) {
+                abort(403, 'Unauthorized action.');
+            }
             Role::where('id', $id)->delete();
             return Redirect::back()->with(['success' => 'Data Berhasil Dihapus']);
         } catch (\Exception $e) {
@@ -99,6 +113,10 @@ class RoleController extends Controller
     public function createrolepermission($id)
     {
         $id = Crypt::decrypt($id);
+        $role = Role::findById($id);
+        if ($role->name === 'master admin' && !auth()->user()->hasRole('master admin')) {
+            abort(403, 'Unauthorized action.');
+        }
         $permissions = Permission::orderBy('id_permission_group')
             ->selectRaw('id_permission_group,permission_groups.name as group_name,GROUP_CONCAT(permissions.id,"-",permissions.name) as permissions')
             ->join('permission_groups', 'permissions.id_permission_group', '=', 'permission_groups.id')
@@ -106,7 +124,6 @@ class RoleController extends Controller
             ->groupBy('permission_groups.name')
             ->get();
 
-        $role = Role::findById($id);
         $rolepermissions = $role->permissions->pluck('name')->toArray();
         return view('settings.roles.create_role_permission', compact('permissions', 'role', 'rolepermissions'));
     }
@@ -114,8 +131,11 @@ class RoleController extends Controller
     public function storerolepermission($id, Request $request)
     {
         $id = Crypt::decrypt($id);
-        $permissions = $request->permission;
         $role = Role::findById($id);
+        if ($role->name === 'master admin' && !auth()->user()->hasRole('master admin')) {
+            abort(403, 'Unauthorized action.');
+        }
+        $permissions = $request->permission;
         $old_permissions = $role->permissions->pluck('name')->toArray();
 
 

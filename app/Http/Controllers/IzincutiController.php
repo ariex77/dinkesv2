@@ -58,7 +58,7 @@ class IzincutiController extends Controller
         
         $qcuti->select('presensi_izincuti.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'presensi_izincuti.keterangan as nama_cuti');
         if (!empty($request->dari) && !empty($request->sampai)) {
-            $qcuti->whereBetween('izincuti.dari', [$request->dari, $request->sampai]);
+            $qcuti->whereBetween('presensi_izincuti.dari', [$request->dari, $request->sampai]);
         }
         if (!empty($request->nama_karyawan)) {
             $qcuti->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
@@ -136,6 +136,8 @@ class IzincutiController extends Controller
                 'sampai' => 'required',
                 'keterangan' => 'required',
                 'kode_cuti' => 'required',
+                'pelimpahan_tugas' => 'required',
+                'nama_kepala_divisi' => 'required',
             ]);
         } else {
             $request->validate([
@@ -144,6 +146,8 @@ class IzincutiController extends Controller
                 'sampai' => 'required',
                 'keterangan' => 'required',
                 'kode_cuti' => 'required',
+                'pelimpahan_tugas' => 'required',
+                'nama_kepala_divisi' => 'required',
             ]);
         }
 
@@ -213,6 +217,8 @@ class IzincutiController extends Controller
                 'sampai' => $request->sampai,
                 'kode_cuti' => $request->kode_cuti,
                 'keterangan' => $request->keterangan,
+                'pelimpahan_tugas' => $request->pelimpahan_tugas,
+                'nama_kepala_divisi' => $request->nama_kepala_divisi,
                 'status' => 0,
                 'approval_step' => 1,
                 'id_user' => $user->id,
@@ -290,6 +296,8 @@ class IzincutiController extends Controller
             'sampai' => 'required',
             'keterangan' => 'required',
             'kode_cuti' => 'required',
+            'pelimpahan_tugas' => 'required',
+            'nama_kepala_divisi' => 'required',
         ]);
         DB::beginTransaction();
         try {
@@ -300,6 +308,8 @@ class IzincutiController extends Controller
                 'sampai' => $request->sampai,
                 'keterangan' => $request->keterangan,
                 'kode_cuti' => $request->kode_cuti,
+                'pelimpahan_tugas' => $request->pelimpahan_tugas,
+                'nama_kepala_divisi' => $request->nama_kepala_divisi,
             ]);
             DB::commit();
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
@@ -633,6 +643,155 @@ class IzincutiController extends Controller
 
         $data['izincuti'] = $izincuti;
         return view('izincuti.show', $data);
+    }
+
+    public function print($kode_izin_cuti)
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        
+        $kode_izin_cuti = Crypt::decrypt($kode_izin_cuti);
+        $izincuti = Izincuti::where('kode_izin_cuti', $kode_izin_cuti)
+            ->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik')
+            ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
+            ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->join('cuti', 'presensi_izincuti.kode_cuti', '=', 'cuti.kode_cuti')
+            ->select('presensi_izincuti.*', 'karyawan.nama_karyawan', 'karyawan.nik_show', 'karyawan.tanggal_masuk', 'karyawan.alamat', 'jabatan.nama_jabatan', 'departemen.nama_dept', 'cabang.nama_cabang', 'cuti.jenis_cuti', 'cuti.jumlah_hari as jatah_cuti_max')
+            ->first();
+            
+        if (!$izincuti) {
+            abort(404, 'Data tidak ditemukan.');
+        }
+        
+        // Cek akses jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!in_array($izincuti->kode_cabang, $userCabangs) || !in_array($izincuti->kode_dept, $userDepartemens)) {
+                abort(403, 'Anda tidak memiliki akses ke izin cuti ini.');
+            }
+        }
+
+        // Calculate leave statistics (annual leave)
+        $tahun_cuti = date('Y', strtotime($izincuti->dari));
+        $cek_cuti_dipakai = Approveizincuti::join('presensi', 'presensi_izincuti_approve.id_presensi', '=', 'presensi.id')
+            ->where('presensi.nik', $izincuti->nik)
+            ->whereRaw("YEAR(presensi.tanggal) = $tahun_cuti")
+            ->count();
+            
+        $data['izincuti'] = $izincuti;
+        $data['generalsetting'] = \App\Models\Pengaturanumum::where('id', 1)->first();
+        
+        // If it's C01 (Cuti Tahunan), calculate sisa
+        if ($izincuti->kode_cuti == 'C01') {
+            $data['sisa_cuti'] = $izincuti->jatah_cuti_max - $cek_cuti_dipakai;
+            $data['cuti_dipakai'] = $cek_cuti_dipakai;
+        } else {
+            $data['sisa_cuti'] = null;
+            $data['cuti_dipakai'] = null;
+        }
+
+        return view('izincuti.print', $data);
+    }
+
+    public function printReport(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        $qcuti = Izincuti::query();
+        $qcuti->join('karyawan', 'presensi_izincuti.nik', '=', 'karyawan.nik');
+        $qcuti->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan');
+        $qcuti->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept');
+        $qcuti->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang');
+        $qcuti->join('cuti', 'presensi_izincuti.kode_cuti', '=', 'cuti.kode_cuti');
+        
+        // Filter berdasarkan akses cabang dan departemen jika bukan super admin
+        if (!$user->isSuperAdmin()) {
+            $userCabangs = $user->getCabangCodes();
+            $userDepartemens = $user->getDepartemenCodes();
+            
+            if (!empty($userCabangs)) {
+                $qcuti->whereIn('karyawan.kode_cabang', $userCabangs);
+            } else {
+                $qcuti->whereRaw('1 = 0');
+            }
+            
+            if (!empty($userDepartemens)) {
+                $qcuti->whereIn('karyawan.kode_dept', $userDepartemens);
+            } else {
+                $qcuti->whereRaw('1 = 0');
+            }
+        }
+        
+        $qcuti->select(
+            'presensi_izincuti.*',
+            'karyawan.nama_karyawan',
+            'karyawan.nik_show',
+            'jabatan.nama_jabatan',
+            'departemen.nama_dept',
+            'cabang.nama_cabang',
+            'cuti.jenis_cuti',
+            'presensi_izincuti.keterangan as nama_cuti'
+        );
+
+        if (!empty($request->dari) && !empty($request->sampai)) {
+            $qcuti->whereBetween('presensi_izincuti.dari', [$request->dari, $request->sampai]);
+        }
+        if (!empty($request->nama_karyawan)) {
+            $qcuti->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
+        }
+        if (!empty($request->kode_cabang)) {
+            $qcuti->where('karyawan.kode_cabang', $request->kode_cabang);
+        }
+        if (!empty($request->kode_dept)) {
+            $qcuti->where('karyawan.kode_dept', $request->kode_dept);
+        }
+        if (!empty($request->status) || $request->status === '0') {
+            $qcuti->where('presensi_izincuti.status', $request->status);
+        }
+
+        $qcuti->orderBy('presensi_izincuti.status');
+        $qcuti->orderBy('presensi_izincuti.dari', 'desc');
+        
+        $izincuti = $qcuti->get();
+
+        // Get filter descriptions for reporting
+        $filter_dari = $request->dari;
+        $filter_sampai = $request->sampai;
+        $filter_karyawan = $request->nama_karyawan;
+        
+        $filter_cabang = 'Semua Cabang';
+        if (!empty($request->kode_cabang)) {
+            $cab = Cabang::where('kode_cabang', $request->kode_cabang)->first();
+            if ($cab) $filter_cabang = $cab->nama_cabang;
+        }
+        
+        $filter_dept = 'Semua Departemen';
+        if (!empty($request->kode_dept)) {
+            $dept = Departemen::where('kode_dept', $request->kode_dept)->first();
+            if ($dept) $filter_dept = $dept->nama_dept;
+        }
+
+        $filter_status = 'Semua Status';
+        if ($request->status === '0') $filter_status = 'Pending';
+        elseif ($request->status == '1') $filter_status = 'Disetujui';
+        elseif ($request->status == '2') $filter_status = 'Ditolak';
+
+        $data['izincuti'] = $izincuti;
+        $data['generalsetting'] = \App\Models\Pengaturanumum::where('id', 1)->first();
+        $data['filters'] = [
+            'dari' => $filter_dari,
+            'sampai' => $filter_sampai,
+            'karyawan' => $filter_karyawan,
+            'cabang' => $filter_cabang,
+            'dept' => $filter_dept,
+            'status' => $filter_status
+        ];
+
+        return view('izincuti.print_report', $data);
     }
 
     public function getsisaharicuti(Request $request)

@@ -38,12 +38,14 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\PreventPageCache::class,
             \App\Http\Middleware\CheckKaryawanExists::class,
+            \App\Http\Middleware\CheckAppExpiration::class,
         ],
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\CheckAppExpiration::class,
         ],
     ];
 

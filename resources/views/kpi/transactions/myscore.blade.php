@@ -9,6 +9,12 @@
 
 @push('mystyle')
     <style>
+        :root {
+            --primary-color: {{ $t['primary'] }};
+            --primary-light: {{ $t['primary_light'] }};
+            --bg-body: {{ $t['bg_body'] }};
+        }
+        
         body {
             background: #f8fafc !important; /* light slate background */
         }
@@ -44,14 +50,14 @@
             width: 56px;
             height: 56px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #32745e, #4b9b82);
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
             color: white;
             font-size: 20px;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 10px rgba(50, 116, 94, 0.2);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .profile-info {
@@ -71,18 +77,18 @@
         }
 
         .period-badge {
-            background: #f0fdf4;
-            color: #32745e;
+            background: var(--bg-body);
+            color: var(--primary-color);
             padding: 4px 8px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
-            border: 1px solid #bbf7d0;
+            border: 1px solid var(--primary-light);
         }
 
         /* Score Card Premium Gradient */
         .score-card {
-            background: linear-gradient(135deg, #32745e 0%, #1e4b3c 100%);
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
             border-radius: 16px;
             padding: 20px;
             margin-bottom: 20px;
@@ -90,7 +96,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 10px 20px -5px rgba(50, 116, 94, 0.4);
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.15);
             position: relative;
             overflow: hidden;
         }
@@ -135,7 +141,7 @@
 
         .grade-badge {
             background: white;
-            color: #32745e;
+            color: var(--primary-color);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 14px;
@@ -240,8 +246,8 @@
         }
 
         .input-group-modern:focus-within {
-            border-color: #32745e;
-            box-shadow: 0 0 0 3px rgba(50, 116, 94, 0.1);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
         }
 
         .input-modern {
@@ -328,10 +334,10 @@
             <div class="score-card fade-up" style="animation-delay: 0.1s">
                 <div class="position-relative" style="z-index: 2;">
                     <div class="score-label">Total Score</div>
-                    <div class="score-value">{{ number_format($kpi_employee->total_nilai, 2) }}</div>
+                    <div class="score-value" id="totalNilaiDisplay">{{ number_format($kpi_employee->total_nilai, 2) }}</div>
                 </div>
                 <div class="text-right position-relative" style="z-index: 2; text-align: right;">
-                    <div class="grade-badge">Grade {{ $kpi_employee->grade ?? '-' }}</div>
+                    <div class="grade-badge" id="gradeDisplay">Grade {{ $kpi_employee->grade ?? '-' }}</div>
                     <div class="status-text">{{ strtoupper($kpi_employee->status) }}</div>
                 </div>
             </div>
@@ -342,7 +348,7 @@
                 <h6 class="section-title fade-up" style="animation-delay: 0.15s">Indikator Penilaian</h6>
 
                 @foreach ($kpi_employee->details as $index => $detail)
-                    <div class="indicator-card fade-up" style="animation-delay: {{ 0.2 + ($index * 0.05) }}s">
+                    <div class="indicator-card fade-up kpi-row" data-target="{{ $detail->target }}" data-jenis-target="{{ $detail->indicator->jenis_target }}" data-bobot="{{ $detail->bobot }}" style="animation-delay: {{ 0.2 + ($index * 0.05) }}s">
                         {{-- Header --}}
                         <div class="indicator-header">
                             <div class="indicator-title">{{ $detail->indicator->nama_indikator }}</div>
@@ -361,7 +367,7 @@
                             <div class="metric-box" style="align-items: flex-end;">
                                 <div class="metric-label">Skor Akhir</div>
                                 <div class="metric-value-wrapper">
-                                    <span class="metric-value {{ $detail->skor >= 70 ? 'score-success' : 'score-danger' }}">
+                                    <span class="metric-value skor-display {{ $detail->skor >= 70 ? 'score-success' : 'score-danger' }}">
                                         {{ number_format($detail->skor, 2) }}
                                     </span>
                                 </div>
@@ -372,16 +378,37 @@
                         <div>
                             <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Realisasi</label>
                             <input type="hidden" name="detail_id[]" value="{{ $detail->id }}">
-                            <div class="input-group-modern">
-                                <input type="number" step="0.01" class="input-modern" name="realisasi[]" 
-                                       value="{{ $detail->realisasi }}" required 
-                                       {{ $kpi_employee->status == 'approved' || $detail->indicator->mode == 'auto' ? 'readonly' : '' }} 
-                                       placeholder="0">
-                                <div class="unit-addon">{{ $detail->indicator->satuan }}</div>
-                            </div>
+                            @if(strtolower($detail->indicator->satuan) == 'skala')
+                                @if($kpi_employee->status == 'approved' || $detail->indicator->mode == 'auto')
+                                    <div class="input-group-modern">
+                                        <input type="number" step="0.01" class="input-modern realisasi-input" name="realisasi[]" value="{{ $detail->realisasi }}" readonly>
+                                        <div class="unit-addon">{{ $detail->indicator->satuan }}</div>
+                                    </div>
+                                @else
+                                    <div class="input-group-modern">
+                                        <select class="input-modern realisasi-input" name="realisasi[]" required style="width: 100%; appearance: auto; -webkit-appearance: auto; background: transparent;">
+                                            <option value="">Pilih Skala</option>
+                                            <option value="1" {{ (int)$detail->realisasi == 1 ? 'selected' : '' }}>1 (Sangat Kurang)</option>
+                                            <option value="2" {{ (int)$detail->realisasi == 2 ? 'selected' : '' }}>2 (Kurang)</option>
+                                            <option value="3" {{ (int)$detail->realisasi == 3 ? 'selected' : '' }}>3 (Cukup)</option>
+                                            <option value="4" {{ (int)$detail->realisasi == 4 ? 'selected' : '' }}>4 (Baik)</option>
+                                            <option value="5" {{ (int)$detail->realisasi == 5 ? 'selected' : '' }}>5 (Sangat Baik)</option>
+                                        </select>
+                                        <div class="unit-addon">{{ $detail->indicator->satuan }}</div>
+                                    </div>
+                                @endif
+                            @else
+                                <div class="input-group-modern">
+                                    <input type="number" step="0.01" class="input-modern realisasi-input" name="realisasi[]" 
+                                           value="{{ $detail->realisasi }}" required 
+                                           {{ $kpi_employee->status == 'approved' || $detail->indicator->mode == 'auto' ? 'readonly' : '' }} 
+                                           placeholder="0">
+                                    <div class="unit-addon">{{ $detail->indicator->satuan }}</div>
+                                </div>
+                            @endif
                             
                             @if($detail->indicator->mode == 'auto')
-                                <div class="flex items-center gap-1 text-xs text-[#32745e] font-semibold mt-2 bg-[#f0fdf4] rounded-lg p-2 border border-[#bbf7d0]">
+                                <div class="flex items-center gap-1 text-xs font-semibold mt-2 rounded-lg p-2 border" style="color: var(--primary-color); background-color: var(--bg-body); border-color: var(--primary-light);">
                                     <ion-icon name="sync-outline"></ion-icon>
                                     Auto Sync: {{ $detail->indicator->metric_source }}
                                 </div>
@@ -392,7 +419,7 @@
                 
                 @if($kpi_employee->status != 'approved')
                     <div class="mt-6 text-center fade-up" style="animation-delay: {{ 0.2 + (count($kpi_employee->details) * 0.05) }}s">
-                        <button type="submit" class="w-full py-3.5 bg-[#32745e] text-white rounded-xl font-bold text-[15px] shadow-lg shadow-[#32745e]/20 active:scale-95 transition-all flex justify-center items-center gap-2">
+                        <button type="submit" class="w-full py-3.5 text-white rounded-xl font-bold text-[15px] shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2" style="background-color: var(--primary-color); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
                             <ion-icon name="save-outline" class="text-xl"></ion-icon> Simpan Realisasi
                         </button>
                     </div>
@@ -420,7 +447,7 @@
                             <div class="indicator-header">
                                 <div class="indicator-title">{{ $loop->iteration }}. {{ $indicator->nama_indikator }}</div>
                                 <input type="hidden" name="indicator_id[]" value="{{ $indicator->id }}">
-                                <div class="bobot-badge text-[#32745e] bg-[#f0fdf4] border-[#bbf7d0]">{{ $indicator->bobot }}%</div>
+                                <div class="bobot-badge" style="color: var(--primary-color); background-color: var(--bg-body); border-color: var(--primary-light);">{{ $indicator->bobot }}%</div>
                             </div>
                             
                             <div class="mb-3">
@@ -454,8 +481,8 @@
                         @endif
                     </div>
 
-                    <div class="mt-6 text-center fade-up" style="animation-delay: {{ 0.15 + (count($indicators) * 0.05) }}s">
-                        <button type="submit" {{ $total_bobot != 100 ? 'disabled' : '' }} class="w-full py-3.5 bg-[#32745e] text-white rounded-xl font-bold text-[15px] shadow-lg shadow-[#32745e]/20 active:scale-95 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
+                     <div class="mt-6 text-center fade-up" style="animation-delay: {{ 0.15 + (count($indicators) * 0.05) }}s">
+                        <button type="submit" {{ $total_bobot != 100 ? 'disabled' : '' }} class="w-full py-3.5 text-white rounded-xl font-bold text-[15px] shadow-lg active:scale-95 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed" style="background-color: var(--primary-color); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
                             <ion-icon name="checkmark-circle-outline" class="text-xl"></ion-icon> Simpan Target
                         </button>
                     </div>
@@ -464,3 +491,73 @@
         @endif
     </div>
 @endsection
+
+@push('myscript')
+<script>
+$(document).ready(function() {
+    function calculateKPI() {
+        let totalScore = 0;
+        
+        $('.kpi-row').each(function() {
+            const card = $(this);
+            const target = parseFloat(card.data('target')) || 0;
+            const jenisTarget = card.data('jenis-target');
+            const bobot = parseFloat(card.data('bobot')) || 0;
+            const realisasiVal = card.find('.realisasi-input').val();
+            const realisasi = parseFloat(realisasiVal);
+            
+            let score = 0;
+            
+            if (!isNaN(realisasi)) {
+                if (jenisTarget === 'max') {
+                    if (target > 0) {
+                        score = (realisasi / target) * bobot;
+                    }
+                } else { // min
+                    if (realisasi === 0) {
+                        score = bobot;
+                    } else {
+                        score = (target / realisasi) * bobot;
+                    }
+                }
+                
+                // Skor tidak boleh melebihi bobot (poin maksimal)
+                if (score > bobot) {
+                    score = bobot;
+                }
+            }
+            
+            // Update individual display
+            const display = card.find('.skor-display');
+            display.text(score.toFixed(2));
+            
+            // Adjust class based on score
+            if (score >= 70) {
+                display.addClass('score-success').removeClass('score-danger');
+            } else {
+                display.addClass('score-danger').removeClass('score-success');
+            }
+            
+            totalScore += score;
+        });
+        
+        // Update total score display
+        $('#totalNilaiDisplay').text(totalScore.toFixed(2));
+        
+        // Update Grade
+        let grade = 'E';
+        if (totalScore >= 90) grade = 'A';
+        else if (totalScore >= 80) grade = 'B';
+        else if (totalScore >= 70) grade = 'C';
+        else if (totalScore >= 60) grade = 'D';
+        
+        $('#gradeDisplay').text('Grade ' + grade);
+    }
+    
+    // Listen to changes in realisasi inputs
+    $(document).on('input change', '.realisasi-input', function() {
+        calculateKPI();
+    });
+});
+</script>
+@endpush

@@ -180,10 +180,11 @@ class IconGeneratorController extends Controller
                 // Update icons array
                 $manifest['icons'] = [];
 
+                $v = time();
                 foreach ($generatedIcons as $sizeName => $iconPath) {
                     $size = $this->iconSizes[$sizeName];
                     $manifest['icons'][] = [
-                        'src' => '/' . $iconPath,
+                        'src' => '/' . $iconPath . '?v=' . $v,
                         'sizes' => $sizeName,
                         'type' => 'image/png',
                         'purpose' => 'any'
@@ -192,7 +193,7 @@ class IconGeneratorController extends Controller
 
                 // Tambahkan favicon.ico juga
                 $manifest['icons'][] = [
-                    'src' => '/favicon.ico',
+                    'src' => '/favicon.ico?v=' . $v,
                     'sizes' => '48x48',
                     'type' => 'image/x-icon',
                     'purpose' => 'any'

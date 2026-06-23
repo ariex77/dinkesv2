@@ -27,7 +27,7 @@
                                 <div class="col-lg-4 col-sm-12">
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="ti ti-search"></i></span>
-                                        <input type="text" class="form-control" name="nama_karyawan" value="{{ request('nama_karyawan') }}" placeholder="Cari Nama Karyawan...">
+                                        <input type="text" class="form-control" name="nama_karyawan" value="{{ request('nama_karyawan') }}" placeholder="Cari Nama Karyawan / No. Dokumen">
                                     </div>
                                 </div>
                                 <div class="col-lg-3 col-sm-6">
@@ -80,7 +80,10 @@
                                                 <span class="text-muted fw-normal" style="font-size: 12px;">({{ $kontrak->nik_show ?? $kontrak->nik }})</span>
                                             </div>
                                             <div class="mt-1">
-                                                <span class="badge bg-label-secondary" style="font-size: 10px;">{{ $kontrak->no_kontrak }}</span>
+                                                <span class="badge bg-label-secondary" style="font-size: 10px;">
+                                                    <i class="ti ti-file-text me-1"></i>
+                                                    {{ $kontrak->no_dokumen ?? $kontrak->no_kontrak }}
+                                                </span>
                                                 <span class="badge bg-label-primary" style="font-size: 10px;">{{ $kontrak->nama_jabatan ?? '-' }}</span>
                                                 <span class="badge bg-label-info" style="font-size: 10px;">{{ $kontrak->nama_dept ?? '-' }}</span>
                                                 <span class="badge bg-label-warning" style="font-size: 10px;">{{ $kontrak->nama_cabang ?? '-' }}</span>

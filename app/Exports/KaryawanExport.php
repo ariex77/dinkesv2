@@ -37,6 +37,10 @@ class KaryawanExport implements FromCollection, WithHeadings, WithMapping
             $query->where('karyawan.kode_dept', $this->filters['kode_dept']);
         }
 
+        if (!empty($this->filters['kode_jabatan'])) {
+            $query->where('karyawan.kode_jabatan', $this->filters['kode_jabatan']);
+        }
+
         $user = auth()->user();
         if (!$user->isSuperAdmin()) {
             $userCabangs = $user->getCabangCodes();

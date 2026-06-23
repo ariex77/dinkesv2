@@ -113,7 +113,7 @@ class AjuanJadwalController extends Controller
         return view('ajuanjadwal.index', compact('ajuanjadwal', 'cabang', 'departemen'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $jamkerja = Jamkerja::orderBy('nama_jam_kerja')->get();
         $user = auth()->user();
@@ -121,6 +121,10 @@ class AjuanJadwalController extends Controller
         
         if (!$user->hasRole('karyawan')) {
              $karyawan = Karyawan::orderBy('nama_karyawan')->get();
+        }
+        
+        if ($request->ajax()) {
+            return view('ajuanjadwal.create_admin', compact('jamkerja', 'karyawan'));
         }
         
         return view('ajuanjadwal.create', compact('jamkerja', 'karyawan'));
@@ -193,7 +197,8 @@ class AjuanJadwalController extends Controller
 
     // 4. Jika tidak ada, Cek Jam Kerja Departemen (Default)
     if ($kode_jam_kerja_awal == null) {
-        $jamkerja_dept = Detailsetjamkerjabydept::where('kode_dept', $kode_dept)
+        $jamkerja_dept = Detailsetjamkerjabydept::join('presensi_jamkerja_bydept', 'presensi_jamkerja_bydept_detail.kode_jk_dept', '=', 'presensi_jamkerja_bydept.kode_jk_dept')
+            ->where('kode_dept', $kode_dept)
             ->where('kode_cabang', $kode_cabang)
             ->where('hari', $namahari)
             ->first();

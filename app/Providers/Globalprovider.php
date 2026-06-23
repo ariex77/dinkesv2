@@ -103,6 +103,10 @@ class Globalprovider extends ServiceProvider
                 $applyFilter($q_ajuanjadwal);
                 $notifikasi_ajuan_jadwal = $q_ajuanjadwal->count();
 
+                $q_koreksi = \App\Models\Koreksi::where('status', '0');
+                $applyFilter($q_koreksi);
+                $notifikasi_koreksi = $q_koreksi->count();
+
                 // Queries for Data List (already joining karyawan in original code, but we need to handle it carefully)
                 // Actually, original code joined karyawan below. My applyFilter also joins. 
                 // To avoid double join, I should construct these queries fresh or be careful.
@@ -151,7 +155,7 @@ class Globalprovider extends ServiceProvider
 
                 $data_izin = $data_izinabsen->unionAll($data_izinsakit)->unionAll($data_izincuti)->unionAll($data_izin_dinas)->get();
 
-                $notifikasi_ajuan_absen = $notifikasi_izinabsen + $notifikasi_izincuti + $notifikasi_izinsakit + $notifikasi_izin_dinas + $notifikasi_ajuan_jadwal;
+                $notifikasi_ajuan_absen = $notifikasi_izinabsen + $notifikasi_izincuti + $notifikasi_izinsakit + $notifikasi_izin_dinas + $notifikasi_ajuan_jadwal + $notifikasi_koreksi;
                 $shareddata = [
                     'notifikasi_izinabsen' => $notifikasi_izinabsen,
                     'notifikasi_izinsakit' => $notifikasi_izinsakit,
@@ -160,6 +164,7 @@ class Globalprovider extends ServiceProvider
                     'notifikasi_izin_dinas' => $notifikasi_izin_dinas,
                     'notifikasi_ajuan_absen' => $notifikasi_ajuan_absen,
                     'notifikasi_ajuan_jadwal' => $notifikasi_ajuan_jadwal,
+                    'notifikasi_koreksi' => $notifikasi_koreksi,
                     'data_izin' => $data_izin,
                 ];
                 View::share($shareddata);

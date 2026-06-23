@@ -19,6 +19,11 @@ class UserController extends Controller
         $userType = $request->user_type ?? 'biasa';
         
         $users = User::with(['roles', 'cabangs', 'departemens'])
+            ->when(!auth()->user()->hasRole('master admin'), function($query) {
+                return $query->whereDoesntHave('roles', function($q) {
+                    $q->where('name', 'master admin');
+                });
+            })
             ->when($request->name, function ($query, $name) {
                 return $query->where('name', 'like', '%' . $name . '%');
             })
@@ -41,13 +46,22 @@ class UserController extends Controller
         
         $users->appends($request->all());
 
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::orderBy('name')
+            ->when(!auth()->user()->hasRole('master admin'), function($query) {
+                return $query->where('name', '!=', 'master admin');
+            })
+            ->get();
         return view('settings.users.index', compact('users', 'roles'));
     }
 
     public function create()
     {
-        $roles = Role::orderBy('name')->where('name', '!=', 'karyawan')->get();
+        $roles = Role::orderBy('name')
+            ->where('name', '!=', 'karyawan')
+            ->when(!auth()->user()->hasRole('master admin'), function($query) {
+                return $query->where('name', '!=', 'master admin');
+            })
+            ->get();
         $cabangs = Cabang::orderBy('kode_cabang')->get();
         $departemens = Departemen::orderBy('kode_dept')->get();
         return view('settings.users.create', compact('roles', 'cabangs', 'departemens'));
@@ -58,14 +72,27 @@ class UserController extends Controller
     $id = Crypt::decrypt($id);
     $user = User::with(['roles', 'cabangs', 'departemens'])->where('id', $id)->first();
 
-    $roles = Role::orderBy('name')->where('name', '!=', 'karyawan')->get();
+    if ($user->hasRole('master admin') && !auth()->user()->hasRole('master admin')) {
+        abort(403, 'Unauthorized action.');
+    }
+
+    $roles = Role::orderBy('name')
+        ->where('name', '!=', 'karyawan')
+        ->when(!auth()->user()->hasRole('master admin'), function($query) {
+            return $query->where('name', '!=', 'master admin');
+        })
+        ->get();
     $cabangs = Cabang::orderBy('kode_cabang')->get();
     $departemens = Departemen::orderBy('kode_dept')->get();
     $userCabangs = $user->cabangs->pluck('kode_cabang')->toArray();
     $userDepartemens = $user->departemens->pluck('kode_dept')->toArray();
     
     // Approval delegation - get all non-karyawan users as potential admin
-    $adminUsers = User::role(Role::where('name', '!=', 'karyawan')->pluck('name')->toArray())->orderBy('name')->get();
+    $roleQuery = Role::where('name', '!=', 'karyawan')
+        ->when(!auth()->user()->hasRole('master admin'), function($query) {
+            return $query->where('name', '!=', 'master admin');
+        });
+    $adminUsers = User::role($roleQuery->pluck('name')->toArray())->orderBy('name')->get();
     $userkaryawan = Userkaryawan::where('id_user', $user->id)->first();
     
     return view('settings.users.edit', compact('user', 'roles', 'cabangs', 'departemens', 'userCabangs', 'userDepartemens', 'adminUsers', 'userkaryawan'));
@@ -98,6 +125,11 @@ class UserController extends Controller
         }
 
         try {
+            $roleName = strtolower($request->role);
+            if ($roleName === 'master admin' && !auth()->user()->hasRole('master admin')) {
+                return Redirect::back()->with(['eror' => 'Unauthorized role assignment.']);
+            }
+
             $user = User::create([
                 'name' => $request->name,
                 'username' => $request->username,
@@ -137,6 +169,9 @@ class UserController extends Controller
         $id = Crypt::decrypt($id);
         $user = User::findorFail($id);
 
+        if ($user->hasRole('master admin') && !auth()->user()->hasRole('master admin')) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $request->validate([
             'name' => 'required',
@@ -162,6 +197,10 @@ class UserController extends Controller
             }
 
             if (isset($request->role)) {
+                $roleName = strtolower($request->role);
+                if ($roleName === 'master admin' && !auth()->user()->hasRole('master admin')) {
+                    return Redirect::back()->with(['error' => 'Unauthorized role assignment.']);
+                }
                 $user->syncRoles([]);
                 $user->assignRole($request->role);
             }
@@ -226,6 +265,10 @@ class UserController extends Controller
     {
         $id = Crypt::decrypt($id);
         try {
+            $user = User::findOrFail($id);
+            if ($user->hasRole('master admin') && !auth()->user()->hasRole('master admin')) {
+                abort(403, 'Unauthorized action.');
+            }
             User::where('id', $id)->delete();
             $cek_user_karyawan = Userkaryawan::where('id_user', $id)->first();
             if ($cek_user_karyawan) {

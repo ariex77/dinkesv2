@@ -9,11 +9,6 @@ class ApprovalFeature extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'kode_feature',
-        'feature',
-        'name',
-        'description'
-    ];
-
+    protected $table = 'approval_features';
+    protected $guarded = ['id'];
 }

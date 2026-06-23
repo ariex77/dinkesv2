@@ -206,6 +206,8 @@
         .type-cuti-bg { background: rgba(255, 159, 64, 0.1); }
         .type-dinas { color: #32745e; }
         .type-dinas-bg { background: rgba(50, 116, 94, 0.1); }
+        .type-reimburse { color: #7367f0; }
+        .type-reimburse-bg { background: rgba(115, 103, 240, 0.1); }
     </style>
 
     <div id="header-section">
@@ -366,6 +368,37 @@
                                 <div class="izin-action">
                                     <div class="step-badge" style="background: rgba(50,116,94,0.1); color: #32745e;">Tahap {{ $izin->approval_step }}</div>
                                     <a href="{{ route('karyawan-approval.izindinas.approve', Crypt::encrypt($izin->kode_izin_dinas)) }}" class="btn-proses">
+                                        <ion-icon name="checkmark-outline"></ion-icon> Proses
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                @endif
+
+                {{-- Reimbursement --}}
+                @if($pendingReimbursement->count() > 0)
+                    <div class="section-title type-reimburse">
+                        <ion-icon name="wallet-outline"></ion-icon>
+                        Reimbursement
+                        <span class="section-count type-reimburse">{{ $pendingReimbursement->count() }}</span>
+                    </div>
+                    @foreach($pendingReimbursement as $r)
+                        <div class="izin-card">
+                            <div class="card-inner">
+                                <div class="izin-icon type-reimburse-bg">
+                                    <ion-icon name="wallet-outline" class="type-reimburse"></ion-icon>
+                                </div>
+                                <div class="izin-info">
+                                    <div class="nama">{{ $r->nama_karyawan }}</div>
+                                    <div class="detail">
+                                        {{ $r->nama_dept ?? '-' }} • {{ $r->no_reimbursement }}
+                                    </div>
+                                    <div class="keterangan">Total: Rp {{ number_format($r->total_nominal, 0, ',', '.') }}</div>
+                                </div>
+                                <div class="izin-action">
+                                    <div class="step-badge" style="background: rgba(115, 103, 240, 0.1); color: #7367f0;">Tahap {{ $r->approval_step }}</div>
+                                    <a href="{{ route('karyawan-approval.reimbursement.approve', Crypt::encrypt($r->no_reimbursement)) }}" class="btn-proses">
                                         <ion-icon name="checkmark-outline"></ion-icon> Proses
                                     </a>
                                 </div>

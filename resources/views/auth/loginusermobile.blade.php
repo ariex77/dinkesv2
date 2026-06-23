@@ -19,7 +19,7 @@
     <link rel="apple-touch-icon" href="/assets/img/icons/pwa/icon-192x192.png">
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v={{ file_exists(public_path('manifest.json')) ? filemtime(public_path('manifest.json')) : time() }}">
 
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -460,6 +460,11 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        // Force update check to sync manifest/icons immediately
+                        registration.update();
+                    })
                     .catch(function(err) {
                         console.log('ServiceWorker registration failed: ', err);
                     });

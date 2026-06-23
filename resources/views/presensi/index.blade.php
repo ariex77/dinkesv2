@@ -168,7 +168,7 @@
                                                 </div>
 
                                                 {{-- Jam Masuk --}}
-                                                <div class="col-6 col-md-2 d-flex align-items-center border-end">
+                                                <div class="col-6 col-md-1 d-flex align-items-center border-end">
                                                     <div class="avatar avatar-xs me-2 bg-success-subtle rounded text-success">
                                                         <i class="ti ti-login"></i>
                                                     </div>
@@ -193,7 +193,7 @@
                                                 </div>
 
                                                 {{-- Jam Pulang --}}
-                                                <div class="col-6 col-md-2 d-flex align-items-center border-end">
+                                                <div class="col-6 col-md-1 d-flex align-items-center border-end">
                                                     <div class="avatar avatar-xs me-2 bg-danger-subtle rounded text-danger">
                                                         <i class="ti ti-logout"></i>
                                                     </div>
@@ -210,6 +210,27 @@
                                                                 @if ($pulangcepat > 0)
                                                                     (-{{ $pulangcepat }})
                                                                 @endif
+                                                            </span>
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                {{-- Istirahat --}}
+                                                <div class="col-6 col-md-2 d-flex align-items-center border-end">
+                                                    <div class="avatar avatar-xs me-2 bg-info-subtle rounded text-info">
+                                                        <i class="ti ti-coffee"></i>
+                                                    </div>
+                                                    <div>
+                                                        <small class="d-block text-muted">Istirahat</small>
+                                                        @if ($d->istirahat_out != null && $d->istirahat_in != null)
+                                                            <span class="fw-bold text-dark" style="font-size: 0.75rem;">
+                                                                {{ date('H:i', strtotime($d->istirahat_out)) }} - {{ date('H:i', strtotime($d->istirahat_in)) }}
+                                                            </span>
+                                                        @elseif($d->istirahat_out != null)
+                                                            <span class="fw-bold text-warning" style="font-size: 0.75rem;">
+                                                                {{ date('H:i', strtotime($d->istirahat_out)) }} - ...
                                                             </span>
                                                         @else
                                                             -

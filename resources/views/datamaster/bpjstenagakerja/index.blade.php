@@ -34,24 +34,36 @@
     <div class="col-lg-12 col-md-12 col-sm-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
             @can('bpjstenagakerja.create')
-                <a href="#" class="btn btn-primary" id="btnCreate">
-                    <i class="ti ti-plus me-1"></i> Tambah BPJS Tenaga Kerja
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="#" class="btn btn-primary" id="btnCreate">
+                        <i class="ti ti-plus me-1"></i> Tambah BPJS Tenaga Kerja
+                    </a>
+                    <a href="#" class="btn btn-success" id="btnImport">
+                        <i class="ti ti-file-import me-1"></i> Import Data
+                    </a>
+                    <button type="button" class="btn btn-danger d-none" id="btnDeleteMultiple">
+                        <i class="ti ti-trash me-1"></i> Hapus Terpilih
+                    </button>
+                </div>
             @endcan
         </div>
         <form action="{{ route('bpjstenagakerja.index') }}">
             <div class="row g-2 mb-3">
-                <div class="col-lg-4 col-md-6 col-sm-12">
+                <div class="col-lg-3 col-md-6 col-sm-12">
                     <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
                         icon="ti ti-search" hideLabel />
                 </div>
-                <div class="col-lg-3 col-md-3 col-sm-12">
+                <div class="col-lg-2 col-md-3 col-sm-12">
                     <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
                         selected="{{ Request('kode_cabang') }}" hideLabel />
                 </div>
-                <div class="col-lg-3 col-md-3 col-sm-12">
+                <div class="col-lg-2 col-md-3 col-sm-12">
                     <x-select label="Departemen" name="kode_dept" :data="$departemen" key="kode_dept" textShow="nama_dept"
                         selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-12">
+                    <x-input-with-icon label="Tanggal Berlaku" value="{{ Request('tanggal') }}" name="tanggal"
+                        icon="ti ti-calendar" hideLabel datepicker="flatpickr-date" />
                 </div>
                 <div class="col-lg-2 col-md-3 col-sm-12">
                     <button class="btn btn-primary w-100"><i class="ti ti-search me-1"></i> Cari</button>
@@ -75,6 +87,9 @@
                     <table class="table table-hover mb-0">
                         <thead style="background-color: var(--theme-color-1) !important; color: white !important;">
                             <tr>
+                                <th class="text-white py-3 text-center" style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" id="checkAll">
+                                </th>
                                 <th class="text-white py-3">KODE</th>
                                 <th class="text-white py-3">NIK</th>
                                 <th class="text-white py-3">NAMA KARYAWAN</th>
@@ -88,6 +103,9 @@
                         <tbody>
                             @foreach ($bpjstenagakerja as $d)
                                 <tr>
+                                    <td class="py-2 text-center">
+                                        <input type="checkbox" class="form-check-input checkItem" name="kode_bpjs_tk[]" value="{{ $d->kode_bpjs_tk }}">
+                                    </td>
                                     <td class="py-2">{{ $d->kode_bpjs_tk }}</td>
                                     <td class="py-2">{{ $d->nik_show ?? $d->nik }}</td>
                                     <td class="py-2 fw-bold text-primary">{{ $d->nama_karyawan }}</td>
@@ -141,6 +159,12 @@
 @push('myscript')
 <script>
     $(function() {
+        $(".flatpickr-date").flatpickr({
+            altInput: true,
+            altFormat: "d-m-Y",
+            dateFormat: "Y-m-d",
+        });
+
         function loading() {
             $("#loadmodal").html(`<div class="sk-wave sk-primary" style="margin:auto">
             <div class="sk-wave-rect"></div>
@@ -158,12 +182,89 @@
             $("#loadmodal").load("{{ route('bpjstenagakerja.create') }}");
         });
 
+        $("#btnImport").click(function() {
+            $("#modal").modal("show");
+            $(".modal-title").text("Import Data BPJS Tenaga Kerja");
+            $("#loadmodal").load("{{ route('bpjstenagakerja.import') }}");
+        });
+
         $(".btnEdit").click(function() {
             loading();
             const kode_bpjs_tk = $(this).attr("kode_bpjs_tk");
             $("#modal").modal("show");
             $(".modal-title").text("Edit BPJS Tenaga Kerja");
             $("#loadmodal").load(`/bpjstenagakerja/${kode_bpjs_tk}/edit`);
+        });
+
+        // Multiple Delete Logic
+        $("#checkAll").click(function() {
+            $(".checkItem").prop('checked', $(this).prop('checked'));
+            showDeleteButton();
+        });
+
+        $(".checkItem").click(function() {
+            showDeleteButton();
+        });
+
+        function showDeleteButton() {
+            const checkedCount = $(".checkItem:checked").length;
+            if (checkedCount > 0) {
+                $("#btnDeleteMultiple").removeClass("d-none");
+            } else {
+                $("#btnDeleteMultiple").addClass("d-none");
+            }
+        }
+
+        $("#btnDeleteMultiple").click(function() {
+            const checkedCount = $(".checkItem:checked").length;
+            Swal.fire({
+                title: 'Apakah Anda Yakin?',
+                text: "Anda akan menghapus " + checkedCount + " data BPJS Tenaga Kerja sekaligus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const selectedIds = [];
+                    $(".checkItem:checked").each(function() {
+                        selectedIds.push($(this).val());
+                    });
+
+                    // Create dynamic form for delete multiple
+                    const form = $('<form>', {
+                        'method': 'POST',
+                        'action': "{{ route('bpjstenagakerja.delete_multiple') }}"
+                    });
+
+                    const token = $('<input>', {
+                        'type': 'hidden',
+                        'name': '_token',
+                        'value': "{{ csrf_token() }}"
+                    });
+
+                    const method = $('<input>', {
+                        'type': 'hidden',
+                        'name': '_method',
+                        'value': "DELETE"
+                    });
+
+                    form.append(token, method);
+
+                    selectedIds.forEach(id => {
+                        form.append($('<input>', {
+                            'type': 'hidden',
+                            'name': 'kode_bpjs_tk[]',
+                            'value': id
+                        }));
+                    });
+
+                    $('body').append(form);
+                    form.submit();
+                }
+            });
         });
     });
 </script>

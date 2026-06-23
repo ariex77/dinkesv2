@@ -116,19 +116,27 @@
                 position: sticky;
                 background-color: #fff;
                 z-index: 10;
-                box-shadow: inset 1px -1px 0 0 #333, inset -1px 1px 0 0 #333;
-                border: none !important;
-                background-clip: padding-box;
+                /* Ensure borders are visible in sticky columns */
+                border-left: 1px solid #333 !important;
+                border-right: 1px solid #333 !important;
             }
             
             .datatable3 th.sticky-col {
-                z-index: 30 !important;
+                z-index: 50 !important;
                 background-color: #024a75;
+                border-left: 1px solid #333 !important;
+                border-right: 1px solid #333 !important;
             }
 
-            .first-col { left: 0; width: 40px; min-width: 40px; }
-            .second-col { left: 40px; width: 110px; min-width: 110px; }
-            .third-col { left: 150px; width: 220px; min-width: 220px; }
+            .first-col { left: 0; width: 40px; min-width: 40px; max-width: 40px; }
+            .second-col { left: 40px; width: 110px; min-width: 110px; max-width: 110px; }
+            .third-col { left: 150px; width: 220px; min-width: 220px; max-width: 220px; }
+            .fourth-col { left: 370px; width: 150px; min-width: 150px; max-width: 150px; }
+            .fifth-col { left: 520px; width: 60px; min-width: 60px; max-width: 60px; }
+            
+            .datatable3 td, .datatable3 th {
+                background-clip: padding-box;
+            }
         }
 
         @media print {
@@ -180,8 +188,8 @@
                     <th rowspan="4" class="sticky-col first-col">No</th>
                     <th rowspan="4" class="sticky-col second-col">Nik</th>
                     <th rowspan="4" class="sticky-col third-col">Nama Karyawan</th>
-                    <th rowspan="4">Jabatan</th>
-                    <th rowspan="4">Dept</th>
+                    <th rowspan="4" class="sticky-col fourth-col">Jabatan</th>
+                    <th rowspan="4" class="sticky-col fifth-col">Dept</th>
                     <th colspan="{{ $jmlhari * 8 }}">Tanggal</th>
                     <th rowspan="4" style="min-width: 60px">Denda (T)</th>
                     <th rowspan="4" style="min-width: 60px">Pot. Jam (T)</th>
@@ -244,8 +252,8 @@
                         <td class="sticky-col first-col">{{ $loop->iteration }}</td>
                         <td class="sticky-col second-col">'{{ $d['nik_show'] ?? $d['nik'] }}</td>
                         <td class="sticky-col third-col">{{ $d['nama_karyawan'] }}</td>
-                        <td>{{ $d['nama_jabatan'] }}</td>
-                        <td style="text-align: center">{{ $d['kode_dept'] }}</td>
+                        <td class="sticky-col fourth-col">{{ $d['nama_jabatan'] }}</td>
+                        <td class="sticky-col fifth-col" style="text-align: center">{{ $d['kode_dept'] }}</td>
                         
                         @php
                             $total_denda = 0; $total_potongan_jam = 0; $total_jam_lembur = 0;
@@ -253,15 +261,35 @@
                             $jml_libur = 0; $jml_alfa = 0; $jml_terlambat = 0;
                             $jml_pulangcepat = 0; $jml_tidakscanmasuk = 0; $jml_tidakscanpulang = 0;
 
-                            $lemburKhusus = getLemburKhusus($d['nik']);
+                            $lemburKhusus = $lembur_khusus_map[$d['nik']] ?? null;
                         @endphp
 
                         @while (strtotime($tanggal_presensi) <= strtotime($periode_sampai))
                             @php
                                 $denda = 0; $potongan_jam = 0;
-                                $search = ['nik' => $d['nik'], 'tanggal' => $tanggal_presensi];
-                                $is_libur = isLiburKaryawan($d['nik'], $tanggal_presensi);
+                                $libur_key = $d['nik'] . '|' . $tanggal_presensi;
+                                $ceklibur = $datalibur_indexed[$libur_key] ?? ($datalibur_by_tanggal[$tanggal_presensi] ?? []);
+
+                                // Optimized: Check libur using employee-specific configuration or general configuration
+                                if (!empty($ceklibur)) {
+                                    $is_libur = true;
+                                } else {
+                                    $has_schedule = false;
+                                    $nama_hari = getHari($tanggal_presensi);
+                                    if (isset($mapJadwalByDate[$tanggal_presensi])) $has_schedule = true;
+                                    elseif (isset($mapJadwalGrupByDate[$tanggal_presensi])) $has_schedule = true;
+                                    elseif (isset($mapJadwalByDay[$nama_hari])) $has_schedule = true;
+                                    else {
+                                        $keyDC = $d['kode_dept'] . '|' . $d['kode_cabang'];
+                                        $mapD = $jadwal_bydept[$keyDC] ?? [];
+                                        if (isset($mapD[$nama_hari])) $has_schedule = true;
+                                        elseif (isset($jadwal_global[$nama_hari])) $has_schedule = true;
+                                    }
+                                    $is_libur = !$has_schedule;
+                                }
                                 // Cek apakah data lembur sudah di-snapshot (dikunci)
+                                $lembur_key = $d['nik'] . '|' . $tanggal_presensi;
+                                $ceklembur = $datalembur_indexed[$lembur_key] ?? [];
                                 $snapshot_lembur = isset($d[$tanggal_presensi]) && $d[$tanggal_presensi]['jam_lembur_aktual'] !== null;
 
                                 if ($snapshot_lembur) {
@@ -269,7 +297,7 @@
                                         ? $d[$tanggal_presensi]['jam_lembur_aktual']
                                         : $d[$tanggal_presensi]['jam_lembur_netto'];
                                 } else {
-                                    $ceklembur = ceklibur($datalembur, $search);
+                                    // O(1) indexed lookup instead of linear search
                                     $lembur_aktual = !empty($ceklembur) ? hitungLembur($ceklembur) : 0;
                                     $tipe_hari = $is_libur ? 2 : 1;
                                     $jam_netto_harian = $lembur_aktual > 0 ? hitungJamNetto($lembur_aktual, $tipe_hari) : 0;
@@ -281,7 +309,7 @@
                                 }
 
                                 $nama_hari = getHari($tanggal_presensi);
-                                
+
                                 $col_data = ['jadwal' => '-', 'in' => '-', 'out' => '-', 'ist_o' => '-', 'ist_i' => '-', 'lbr' => '-', 'pj' => '-', 'dnd' => '-'];
                                 $bgcolor = ''; $textcolor = '';
                             @endphp
@@ -308,7 +336,7 @@
                                         $pc = hitungpulangcepat($tanggal_presensi, $row_p['jam_out'], $row_p['jam_pulang'], $row_p['istirahat'], $row_p['jam_awal_istirahat'], $row_p['jam_akhir_istirahat'], $row_p['lintashari']);
                                         if ($pc) $jml_pulangcepat++;
 
-                                        $ist_pot = hitungPotonganIstirahat($row_p['istirahat_in'], $row_p['istirahat_out'], $row_p['jam_awal_istirahat'], $row_p['jam_akhir_istirahat']);
+                                        $ist_pot = hitungPotonganIstirahat($row_p['istirahat_out'], $row_p['istirahat_in'], $row_p['jam_awal_istirahat'], $row_p['jam_akhir_istirahat']);
                                         $no_abs_pot = (empty($row_p['jam_out']) || empty($row_p['jam_in'])) ? $row_p['total_jam'] : 0;
                                         $pj_ist_stat = $row_p['status_potongan_istirahat'] ?? $generalsetting->potongan_istirahat;
                                         
@@ -341,9 +369,9 @@
                             @else
                                 @php
                                     $is_future = strtotime($tanggal_presensi) > strtotime(date('Y-m-d'));
-                                    if (!empty($ceklibur)) { $bgcolor = 'green'; $textcolor = 'white'; $jml_libur++; $col_data['in'] = 'LIBUR'; }
+                                    if (!empty($ceklibur)) { $bgcolor = '#006400'; $textcolor = 'white'; $jml_libur++; $col_data['in'] = 'LIBUR'; }
                                     else {
-                                        $fallback = $mapJadwalByDate[$tanggal_presensi] ?? ($mapJadwalGrupByDate[$tanggal_presensi] ?? ($mapJadwalByDay[$nama_hari] ?? ($jadwal_bydept[$d['kode_dept'].'|'.$d['kode_cabang']][$nama_hari] ?? null)));
+                                        $fallback = $mapJadwalByDate[$tanggal_presensi] ?? ($mapJadwalGrupByDate[$tanggal_presensi] ?? ($mapJadwalByDay[$nama_hari] ?? ($jadwal_bydept[$d['kode_dept'].'|'.$d['kode_cabang']][$nama_hari] ?? ($jadwal_global[$nama_hari] ?? null))));
                                         if (is_array($fallback)) {
                                             $col_data['jadwal'] = $fallback['nama_jam_kerja'] . ' (' . date('H:i', strtotime($fallback['jam_masuk'])) . '-' . date('H:i', strtotime($fallback['jam_pulang'])) . ')';
                                             $tJam = $fallback['total_jam'];
@@ -357,12 +385,14 @@
                                             $col_data['pj'] = $potongan_jam > 0 ? formatAngkaDesimal($potongan_jam) : '-';
                                         }
                                     }
-                                    if ($is_libur) { $bgcolor = 'orange'; $textcolor = 'white'; $col_data['in'] = 'LB-K'; }
+                                    if ($is_libur && empty($ceklibur)) { $bgcolor = 'orange'; $textcolor = 'white'; $col_data['in'] = 'LB-K'; }
                                 @endphp
                             @endif
 
                             @php 
                                 $total_denda += $denda; $total_potongan_jam += $potongan_jam; $total_jam_lembur += $jam_netto_harian;
+                                $bgcolor = !empty($ceklibur) ? '#006400' : ($is_libur ? 'orange' : $bgcolor);
+                                if (!empty($ceklibur) || $is_libur) $textcolor = 'white';
                                 $cell_style = "background-color:$bgcolor; color:$textcolor;";
                             @endphp
                             

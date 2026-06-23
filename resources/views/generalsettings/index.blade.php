@@ -200,14 +200,12 @@
                                     :value="$setting->periode_laporan_sampai ?? ''" />
                             </div>
                         </div>
-                        <label for="" style="font-weight: 600" class="form-label">Periode Laporan Lintas Bulan</label>
-                        <div class="checkbox-wrapper-55">
-                            <label class="rocker rocker-small">
-                                <input type="checkbox" name="periode_laporan_next_bulan" @checked($setting->periode_laporan_next_bulan ?? false)>
-                                <span class="switch-left">Yes</span>
-                                <span class="switch-right">No</span>
-                            </label>
-                        </div>
+                        <label for="periode_laporan_next_bulan" style="font-weight: 600" class="form-label">Metode Lintas Bulan</label>
+                        <select name="periode_laporan_next_bulan" id="periode_laporan_next_bulan" class="form-select">
+                            <option value="0" {{ ($setting->periode_laporan_next_bulan ?? 0) == 0 ? 'selected' : '' }}>Satu Bulan yang Sama (Default)</option>
+                            <option value="1" {{ ($setting->periode_laporan_next_bulan ?? 0) == 1 ? 'selected' : '' }}>Bulan Sebelumnya ke Bulan Saat Ini (Contoh: 21 April - 20 Mei)</option>
+                            <option value="2" {{ ($setting->periode_laporan_next_bulan ?? 0) == 2 ? 'selected' : '' }}>Bulan Saat Ini ke Bulan Berikutnya (Contoh: 2 Mei - 1 Juni)</option>
+                        </select>
                     </div>
                 </div>
                 <!-- Email -->
@@ -217,6 +215,56 @@
                     </div>
                     <div class="card-body">
                         <x-input-with-icon-label label="Domain Email (contoh: adamadifa.site)" name="domain_email" icon="ti ti-mail" :value="$setting->domain_email ?? ''" />
+                    </div>
+                </div>
+                <!-- Jadwal Kerja Global -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Jadwal Kerja Global</h6>
+                    </div>
+                    <div class="card-body">
+                        <label for="" style="font-weight: 600" class="form-label">Aktifkan Jadwal Global</label>
+                        <div class="checkbox-wrapper-55 mb-2">
+                            <label class="rocker rocker-small">
+                                <input type="checkbox" name="global_jamkerja_aktif" id="global_jamkerja_aktif" @checked($setting->global_jamkerja_aktif ?? false)>
+                                <span class="switch-left">Yes</span>
+                                <span class="switch-right">No</span>
+                            </label>
+                        </div>
+                        <div id="global_jamkerja_container" style="display: none;">
+                            <small class="text-muted d-block mb-3">
+                                Jadwal ini digunakan sebagai fallback jika karyawan tidak memiliki jadwal kerja dari level manapun (by date, grup, by day, departemen).
+                            </small>
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 100px;">Hari</th>
+                                        <th>Jam Kerja</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php
+                                        $daftarHari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                                    @endphp
+                                    @foreach($daftarHari as $hari)
+                                        <tr>
+                                            <td class="align-middle" style="font-weight: 600;">{{ $hari }}</td>
+                                            <td>
+                                                <select name="global_jamkerja[{{ $hari }}]" class="form-select form-select-sm">
+                                                    <option value="">-- Libur --</option>
+                                                    @foreach($jamkerja_list as $jk)
+                                                        <option value="{{ $jk->kode_jam_kerja }}"
+                                                            @selected(isset($global_jamkerja[$hari]) && $global_jamkerja[$hari]->kode_jam_kerja == $jk->kode_jam_kerja)>
+                                                            {{ $jk->kode_jam_kerja }} - {{ $jk->nama_jam_kerja }} ({{ $jk->jam_masuk }} - {{ $jk->jam_pulang }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -248,6 +296,13 @@
                                     icon="ti ti-clock" :value="$setting->session_time ?? '120'" />
                                 <small class="text-muted">Lama waktu user tetap login tanpa perlu login ulang (Default: 120 Hari)</small>
                             </div>
+                            @if(auth()->user()->hasRole('master admin'))
+                            <div class="mt-3">
+                                <x-input-with-icon-label label="Tanggal Expired Aplikasi" name="expired"
+                                    icon="ti ti-calendar-off" datepicker="flatpickr-date" :value="$setting->expired ?? ''" />
+                                <small class="text-muted">Batas tanggal aktif aplikasi untuk klien/pengguna (Kosongkan jika tidak ada).</small>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -548,6 +603,10 @@
             time_24hr: true,
         });
 
+        $('.flatpickr-date').flatpickr({
+            dateFormat: 'Y-m-d',
+        });
+
         // Toggle Group WA Input
         function toggleGroupInput() {
             const tujuanGrup = $('#tujuan_grup').is(':checked');
@@ -564,6 +623,19 @@
         // Toggle on radio button change
         $('input[name="tujuan_notifikasi_wa"]').change(function() {
             toggleGroupInput();
+        });
+
+        // Toggle Global Jadwal Kerja Container
+        function toggleGlobalJamkerja() {
+            if ($('#global_jamkerja_aktif').is(':checked')) {
+                $('#global_jamkerja_container').slideDown();
+            } else {
+                $('#global_jamkerja_container').slideUp();
+            }
+        }
+        toggleGlobalJamkerja();
+        $('#global_jamkerja_aktif').change(function() {
+            toggleGlobalJamkerja();
         });
 
         // PWA Icon Generator

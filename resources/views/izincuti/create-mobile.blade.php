@@ -169,9 +169,21 @@
             </div>
 
             <div class="form-label-group">
+                <ion-icon name="briefcase-outline" class="input-icon"></ion-icon>
+                <input type="text" name="pelimpahan_tugas" id="pelimpahan_tugas" placeholder=" " required>
+                <label for="pelimpahan_tugas">Pelimpahan Tugas</label>
+            </div>
+
+            <div class="form-label-group">
+                <ion-icon name="person-outline" class="input-icon"></ion-icon>
+                <input type="text" name="nama_kepala_divisi" id="nama_kepala_divisi" placeholder=" " required>
+                <label for="nama_kepala_divisi">Nama Kepala Divisi</label>
+            </div>
+
+            <div class="form-label-group">
                 <ion-icon name="document-text-outline" class="input-icon"></ion-icon>
                 <textarea name="keterangan" id="keterangan" placeholder=" " required></textarea>
-                <label for="keterangan">Keterangan</label>
+                <label for="keterangan">Alasan Cuti</label>
             </div>
 
             <button type="submit" class="btn-submit-modern" id="btnSimpan">
@@ -282,6 +294,8 @@
                 let dari = document.getElementById('dari').value;
                 let sampai = document.getElementById('sampai').value;
                 let jml_hari = document.getElementById('jml_hari').value;
+                let pelimpahan_tugas = document.getElementById('pelimpahan_tugas').value;
+                let nama_kepala_divisi = document.getElementById('nama_kepala_divisi').value;
                 let keterangan = document.getElementById('keterangan').value;
 
                 if (!kode_cuti) {
@@ -308,9 +322,21 @@
                     return;
                 }
 
+                if (!pelimpahan_tugas.trim()) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Pelimpahan Tugas Harus Diisi !', icon: "warning" });
+                    return;
+                }
+
+                if (!nama_kepala_divisi.trim()) {
+                    e.preventDefault();
+                    Swal.fire({ title: "Oops!", text: 'Nama Kepala Divisi Harus Diisi !', icon: "warning" });
+                    return;
+                }
+
                 if (!keterangan.trim()) {
                     e.preventDefault();
-                    Swal.fire({ title: "Oops!", text: 'Keterangan Harus Diisi !', icon: "warning" });
+                    Swal.fire({ title: "Oops!", text: 'Alasan Cuti Harus Diisi !', icon: "warning" });
                     return;
                 }
 

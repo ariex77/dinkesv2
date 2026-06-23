@@ -51,6 +51,7 @@ class DashboardController extends Controller
 
                 ->leftJoin('presensi_izincuti_approve', 'presensi.id', '=', 'presensi_izincuti_approve.id_presensi')
                 ->leftJoin('presensi_izincuti', 'presensi_izincuti_approve.kode_izin_cuti', '=', 'presensi_izincuti.kode_izin_cuti')
+                ->leftJoin('mesin_fingerprints', 'presensi.id_mesin', '=', 'mesin_fingerprints.id')
                 ->select(
                     'presensi.*',
                     'presensi_jamkerja.nama_jam_kerja',
@@ -61,6 +62,7 @@ class DashboardController extends Controller
                     'presensi_izinabsen.keterangan as keterangan_izin',
                     'presensi_izinsakit.keterangan as keterangan_izin_sakit',
                     'presensi_izincuti.keterangan as keterangan_izin_cuti',
+                    'mesin_fingerprints.nama_mesin'
                 )
                 ->orderBy('presensi.tanggal', 'desc')
                 ->limit(30)
@@ -110,6 +112,7 @@ class DashboardController extends Controller
             $kontrak = DB::table('kontrak')
                 ->where('nik', $userkaryawan->nik)
                 ->where('status_kontrak', '1')
+                ->where('jenis_kontrak', '!=', 'T')
                 ->orderBy('sampai', 'desc')
                 ->first();
 
@@ -246,7 +249,7 @@ class DashboardController extends Controller
             $data['departemen'] = $user->getDepartemen();
             $data['cabang'] = $user->getCabang();
             $today = Carbon::now(config('app.timezone'));
-            $data['birthday'] = Karyawan::whereMonth('tanggal_lahir', $today->month)->whereDay('tanggal_lahir', $today->day)
+            $data['birthday'] = Karyawan::where('status_aktif_karyawan', 1)->whereMonth('tanggal_lahir', $today->month)->whereDay('tanggal_lahir', $today->day)
                 ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
                 ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
                 ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
@@ -295,26 +298,45 @@ class DashboardController extends Controller
             $data['kontrak_bulandepan'] = $sk->getRekapkontrak(2, $userCabangs, $userDepartemens);
             $data['kontrak_duabulan'] = $sk->getRekapkontrak(3, $userCabangs, $userDepartemens);
             // Storage Usage Info
-            try {
-                $disk_path = base_path();
-                $total_space = @disk_total_space($disk_path);
-                $free_space = @disk_free_space($disk_path);
+            if ($user->hasRole('master admin')) {
+                try {
+                    $disk_path = base_path();
+                    $total_space = @disk_total_space($disk_path);
+                    $free_space = @disk_free_space($disk_path);
 
-                if ($total_space !== false && $free_space !== false) {
-                    $used_space = $total_space - $free_space;
-                    $percentage = ($total_space > 0) ? round(($used_space / $total_space) * 100, 2) : 0;
+                    if ($total_space !== false && $free_space !== false) {
+                        $used_space = $total_space - $free_space;
+                        $percentage = ($total_space > 0) ? round(($used_space / $total_space) * 100, 2) : 0;
 
-                    $data['storage_info'] = [
-                        'total' => round($total_space / (1024 * 1024 * 1024), 2) . ' GB',
-                        'used' => round($used_space / (1024 * 1024 * 1024), 2) . ' GB',
-                        'free' => round($free_space / (1024 * 1024 * 1024), 2) . ' GB',
-                        'percentage' => $percentage
-                    ];
-                } else {
+                        $data['storage_info'] = [
+                            'total' => round($total_space / (1024 * 1024 * 1024), 2) . ' GB',
+                            'used' => round($used_space / (1024 * 1024 * 1024), 2) . ' GB',
+                            'free' => round($free_space / (1024 * 1024 * 1024), 2) . ' GB',
+                            'percentage' => $percentage
+                        ];
+                    } else {
+                        $data['storage_info'] = null;
+                    }
+                } catch (\Exception $e) {
                     $data['storage_info'] = null;
                 }
-            } catch (\Exception $e) {
-                $data['storage_info'] = null;
+            }
+
+            // Expiration warning alert (7 days or less)
+            $data['expired_alert'] = null;
+            $setting = Pengaturanumum::first();
+            if ($setting && $setting->expired) {
+                $today = Carbon::today();
+                $expiredDate = Carbon::parse($setting->expired);
+                $diffInDays = $today->diffInDays($expiredDate, false);
+
+                if ($diffInDays <= 7) {
+                    $data['expired_alert'] = [
+                        'days_left' => $diffInDays,
+                        'date' => $expiredDate->translatedFormat('d F Y'),
+                        'is_expired' => $diffInDays < 0
+                    ];
+                }
             }
 
             return view('dashboard.dashboard', $data);
@@ -326,7 +348,8 @@ class DashboardController extends Controller
         try {
             // Ambil karyawan yang ulang tahun hari ini (menggunakan timezone aplikasi)
             $today = Carbon::now(config('app.timezone'));
-            $birthday = Karyawan::whereMonth('tanggal_lahir', $today->month)
+            $birthday = Karyawan::where('status_aktif_karyawan', 1)
+                ->whereMonth('tanggal_lahir', $today->month)
                 ->whereDay('tanggal_lahir', $today->day)
                 ->when($request->kode_cabang, function ($query) use ($request) {
                     $query->where('kode_cabang', $request->kode_cabang);

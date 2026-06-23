@@ -207,16 +207,16 @@
 <script>
     var lokasi = "{{ $lokasi_user }}";
     var lok = lokasi.split(",");
-    var latitude_user = lok[0];
-    var longitude_user = lok[1];
+    var latitude_user = parseFloat(lok[0]);
+    var longitude_user = parseFloat(lok[1]);
 
-    var latitude_kantor = "{{ $latitude }}";
-    var longitude_kantor = "{{ $longitude }}";
-    var rd = "{{ $cabang->radius_cabang }}";
+    var latitude_kantor = parseFloat("{{ $latitude }}");
+    var longitude_kantor = parseFloat("{{ $longitude }}");
+    var rd = parseFloat("{{ $cabang->radius_cabang }}");
     
     var {{ $map_id }} = L.map('{{ $map_id }}', {
         center: [latitude_user, longitude_user],
-        zoom: 16
+        zoom: 17
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -224,19 +224,40 @@
         attribution: '© OpenStreetMap'
     }).addTo({{ $map_id }});
 
+    // Marker karyawan (biru default)
     var marker = L.marker([latitude_user, longitude_user]).addTo({{ $map_id }});
     marker.bindPopup("<b>Lokasi Karyawan</b>").openPopup();
 
+    // Marker kantor (merah)
+    var officeIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+    var officeMarker = L.marker([latitude_kantor, longitude_kantor], { icon: officeIcon }).addTo({{ $map_id }});
+    officeMarker.bindPopup("<b>Lokasi Kantor</b>");
+
+    // Radius kantor
     var circle = L.circle([latitude_kantor, longitude_kantor], {
         color: 'red',
         fillColor: '#f03',
         fillOpacity: 0.2,
         radius: rd
     }).addTo({{ $map_id }});
-    
-    // Fit bounds to show both user and office
-    var group = new L.featureGroup([marker, circle]);
-    {{ $map_id }}.fitBounds(group.getBounds().pad(0.1));
+
+    // Garis penghubung karyawan ke kantor
+    var line = L.polyline([
+        [latitude_user, longitude_user],
+        [latitude_kantor, longitude_kantor]
+    ], {
+        color: '#3b82f6',
+        weight: 2,
+        dashArray: '8, 8',
+        opacity: 0.7
+    }).addTo({{ $map_id }});
 
     setInterval(function() {
         {{ $map_id }}.invalidateSize();

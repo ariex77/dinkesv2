@@ -68,7 +68,11 @@ class KontrakController extends Controller
         }
 
         if ($request->nama_karyawan) {
-            $query->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
+            $query->where(function ($q) use ($request) {
+                $q->where('karyawan.nama_karyawan', 'like', '%' . $request->nama_karyawan . '%')
+                    ->orWhere('kontrak.no_kontrak', 'like', '%' . $request->nama_karyawan . '%')
+                    ->orWhere('kontrak.no_dokumen', 'like', '%' . $request->nama_karyawan . '%');
+            });
         }
 
         if ($request->kode_cabang) {
@@ -272,6 +276,8 @@ class KontrakController extends Controller
             'karyawan.jenis_kelamin',
             'karyawan.alamat',
             'karyawan.no_ktp',
+            'karyawan.pendidikan_terakhir',
+            'karyawan.no_hp',
             'jabatan.nama_jabatan',
             'cabang.nama_cabang',
             'departemen.nama_dept',
@@ -309,41 +315,44 @@ class KontrakController extends Controller
             ->get();
             
         $pengaturan = \App\Models\Pengaturanumum::first();
+        $konten = $this->prepareContractContent($kontrak, $tunjanganItems, $pengaturan);
 
         if ($user->hasRole('karyawan')) {
-            return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan'));
+            return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan', 'konten'));
         }
         
-        // For now, admin also uses the same view or we can create a desktop view later
-        // return view('datamaster.kontrak.show', compact('kontrak', 'tunjanganItems'));
-        return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan'));
+        return view('datamaster.kontrak.show_mobile', compact('kontrak', 'tunjanganItems', 'pengaturan', 'konten'));
     }
 
-    public function template()
+    public function template(Request $request)
     {
-        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', 'PKWT')->first();
+        $type = $request->get('type', 'PKWT');
+        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', $type)->first();
         if (!$template) {
             // Default template if not exists
-            $konten = view('datamaster.kontrak.default_template')->render();
+            $viewName = $type == 'PKWTT' ? 'datamaster.kontrak.default_template_pkwtt' : 'datamaster.kontrak.default_template';
+            $konten = view($viewName)->render();
             // Create initial record
             $template = \App\Models\KonfigurasiDokumen::create([
-                'kode_dokumen' => 'PKWT',
-                'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                'kode_dokumen' => $type,
+                'nama_dokumen' => $type == 'PKWTT' ? 'Perjanjian Kerja Waktu Tidak Tertentu' : 'Perjanjian Kerja Waktu Tertentu',
                 'konten' => $konten
             ]);
         }
-        return view('datamaster.kontrak.template', compact('template'));
+        return view('datamaster.kontrak.template', compact('template', 'type'));
     }
 
     public function updateTemplate(Request $request)
     {
+        $type = $request->get('kode_dokumen', 'PKWT');
         // Handle Reset
         if ($request->has('reset') && $request->reset == 'true') {
-            $konten = view('datamaster.kontrak.default_template')->render();
+            $viewName = $type == 'PKWTT' ? 'datamaster.kontrak.default_template_pkwtt' : 'datamaster.kontrak.default_template';
+            $konten = view($viewName)->render();
             \App\Models\KonfigurasiDokumen::updateOrCreate(
-                ['kode_dokumen' => 'PKWT'],
+                ['kode_dokumen' => $type],
                 [
-                    'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                    'nama_dokumen' => $type == 'PKWTT' ? 'Perjanjian Kerja Waktu Tidak Tertentu' : 'Perjanjian Kerja Waktu Tertentu',
                     'konten' => $konten
                 ]
             );
@@ -355,9 +364,9 @@ class KontrakController extends Controller
         ]);
 
         \App\Models\KonfigurasiDokumen::updateOrCreate(
-            ['kode_dokumen' => 'PKWT'],
+            ['kode_dokumen' => $type],
             [
-                'nama_dokumen' => 'Perjanjian Kerja Waktu Tertentu',
+                'nama_dokumen' => $type == 'PKWTT' ? 'Perjanjian Kerja Waktu Tidak Tertentu' : 'Perjanjian Kerja Waktu Tertentu',
                 'konten' => $request->konten
             ]
         );
@@ -381,6 +390,8 @@ class KontrakController extends Controller
             'karyawan.jenis_kelamin',
             'karyawan.alamat',
             'karyawan.no_ktp',
+            'karyawan.pendidikan_terakhir',
+            'karyawan.no_hp',
             'jabatan.nama_jabatan',
             'cabang.nama_cabang',
             'departemen.nama_dept',
@@ -415,61 +426,12 @@ class KontrakController extends Controller
             ->get();
 
         $setting = \App\Models\Pengaturanumum::first();
-        
-        // Get Template
-        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', 'PKWT')->first();
-        if (!$template) {
-             // Fallback to default if not configured
-             $konten = view('datamaster.kontrak.default_template')->render();
-        } else {
-            $konten = $template->konten;
-        }
-
-
-        // Prepare Placeholders
-        $placeholders = [
-            '{{no_kontrak}}' => $kontrak->no_kontrak,
-            '{{hari_ini}}' => now()->isoFormat('dddd'),
-            '{{tanggal_hari_ini}}' => now()->isoFormat('D MMMM Y'),
-            '{{nama_hrd}}' => $setting->nama_hrd ?? 'Pihak Pertama',
-            '{{nama_perusahaan}}' => $setting->nama_perusahaan ?? 'Perusahaan',
-            '{{alamat_perusahaan}}' => $setting->alamat ?? 'Lokasi Perusahaan',
-            '{{nama_karyawan}}' => $kontrak->nama_karyawan,
-            '{{tempat_lahir}}' => $kontrak->tempat_lahir ?? '-',
-            '{{tanggal_lahir}}' => $kontrak->tanggal_lahir ? Carbon::parse($kontrak->tanggal_lahir)->format('d-m-Y') : '-',
-            '{{jenis_kelamin}}' => $kontrak->jenis_kelamin,
-            '{{alamat_karyawan}}' => $kontrak->alamat ?? '-',
-            '{{no_ktp}}' => $kontrak->no_ktp ?? '-',
-            '{{jabatan}}' => $kontrak->nama_jabatan,
-            '{{cabang}}' => $kontrak->nama_cabang,
-            '{{tanggal_mulai}}' => $kontrak->dari ? Carbon::parse($kontrak->dari)->isoFormat('D MMMM Y') : '-',
-            '{{tanggal_selesai}}' => $kontrak->sampai ? Carbon::parse($kontrak->sampai)->isoFormat('D MMMM Y') : '-',
-            '{{gaji_pokok}}' => 'Rp ' . number_format($kontrak->jumlah_gaji ?? 0, 0, ',', '.'),
-        ];
-        
-        // Replace Tunjangan Loop
-        $tunjanganHtml = '<table width="100%" style="border-collapse:collapse; margin:0; padding:0;">';
-        if ($tunjanganItems->isNotEmpty()) {
-            foreach ($tunjanganItems as $item) {
-                $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">'.$item->jenis.'</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp '.number_format($item->jumlah ?? 0, 0, ',', '.').'</td></tr>';
-            }
-        } else {
-             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Transport</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
-             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Tunjangan Shift Malam</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
-             $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">Uang Makan</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp 0</td></tr>';
-        }
-        $tunjanganHtml .= '</table>';
-        $placeholders['{{tabel_tunjangan}}'] = $tunjanganHtml;
-
-
-        // Perform Replacement
-        foreach ($placeholders as $key => $value) {
-            $konten = str_replace($key, $value, $konten);
-        }
+        $konten = $this->prepareContractContent($kontrak, $tunjanganItems, $setting);
 
         $pdf = Pdf::loadView('datamaster.kontrak.print_dynamic', [
             'konten' => $konten,
-            'kontrak' => $kontrak // Pass for title etc
+            'kontrak' => $kontrak, // Pass for title etc
+            'setting' => $setting
         ])->setPaper('legal', 'portrait');
 
         $filename = 'kontrak-' . $kontrak->nik . '-' . $kontrak->no_kontrak . '.pdf';
@@ -534,6 +496,7 @@ class KontrakController extends Controller
             'kode_cabang' => ['required', 'exists:cabang,kode_cabang'],
             'kode_dept' => ['required', 'exists:departemen,kode_dept'],
             'status_kontrak' => ['required', 'string', 'max:20'],
+            'no_dokumen' => ['nullable', 'string', 'max:100'],
             'nominal_gaji' => ['nullable', 'string'],
             'nominal_tunjangan_detail' => ['nullable', 'array'],
             'kode_jenis_tunjangan' => ['nullable', 'array'],
@@ -680,5 +643,67 @@ class KontrakController extends Controller
                 'details' => $allowanceDetails,
             ] : null,
         ]);
+    }
+
+    protected function prepareContractContent($kontrak, $tunjanganItems, $setting)
+    {
+        // Get Template
+        $kode_template = $kontrak->jenis_kontrak == 'T' ? 'PKWTT' : 'PKWT';
+        $template = \App\Models\KonfigurasiDokumen::where('kode_dokumen', $kode_template)->first();
+        if (!$template) {
+             // Fallback to default if not configured
+             $viewName = $kode_template == 'PKWTT' ? 'datamaster.kontrak.default_template_pkwtt' : 'datamaster.kontrak.default_template';
+             $konten = view($viewName)->render();
+        } else {
+            $konten = $template->konten;
+        }
+
+        // Prepare Placeholders
+        $totalTunjangan = $tunjanganItems->sum('jumlah');
+        $totalGaji = ($kontrak->jumlah_gaji ?? 0) + $totalTunjangan;
+
+        $placeholders = [
+            '{{no_kontrak}}' => $kontrak->no_kontrak,
+            '{{no_dokumen}}' => $kontrak->no_dokumen ?? '-',
+            '{{hari_ini}}' => now()->isoFormat('dddd'),
+            '{{tanggal_hari_ini}}' => now()->isoFormat('D MMMM Y'),
+            '{{nama_hrd}}' => $setting->nama_hrd ?? 'Pihak Pertama',
+            '{{jabatan_hrd}}' => 'Owner ' . ($setting->nama_perusahaan ?? 'Perusahaan'),
+            '{{nama_perusahaan}}' => $setting->nama_perusahaan ?? 'Perusahaan',
+            '{{alamat_perusahaan}}' => $setting->alamat ?? 'Lokasi Perusahaan',
+            '{{nama_karyawan}}' => $kontrak->nama_karyawan,
+            '{{tempat_lahir}}' => $kontrak->tempat_lahir ?? '-',
+            '{{tanggal_lahir}}' => $kontrak->tanggal_lahir ? Carbon::parse($kontrak->tanggal_lahir)->isoFormat('D MMMM Y') : '-',
+            '{{pendidikan_terakhir}}' => $kontrak->pendidikan_terakhir ?? '-',
+            '{{jenis_kelamin}}' => $kontrak->jenis_kelamin == 'L' ? 'Laki-laki' : ($kontrak->jenis_kelamin == 'P' ? 'Perempuan' : ($kontrak->jenis_kelamin ?? '-')),
+            '{{alamat_karyawan}}' => $kontrak->alamat ?? '-',
+            '{{no_ktp}}' => $kontrak->no_ktp ?? '-',
+            '{{no_hp}}' => $kontrak->no_hp ?? '-',
+            '{{jabatan}}' => $kontrak->nama_jabatan,
+            '{{cabang}}' => $kontrak->nama_cabang,
+            '{{tanggal_mulai}}' => $kontrak->dari ? Carbon::parse($kontrak->dari)->isoFormat('D MMMM Y') : '-',
+            '{{tanggal_selesai}}' => $kontrak->sampai ? Carbon::parse($kontrak->sampai)->isoFormat('D MMMM Y') : '-',
+            '{{gaji_pokok}}' => 'Rp ' . number_format($kontrak->jumlah_gaji ?? 0, 0, ',', '.'),
+            '{{total_gaji}}' => 'Rp ' . number_format($totalGaji, 0, ',', '.'),
+        ];
+        
+        // Replace Tunjangan Loop
+        $tunjanganHtml = '<table width="100%" style="border-collapse:collapse; margin:0; padding:0;">';
+        if ($tunjanganItems->isNotEmpty()) {
+            foreach ($tunjanganItems as $item) {
+                if (($item->jumlah ?? 0) > 0) {
+                    $tunjanganHtml .= '<tr><td class="label" style="width:55%; padding: 6px 10px; border:none;">'.$item->jenis.'</td><td class="value" style="text-align:right; padding: 6px 10px; border:none;">Rp '.number_format($item->jumlah ?? 0, 0, ',', '.').'</td></tr>';
+                }
+            }
+        }
+        $tunjanganHtml .= '</table>';
+        $placeholders['{{tabel_tunjangan}}'] = $tunjanganHtml;
+
+        // Perform Replacement
+        foreach ($placeholders as $key => $value) {
+            $konten = str_ireplace($key, $value, $konten);
+        }
+
+        return $konten;
     }
 }

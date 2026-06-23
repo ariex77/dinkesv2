@@ -19,7 +19,7 @@
     </div>
     <x-input-with-icon icon="ti ti-sun" label="Jumlah Hari" name="jml_hari" disabled="true" />
     <x-textarea label="Keterangan" name="keterangan" />
-    <x-input-file name="sid" label="sid" />
+    <x-input-file name="sid" label="sid" accept="image/*" />
     <div class="form-group mb-3">
         <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Submit</button>
     </div>

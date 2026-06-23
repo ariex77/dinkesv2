@@ -141,4 +141,11 @@
      .table-dark.table-hover>tbody>tr:hover>* {
          background-color: rgba(255, 255, 255, 0.08) !important;
      }
+
+     /* Dynamic active nav-pills color */
+     .nav-pills .nav-link.active,
+     .nav-pills .show > .nav-link {
+         background-color: var(--theme-color-1) !important;
+         color: #fff !important;
+     }
  </style>

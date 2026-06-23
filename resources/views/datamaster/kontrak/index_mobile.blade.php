@@ -160,7 +160,7 @@
                             </div>
                             <div class="slip-info">
                                 <div class="slip-title">
-                                    <span>No. {{ $d->no_kontrak }}</span>
+                                    <span>No. Dok: {{ $d->no_dokumen ?? $d->no_kontrak }}</span>
                                     <span class="status-badge {{ $statusClass }}">{{ $statusText }}</span>
                                 </div>
                                 <div class="slip-period">

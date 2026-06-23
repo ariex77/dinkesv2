@@ -174,8 +174,10 @@
                             $pulangcepat = $pulangcepat > $d->total_jam ? $d->total_jam : $pulangcepat;
                             if ($pulangcepat != null) $jml_pulangcepat++;
 
+                            $potongan_istirahat = hitungPotonganIstirahat($d->istirahat_out, $d->istirahat_in, $d->jam_awal_istirahat, $d->jam_akhir_istirahat);
                             $potongan_tidak_absen = (empty($d->jam_out) || empty($d->jam_in)) ? $d->total_jam : 0;
-                            $potongan_jam = $potongan_tidak_absen == 0 ? ($pulangcepat + $potongan_jam_terlambat) : $potongan_tidak_absen;
+                            $status_potongan_istirahat = $d->status_potongan_istirahat ?? $generalsetting->potongan_istirahat;
+                            $potongan_jam = $potongan_tidak_absen == 0 ? ($pulangcepat + $potongan_jam_terlambat + ($status_potongan_istirahat == 1 ? $potongan_istirahat : 0)) : $potongan_tidak_absen;
 
                             $status_potongan_harian = $d->status_potongan ?? $generalsetting->status_potongan_jam;
                             if ($status_potongan_harian == 0) $potongan_jam = 0;

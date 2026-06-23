@@ -189,7 +189,7 @@
             </div>
 
             <div class="custom-file-upload" id="fileUploadBox">
-                <input type="file" name="sid" id="sid" accept=".png, .jpg, .jpeg, .pdf">
+                <input type="file" name="sid" id="sid" accept="image/*">
                 <label for="sid">
                     <ion-icon name="cloud-upload-outline"></ion-icon>
                     <br>

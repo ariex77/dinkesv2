@@ -63,16 +63,17 @@ class PengumumanController extends Controller
                 'judul' => $request->judul,
                 'isi' => $request->isi,
             ]);
-            
-            // Send Notification to all Users (Internal)
-            $users = \App\Models\User::all(); // Or filter active users
-            \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\PengumumanNotification($pengumuman));
-
-            // Send OneSignal Push Notification
-            // $this->sendOneSignalNotification($pengumuman->judul, $pengumuman->isi);
 
             DB::commit();
             
+            // Kirim Notifikasi ke semua Users (Internal Database & WebPush untuk Karyawan)
+            try {
+                $users = \App\Models\User::all();
+                \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\PengumumanNotification($pengumuman));
+            } catch (\Exception $e) {
+                Log::error('Gagal mengirim notifikasi pengumuman: ' . $e->getMessage());
+            }
+
             return Redirect::route('pengumuman.index')->with(['success' => 'Data Berhasil Disimpan']);
         } catch (\Exception $e) {
             DB::rollback();

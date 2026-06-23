@@ -2,10 +2,14 @@
 <div id="pwa-install-prompt" class="pwa-install-prompt" style="display: none;">
     <div class="pwa-install-content">
         <div class="pwa-install-icon">
-            <i class="bx bx-mobile-alt"></i>
+            @if (!empty($general_setting->logo) && Storage::disk('public')->exists('logo/' . $general_setting->logo))
+                <img src="{{ asset('storage/logo/' . $general_setting->logo) }}?v={{ Storage::disk('public')->exists('logo/' . $general_setting->logo) ? Storage::disk('public')->lastModified('logo/' . $general_setting->logo) : time() }}" alt="Logo" class="pwa-app-logo">
+            @else
+                <img src="{{ asset('assets/img/icons/pwa/icon-192x192.png') }}?v={{ file_exists(public_path('assets/img/icons/pwa/icon-192x192.png')) ? filemtime(public_path('assets/img/icons/pwa/icon-192x192.png')) : time() }}" alt="Logo" class="pwa-app-logo">
+            @endif
         </div>
         <div class="pwa-install-text">
-            <h4>Install E-Presensi</h4>
+            <h4>Install {{ $general_setting->nama_aplikasi ?? 'E-Presensi' }}</h4>
             <p>Install aplikasi untuk presensi yang lebih mudah dan cepat!</p>
         </div>
         <div class="pwa-install-actions">
@@ -45,13 +49,20 @@
         flex-shrink: 0;
         width: 48px;
         height: 48px;
-        background: linear-gradient(135deg, #696cff, #5a5fcf);
+        background: #ffffff;
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .pwa-app-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .pwa-install-text {
@@ -117,7 +128,7 @@
         .pwa-install-icon {
             width: 40px;
             height: 40px;
-            font-size: 20px;
+            border-radius: 10px;
         }
 
         .pwa-install-text h4 {

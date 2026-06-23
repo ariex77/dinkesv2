@@ -62,6 +62,7 @@ class ResetDataController extends Controller
 
             // Tahap 5: Tabel yang memiliki foreign key ke karyawan (transaksi)
             $this->deleteTable('aktivitas_karyawan', $deletedTables, $errors);
+            $this->deleteTable('karyawan_pelatihan', $deletedTables, $errors);
             $this->deleteTable('kunjungan', $deletedTables, $errors);
             $this->deleteTable('karyawan_wajah', $deletedTables, $errors);
             $this->deleteTable('users_karyawan', $deletedTables, $errors);
@@ -70,6 +71,7 @@ class ResetDataController extends Controller
             $this->deleteTable('pelanggaran', $deletedTables, $errors);
             $this->deleteTable('ajuan_jadwal', $deletedTables, $errors);
             $this->deleteTable('mutasi_karyawan', $deletedTables, $errors);
+            $this->deleteTable('resign_karyawans', $deletedTables, $errors);
 
             // Tahap 5.5: Tabel KPI (Performance)
             $this->deleteTable('kpi_details', $deletedTables, $errors);
@@ -87,6 +89,7 @@ class ResetDataController extends Controller
             $this->deleteTable('slip_gaji', $deletedTables, $errors);
             $this->deleteTable('lembur', $deletedTables, $errors);
             $this->deleteTable('log_absen', $deletedTables, $errors);
+            $this->deleteTable('log_mesin_presensis', $deletedTables, $errors);
 
             // Tahap 6.5: Tabel Pinjaman
             $this->deleteTable('pembayaran_pinjaman', $deletedTables, $errors);
@@ -115,8 +118,15 @@ class ResetDataController extends Controller
             $this->deleteTable('wamessages', $deletedTables, $errors);
             $this->deleteTable('messages', $deletedTables, $errors);
             $this->deleteTable('devices', $deletedTables, $errors);
+            $this->deleteTable('user_cabang_access', $deletedTables, $errors);
+            $this->deleteTable('user_departemen_access', $deletedTables, $errors);
             $this->deleteTable('update_logs', $deletedTables, $errors);
             $this->deleteTable('pengumuman', $deletedTables, $errors);
+            $this->deleteTable('notifications', $deletedTables, $errors);
+            $this->deleteTable('jobs', $deletedTables, $errors);
+            $this->deleteTable('failed_jobs', $deletedTables, $errors);
+            $this->deleteTable('job_batches', $deletedTables, $errors);
+            $this->deleteTable('user_login_logs', $deletedTables, $errors);
 
             // Tahap 11: Tabel users (Kecuali Super Admin)
             $superAdminIds = DB::table('model_has_roles')

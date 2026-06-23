@@ -1,224 +1,177 @@
-    <div class="title" style="text-align: center; text-transform: uppercase;">
-        <h2 style="margin:0;">Perjanjian Kerja Waktu Tertentu</h2>
-        <h4 style="margin:0;">Nomor : @{{no_kontrak}}</h4>
+<div class="title" style="text-align: center; margin-bottom: 20px;">
+    <h1 style="font-size: 14pt; font-weight: bold; text-decoration: underline; margin-bottom: 5px;">SURAT PERJANJIAN KERJA WAKTU TERTENTU (PKWT)</h1>
+    <p style="font-size: 11pt; margin: 0;">Nomor : @{{no_dokumen}}</p>
+</div>
+
+<div class="content">
+    <p>Pada hari @{{hari_ini}} tanggal @{{tanggal_hari_ini}}, yang bertanda tangan di bawah ini:</p>
+
+    <table style="width: 100%; margin-bottom: 15px;">
+        <tr>
+            <td class="label" style="width: 120px; vertical-align: top;">Nama</td>
+            <td class="colon" style="width: 10px; vertical-align: top;">:</td>
+            <td><strong>@{{nama_hrd}}</strong></td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Jabatan</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{jabatan_hrd}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Alamat</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{alamat_perusahaan}}</td>
+        </tr>
+    </table>
+
+    <p>Dalam hal ini bertindak untuk dan atas nama <strong>@{{nama_perusahaan}}</strong>, yang selanjutnya dalam perjanjian ini disebut sebagai <strong>PIHAK PERTAMA</strong>.</p>
+
+    <table style="width: 100%; margin-bottom: 15px; margin-top: 15px;">
+        <tr>
+            <td class="label" style="width: 120px; vertical-align: top;">Nama</td>
+            <td class="colon" style="width: 10px; vertical-align: top;">:</td>
+            <td><strong>@{{nama_karyawan}}</strong></td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Tempat, Tgl Lahir</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{tempat_lahir}}, @{{tanggal_lahir}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Pendidikan Terakhir</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{pendidikan_terakhir}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Jenis Kelamin</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{jenis_kelamin}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">Alamat</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{alamat_karyawan}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">No. KTP / SIM</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{no_ktp}}</td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;">No. Telepon</td>
+            <td style="vertical-align: top;">:</td>
+            <td>@{{no_hp}}</td>
+        </tr>
+    </table>
+
+    <p>Dalam hal ini bertindak untuk dan atas nama diri sendiri, yang selanjutnya dalam perjanjian ini disebut sebagai <strong>PIHAK KEDUA</strong>.</p>
+
+    <p style="text-align: justify; margin-top: 15px;">
+        Kedua belah pihak telah sepakat dan setuju untuk mengadakan Perjanjian Kerja Waktu Tertentu (PKWT), yang selanjutnya disebut "Perjanjian", dengan ketentuan-ketentuan sebagai berikut:
+    </p>
+
+    <!-- Pasal-Pasal -->
+    <div style="text-align: center; margin-top: 20px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 1<br>KETENTUAN UMUM</p>
     </div>
+    <ol>
+        <li>PIHAK KEDUA wajib mematuhi seluruh peraturan perusahaan, tata tertib, serta instruksi kerja yang berlaku di lingkungan PIHAK PERTAMA.</li>
+        <li>PIHAK KEDUA bersedia mengabdikan diri secara penuh dan tidak melakukan aktivitas pekerjaan lain di luar perusahaan tanpa izin tertulis dari PIHAK PERTAMA.</li>
+    </ol>
 
-    <div class="content" style="margin-top: 25px;">
-        <p class="paragraph" style="text-align: justify;">
-            Pada hari @{{hari_ini}} tanggal @{{tanggal_hari_ini}}, telah dilakukan kesepakatan untuk
-            melakukan Perjanjian Kerja Waktu Tertentu antara :
-        </p>
-
-        <table class="section-table" style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Nama</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{nama_hrd}}</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Jabatan</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">HRD @{{nama_perusahaan}}</td>
-            </tr>
-            <tr>
-                <td colspan="3" style="vertical-align: top; padding: 2px 0;">
-                    Dalam hal ini bertindak untuk dan atas nama @{{nama_perusahaan}} yang berkedudukan di @{{alamat_perusahaan}},
-                    yang selanjutnya dalam perjanjian ini disebut <strong>PIHAK PERTAMA</strong>.
-                </td>
-            </tr>
-        </table>
-
-        <br>
-
-        <table class="section-table" style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Nama</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{nama_karyawan}}</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Tempat/Tgl Lahir</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{tempat_lahir}} / @{{tanggal_lahir}}</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Jenis Kelamin</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{jenis_kelamin}}</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">Alamat</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{alamat_karyawan}}</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 160px; vertical-align: top; padding: 2px 0;">No KTP</td>
-                <td class="colon" style="width: 10px; vertical-align: top; padding: 2px 0;">:</td>
-                <td style="vertical-align: top; padding: 2px 0;">@{{no_ktp}}</td>
-            </tr>
-            <tr>
-                <td colspan="3" style="vertical-align: top; padding: 2px 0;">
-                    Dalam hal ini bertindak untuk dan atas nama pribadi, yang selanjutnya dalam perjanjian ini disebut
-                    <strong>PIHAK KEDUA</strong>.
-                </td>
-            </tr>
-        </table>
-
-        <p class="paragraph" style="text-align: justify;">
-            Dengan ini menyatakan bahwa Pihak Pertama dan Pihak Kedua telah sepakat dalam suatu perjanjian kerjasama dengan
-            ketentuan-ketentuan dan syarat-syarat sebagaimana tercantum dalam pasal-pasal di bawah ini :
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 1<br>Penempatan Dan Lokasi Kerja</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Pertama bersedia dan siap untuk menerima Pihak Kedua sebagai karyawan dengan status karyawan kontrak untuk
-            waktu tertentu pada Pihak Pertama dan ditempatkan sebagai : @{{jabatan}} dengan lokasi kerja
-            di @{{cabang}}. Pihak kedua menyatakan bersedia dipindahkan atau
-            dimutasikan pada cabang lain, bilamana terdapat kebutuhan untuk itu, sesuai dengan keputusan dan kebutuhan Perusahaan
-            Pihak Kedua ditempatkan.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 2<br>Pelaksanaan Pekerjaan</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Kedua mempunyai tugas dan kewajiban melaksanakan pekerjaan pada bagian yang telah ditetapkan dan mengikuti
-            prosedur kerja yang ditetapkan dan berlaku dimana Pihak Kedua ditempatkan.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 3<br>Jangka Waktu Perjanjian</p>
-        <p class="paragraph" style="text-align: justify;">
-            Perjanjian kerja untuk waktu tertentu ini berlaku sejak tanggal
-            @{{tanggal_mulai}}
-            dan akan berakhir dengan sendirinya pada tanggal
-            @{{tanggal_selesai}}.
-        </p>
-        <p class="paragraph" style="text-align: justify;">
-            Bilamana perjanjian kerja waktu tertentu ini telah berakhir sesuai dengan jangka waktu yang telah ditentukan,
-            maka hubungan hukum kerja ini putus dengan sendirinya dan Pihak Pertama tidak wajib mengangkat Pihak Kedua menjadi
-            karyawan tetap. Perpanjangan perjanjian kerja waktu tertentu dapat dilakukan, sesuai dengan kebutuhan dan
-            persetujuan Pihak Pertama dan Pihak Kedua.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 4<br>Perpanjangan Kontrak</p>
-        <p class="paragraph" style="text-align: justify;">
-            Dalam hal kesepakatan kerja ini diperpanjang oleh Pihak Pertama, maka hal tersebut akan diberitahukan secara tertulis
-            kepada pihak kedua selambat-lambatnya 7 (tujuh) hari sebelum kesepakatan kerja ini berakhir.
-        </p>
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 2<br>PENUNJUKAN DAN PENEMPATAN</p>
     </div>
+    <ol>
+        <li>PIHAK PERTAMA menunjuk PIHAK KEDUA sebagai karyawan dengan jabatan <strong>@{{jabatan}}</strong>.</li>
+        <li>PIHAK KEDUA bersedia ditempatkan di unit kerja/cabang manapun sesuai kebutuhan PIHAK PERTAMA.</li>
+    </ol>
 
-    <div class="content" style="margin-top: 25px;">
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 5<br>Upah Dan Tunjangan Atau Fasilitas</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Kedua akan menerima upah perbulan dan beberapa tunjangan atau fasilitas, sebagai berikut :
-        </p>
-        <table class="comp-table" style="width: 70%; border-collapse: separate; margin-top: 10px; margin-bottom: 15px;">
-            <tr>
-                <td class="label" style="width: 55%; padding: 6px 10px;">Gaji Pokok</td>
-                <td class="value" style="text-align: right; padding: 6px 10px;">@{{gaji_pokok}}</td>
-            </tr>
-           
-            <tr>
-                <td colspan="2" style="padding:0">@{{tabel_tunjangan}}</td>
-            </tr>
-
-            <tr>
-                <td class="label" style="width: 55%; padding: 6px 10px;">Perhitungan Upah Lembur</td>
-                <td class="value" style="text-align: right; padding: 6px 10px;">Normatif</td>
-            </tr>
-            <tr>
-                <td class="label" style="width: 55%; padding: 6px 10px;">BPJS Ketenagakerjaan &amp; Kesehatan</td>
-                <td class="value" style="text-align: right; padding: 6px 10px;">Ditanggung Perusahaan</td>
-            </tr>
-        </table>
-        <p class="paragraph" style="text-align: justify;">
-            Pembayaran upah akan dibayarkan oleh Pihak Pertama melalui transfer ke rekening Pihak Kedua paling lambat diberikan
-            setiap tanggal 25 (dua puluh lima) setiap bulannya.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 6<br>Jam Kerja</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Kedua bersedia bekerja selama 8 (delapan) jam sehari untuk 5 (lima) hari kerja dalam seminggu dan 7 (tujuh) jam
-            sehari untuk 6 (enam) hari kerja dalam seminggu dengan 40 (empat puluh) jam seminggu, dengan pengaturan hari dan jam
-            kerja disesuaikan dengan situasi dan kebutuhan Perusahaan. Kelebihan jam kerja sebagaimana disebut diatas, akan
-            diperhitungkan sebagai jam kerja lembur yang Pihak Kedua berhak mendapatkan upah lembur dengan berdasarkan pada
-            Keputusan Menteri Tenaga Kerja No. 102/MEN/VI/2004. Pihak Kedua menyatakan bersedia untuk bekerja dalam hari kerja
-            Shift bilamana situasi dan kebutuhan Pemerintah meminta, atau bilamana Pihak Kedua ditempatkan.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 7<br>Tata Tertib Dan Disiplin Kerja</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Kedua wajib mengikuti dan mentaati keseluruhan peraturan dan tata tertib serta disiplin kerja yang berlaku di
-            @{{nama_perusahaan}}. Pelanggaran terhadap tata tertib dan disiplin kerja akan mendapatkan sanksi sebagaimana
-            yang telah diatur dalam Perjanjian Kerja Bersama dan Peraturan Ketenagakerjaan yang berlaku.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 8<br>Pengakhiran Hubungan Kerja</p>
-        <p class="paragraph" style="text-align: justify;">
-            Sewaktu-waktu tanpa harus menunggu berakhirnya masa kontrak kerja, Pihak Kedua dapat dikenakan sanksi Pemutusan Hubungan
-            Kerja bilamana melakukan pelanggaran sebagai berikut :
-        </p>
-        <ul style="padding-left: 18px;">
-            <li>Penipuan, penggelapan atau pemalsuan dokumen dan memberikan keterangan palsu di dalam lingkungan Perusahaan.</li>
-            <li>Menggunakan, membawa senjata tajam, meminum minuman keras atau obat-obatan terlarang di lingkungan Perusahaan.</li>
-            <li>Berusaha atau melakukan tindakan tidak menyenangkan terhadap atasan, bawahan, rekan kerja atau orang lain yang ada
-                hubungan dengan Perusahaan.</li>
-            <li>Membuka penghasilan, Kegiatan Perusahaan, Kegiatan, atasan, bawahan atau rekan kerja untuk kepentingan pihak luar
-                yang bertentangan dengan Peraturan Perusahaan.</li>
-            <li>Dengan sengaja menjaga/membiarkan dalam keadaan bahaya yang dapat menimbulkan kerugian besar bagi Perusahaan.</li>
-            <li>Bertindak dengan sengaja Pekerja di lingkungan Pekerjaan.</li>
-            <li>Dan pelanggaran-pelanggaran berat lainnya yang diatur dalam Perjanjian Kerja Bersama.</li>
-        </ul>
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 3<br>JANGKA WAKTU PERJANJIAN</p>
     </div>
+    <ol>
+        <li>Perjanjian ini berlaku untuk jangka waktu tertentu, terhitung mulai tanggal <strong>@{{tanggal_mulai}}</strong> sampai dengan tanggal <strong>@{{tanggal_selesai}}</strong>.</li>
+        <li>Setelah jangka waktu tersebut berakhir, maka hubungan kerja antara PIHAK PERTAMA dan PIHAK KEDUA putus demi hukum tanpa kewajiban PIHAK PERTAMA membayar uang pesangon, kecuali ditentukan lain oleh undang-undang yang berlaku.</li>
+    </ol>
 
-    <div class="content" style="margin-top: 25px;">
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 9<br>Ketentuan PHK (Pemutusan Hubungan Kerja)</p>
-        <p class="paragraph" style="text-align: justify;">
-            Dalam hal ini Pihak Kedua melakukan pelanggaran sebagaimana disebut dalam pasal 8 perjanjian ini, Pihak Pertama akan
-            melakukan tindakan Pemutusan Hubungan Kerja atas diri Pihak Kedua dengan berpedoman pada ketentuan Undang-Undang
-            Ketenagakerjaan yang berlaku. Pihak Pertama dibebaskan untuk memberikan kompensasi atau kebijaksanaan dalam bentuk
-            apapun sebagai akibat Pemutusan Hubungan Kerja dengan alasan-alasan sebagaimana tersebut dalam pasal 8 perjanjian ini.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 10<br>Sisa Kontrak</p>
-        <p class="paragraph" style="text-align: justify;">
-            Pihak Pertama dapat mengakhiri perjanjian kerja ini sebelum waktunya dengan memberikan ganti rugi sisa masa kontrak
-            kepada Pihak Kedua.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 11<br>Perubahan</p>
-        <p class="paragraph" style="text-align: justify;">
-            Bilamana terdapat kekeliruan didalam ketentuan-ketentuan perjanjian kerja ini, akan dilakukan perubahan dan
-            perbaikan seperlunya.
-        </p>
-
-        <p class="pasal-title" style="text-align: center; font-weight: bold; text-transform: uppercase; margin-top: 15px; margin-bottom: 5px;">Pasal 12<br>Penyelesaian</p>
-        <p class="paragraph" style="text-align: justify;">
-            Bilamana dikemudian hari timbul perselisihan sebagai akibat dari perjanjian ini, maka Pihak Pertama dan Pihak Kedua
-            sepakat untuk menyelesaikannya secara musyawarah kekeluargaan, tanpa mengesampingkan kemungkinan penyelesaian melalui
-            prosedur dan ketentuan hukum yang berlaku.
-        </p>
-
-        <p class="paragraph">
-            Demikian perjanjian kerja waktu tertentu ini dibuat oleh kedua belah pihak dalam keadaan sehat jasmani dan rohani, tanpa
-            tekanan atau paksaan dari pihak manapun dan akan dilaksanakan dengan penuh tanggung jawab.
-        </p>
-
-        <p class="paragraph">Jakarta, _______________________</p>
-
-        <table width="100%" style="margin-top: 40px;">
-            <tr>
-                <td width="50%" align="center">
-                    Pihak Pertama,
-                    <br><br><br><br>
-                    <strong><u>@{{nama_hrd}}</u></strong><br>
-                    HRD
-                </td>
-                <td width="50%" align="center">
-                    Pihak Kedua,
-                    <br><br><br><br>
-                    <strong><u>@{{nama_karyawan}}</u></strong><br>
-                    Karyawan
-                </td>
-            </tr>
-        </table>
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 4<br>HAK DAN KEWAJIBAN</p>
     </div>
+    <ol>
+        <li>PIHAK KEDUA berhak menerima upah sesuai kesepakatan.</li>
+        <li>PIHAK KEDUA berkewajiban menjaga kerahasiaan data perusahaan, merawat peralatan kerja, dan menjaga nama baik PIHAK PERTAMA.</li>
+    </ol>
 
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 5<br>SANKSI</p>
+    </div>
+    <p style="text-align: justify;">Pelanggaran terhadap peraturan perusahaan atau ketentuan dalam perjanjian ini dapat mengakibatkan PIHAK KEDUA dikenakan sanksi berupa teguran lisan, Surat Peringatan (SP) I, II, III, hingga Pemutusan Hubungan Kerja (PHK) tanpa kompensasi.</p>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 6<br>WAKTU DAN TEMPAT KERJA</p>
+    </div>
+    <p style="text-align: justify;">PIHAK KEDUA wajib mengikuti jadwal kerja yang telah ditetapkan oleh PIHAK PERTAMA, termasuk jadwal shift, lembur, dan penempatan lokasi kerja di <strong>@{{cabang}}</strong> atau lokasi lain yang ditentukan kemudian.</p>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 7<br>UPAH, INSENTIF, DAN KOMPENSASI</p>
+    </div>
+    <ol style="margin-bottom: 10px;">
+        <li>PIHAK PERTAMA akan memberikan upah kepada PIHAK KEDUA setiap bulannya dengan rincian sebagai berikut:
+            <table style="width: 80%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; border: 1px solid #000;">
+                <tr style="border: 1px solid #000;">
+                    <td style="padding: 5px; border: 1px solid #000;">Gaji Pokok</td>
+                    <td style="padding: 5px; text-align: right; border: 1px solid #000;">@{{gaji_pokok}}</td>
+                </tr>
+                <tr style="border: 1px solid #000;">
+                    <td colspan="2" style="padding: 0; border: 1px solid #000;">@{{tabel_tunjangan}}</td>
+                </tr>
+                <tr style="border: 1px solid #000; font-weight: bold; background-color: #f2f2f2;">
+                    <td style="padding: 5px; border: 1px solid #000;">TOTAL GAJI</td>
+                    <td style="padding: 5px; text-align: right; border: 1px solid #000;">@{{total_gaji}}</td>
+                </tr>
+            </table>
+        </li>
+        <li>Upah dibayarkan paling lambat tanggal 25 setiap bulannya.</li>
+    </ol>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 8<br>PERHITUNGAN HARI KERJA</p>
+    </div>
+    <p style="text-align: justify;">Perhitungan hari kerja dan absensi PIHAK KEDUA akan dilakukan secara sistematis melalui aplikasi presensi perusahaan yang menjadi dasar perhitungan upah.</p>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 9<br>RANGKAP KERJA</p>
+    </div>
+    <p style="text-align: justify;">PIHAK KEDUA dilarang keras melakukan rangkap kerja di instansi/perusahaan lain selama masih dalam ikatan perjanjian kerja dengan PIHAK PERTAMA.</p>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 10<br>PENYELESAIAN PERSELISIHAN</p>
+    </div>
+    <p style="text-align: justify;">Apabila terjadi perselisihan, kedua belah pihak sepakat untuk menyelesaikan secara musyawarah. Jika tidak tercapai mufakat, maka akan diselesaikan sesuai dengan hukum yang berlaku.</p>
+
+    <div style="text-align: center; margin-top: 15px;">
+        <p style="font-weight: bold; margin-bottom: 0;">PASAL 11<br>PENUTUP</p>
+    </div>
+    <p style="text-align: justify; margin-bottom: 30px;">
+        Demikian Perjanjian ini dibuat dalam rangkap 2 (dua) yang masing-masing mempunyai kekuatan hukum yang sama, ditandatangani oleh kedua belah pihak dalam keadaan sadar dan tanpa paksaan dari pihak manapun.
+    </p>
+
+    <!-- Tanda Tangan -->
+    <table style="width: 100%; margin-top: 40px;">
+        <tr>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+                PIHAK PERTAMA,
+                <br><br><br><br><br>
+                ( <strong>@{{nama_hrd}}</strong> )<br>
+                @{{jabatan_hrd}}
+            </td>
+            <td style="width: 50%; text-align: center; vertical-align: top;">
+                PIHAK KEDUA,
+                <br><br><br><br><br>
+                ( <strong>@{{nama_karyawan}}</strong> )<br>
+                Karyawan
+            </td>
+        </tr>
+    </table>
+</div>

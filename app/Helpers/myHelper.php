@@ -436,7 +436,10 @@ function hitungjamterlambat($jam_in, $jam_mulai)
 
 function hitungdenda($denda_list, $terlambat)
 {
-    $general_setting = Pengaturanumum::where('id', 1)->first();
+    static $general_setting = null;
+    if ($general_setting === null) {
+        $general_setting = Pengaturanumum::where('id', 1)->first();
+    }
     if ($general_setting->denda == 1) {
         $denda_terlambat = 0;
         foreach ($denda_list as $denda) {
@@ -785,10 +788,14 @@ function isLiburKaryawan($nik, $tanggal)
  */
 function hitungJamNetto($jam_aktual, $tipe_hari)
 {
-    // Fetch rules for the given day type (1: Workday, 2: Holiday) ordered by start hour
-    $rules = LemburAturan::where('tipe_hari', $tipe_hari)
-        ->orderBy('jam_dari', 'asc')
-        ->get();
+    // Static cache: fetch rules only once per tipe_hari per request
+    static $rules_cache = [];
+    if (!isset($rules_cache[$tipe_hari])) {
+        $rules_cache[$tipe_hari] = LemburAturan::where('tipe_hari', $tipe_hari)
+            ->orderBy('jam_dari', 'asc')
+            ->get();
+    }
+    $rules = $rules_cache[$tipe_hari];
 
     $jam_netto = 0;
     $sisa_jam = $jam_aktual;
@@ -811,15 +818,17 @@ function hitungJamNetto($jam_aktual, $tipe_hari)
 /**
  * Calculate excess break time deduction.
  * Comparison between actual break duration and scheduled duration.
+ * @param string $start_break Time when employee goes out for break (e.g., istirahat_out)
+ * @param string $end_break Time when employee comes back from break (e.g., istirahat_in)
  */
-function hitungPotonganIstirahat($istirahat_in, $istirahat_out, $jam_awal_istirahat, $jam_akhir_istirahat)
+function hitungPotonganIstirahat($start_break, $end_break, $jam_awal_istirahat, $jam_akhir_istirahat)
 {
-    if (!empty($istirahat_in) && !empty($istirahat_out)) {
-        $awal = strtotime($istirahat_in);
-        $akhir = strtotime($istirahat_out);
+    if (!empty($start_break) && !empty($end_break)) {
+        $awal = strtotime($start_break);
+        $akhir = strtotime($end_break);
         $durasi_riil = $akhir - $awal;
 
-        // Use the date from istirahat_in to build the scheduled timestamps
+        // Use the date from start_break to build the scheduled timestamps
         $tgl = date('Y-m-d', $awal);
         $awal_skd = strtotime($tgl . ' ' . $jam_awal_istirahat);
         $akhir_skd = strtotime($tgl . ' ' . $jam_akhir_istirahat);

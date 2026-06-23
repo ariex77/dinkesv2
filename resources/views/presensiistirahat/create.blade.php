@@ -264,24 +264,26 @@
 
     <!-- Action Buttons -->
     <div class="action-area">
-        @if ($presensi->istirahat_in == null)
+        @if ($presensi->istirahat_out == null)
             <button class="capture-btn btn-start" id="btn-action">
                 <ion-icon name="cafe-outline" style="font-size: 24px;"></ion-icon>
                 <span>Mulai Istirahat</span>
             </button>
-        @else
+            <input type="hidden" id="status" value="1">
+        @elseif ($presensi->istirahat_in == null)
             <button class="capture-btn btn-end" id="btn-action">
                 <ion-icon name="briefcase-outline" style="font-size: 24px;"></ion-icon>
                 <span>Selesai Istirahat</span>
             </button>
+            <input type="hidden" id="status" value="2">
+        @else
+            <button class="capture-btn btn-secondary disabled" style="background: #475569; opacity: 1;">
+                <ion-icon name="checkmark-done-circle-outline" style="font-size: 24px;"></ion-icon>
+                <span>Presensi Istirahat Selesai</span>
+            </button>
+            <input type="hidden" id="status" value="0">
         @endif
-        <input type="hidden" id="status" value="{{ $presensi->istirahat_in == null ? '1' : '2' }}">
     </div>
-
-    <!-- Sound Effects -->
-    <audio id="notifikasi_radus"><source src="{{ asset('assets/sound/radius.mp3') }}" type="audio/mpeg"></audio>
-    <audio id="notifikasi_success"><source src="{{ asset('assets/sound/absenmasuk.wav') }}" type="audio/mpeg"></audio>
-    <audio id="notifikasi_error"><source src="{{ asset('assets/sound/absenpulang.mp3') }}" type="audio/mpeg"></audio>
 
     <!-- Required Libs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
@@ -432,9 +434,7 @@
                     contentType: false,
                     processData: false,
                     success: function(respond) {
-                        // Response is already JSON
                         if (respond.status == true) {
-                            // document.getElementById('notifikasi_success').play();
                             Swal.fire({
                                 title: 'Berhasil!',
                                 text: respond.message,
@@ -443,8 +443,6 @@
                                 window.location.href = '/dashboard';
                             });
                         } else {
-                            // This branch might run if 200 OK but status false (unlikely with this controller, but safe to keep)
-                            // document.getElementById('notifikasi_error').play();
                             Swal.fire({
                                 title: 'Gagal!',
                                 text: respond.message,
@@ -454,15 +452,10 @@
                         }
                     },
                     error: function(xhr) {
-                        // document.getElementById('notifikasi_error').play();
-                        
                         var message = 'Terjadi kesalahan sistem.';
                         if (xhr.responseJSON) {
                             var respond = xhr.responseJSON;
                             message = respond.message;
-                            if(respond.notifikasi == "notifikasi_radius"){
-                                document.getElementById('notifikasi_radus').play();
-                            }
                         }
 
                         Swal.fire({

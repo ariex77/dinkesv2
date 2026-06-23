@@ -12,6 +12,8 @@
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -135,7 +137,7 @@
             <div class="flex justify-between items-start mb-0 relative z-10">
                 {{-- Left: Name --}}
                 <div class="fade-in" style="animation-delay:.05s">
-                    <h3 style="font-size:20px; font-weight:800; line-height:1.1;">{{ $karyawan->nama_karyawan }}👋</h3>
+                    <h3 style="font-size:20px; font-weight:800; line-height:1.1;">{{ $karyawan->nama_karyawan }}</h3>
                     <span style="font-size:13px; font-weight:400; opacity:.8; display:block; margin-top:2px;">{{ $karyawan->nama_jabatan }} ({{ $karyawan->nama_dept }})</span>
                 </div>
                 {{-- Right: Avatar --}}
@@ -457,7 +459,17 @@
                         $text_color = $d->status == 'h' ? ($t['primary'] ?? '#2d5a4c') : ($d->status == 'i' ? '#1e90ff' : ($d->status == 's' ? '#ff6384' : ($d->status == 'c' ? '#ff9f40' : '#e74c3c')));
                         $bg_color = $d->status == 'h' ? (($t['primary'] ?? '#2d5a4c') . '18') : ($d->status == 'i' ? '#1e90ff18' : ($d->status == 's' ? '#ff638418' : ($d->status == 'c' ? '#ff9f4018' : '#e74c3c18')));
                     @endphp
-                    <div class="bg-white rounded-[12px] mb-2 p-3 flex items-center gap-3" style="border:1px solid {{ $text_color }}4d; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
+                    <div class="bg-white rounded-[12px] mb-2 p-3 flex items-center gap-3 cursor-pointer presensi-card" 
+                        data-tanggal="{{ DateToIndo($d->tanggal) }}"
+                        data-jam-in="{{ $d->jam_in != null ? date('H:i', strtotime($d->jam_in)) : '-' }}"
+                        data-jam-out="{{ $d->jam_out != null ? date('H:i', strtotime($d->jam_out)) : '-' }}"
+                        data-foto-in="{{ !empty($d->foto_in) ? url('/storage/uploads/absensi/' . $d->foto_in) : '' }}"
+                        data-foto-out="{{ !empty($d->foto_out) ? url('/storage/uploads/absensi/' . $d->foto_out) : '' }}"
+                        data-status="{{ $d->status }}"
+                        data-jam-kerja="{{ $d->nama_jam_kerja }}"
+                        data-keterangan="{{ $d->status == 'h' ? 'Hadir' : ($d->status == 'i' ? 'Izin: ' . $d->keterangan_izin : ($d->status == 's' ? 'Sakit: ' . $d->keterangan_izin_sakit : ($d->status == 'c' ? 'Cuti: ' . $d->keterangan_izin_cuti : 'Alpha'))) }}"
+                        data-nama-mesin="{{ $d->nama_mesin }}"
+                        style="border:1px solid {{ $text_color }}4d; box-shadow: 0 1px 4px rgba(0,0,0,0.02);">
                         {{-- Day Badge --}}
                         <div class="shrink-0 flex flex-col items-center justify-center rounded-[10px]" style="width:45px; height:45px; background:{{ $bg_color }};">
                             <span style="font-size:10px; font-weight:700; color:{{ $text_color }}; line-height:1;">{{ $day_short }}</span>
@@ -644,6 +656,75 @@
             </style>
         @endif
 
+        {{-- ===== DETAIL PRESENSI MODAL ===== --}}
+        <div id="detailPresensiModal" class="fixed inset-0 z-[1000] flex items-center justify-center p-4" style="display:none;">
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-sm modal-close"></div>
+            <div class="relative bg-white rounded-[30px] w-full max-w-[360px] overflow-hidden shadow-2xl transition-all">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <h3 class="text-xl font-bold text-gray-800">Detail Presensi</h3>
+                        <button class="text-gray-400 hover:text-gray-600 modal-close">
+                            <ion-icon name="close-circle-outline" style="font-size:28px;"></ion-icon>
+                        </button>
+                    </div>
+
+                    <div id="modalContent">
+                        <div class="mb-4">
+                            <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tanggal & Status</span>
+                            <div class="flex justify-between items-center">
+                                <span id="modalTanggal" class="text-lg font-bold text-gray-800"></span>
+                                <span id="modalStatus" class="px-3 py-1 rounded-full text-xs font-bold text-white"></span>
+                            </div>
+                            <p id="modalKeterangan" class="text-sm text-gray-500 mt-1"></p>
+                        </div>
+
+                        <div id="modalMesinSection" class="mb-4 p-3 rounded-2xl bg-indigo-50 border border-indigo-100 hidden">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0">
+                                    <ion-icon name="finger-print" style="font-size:20px;"></ion-icon>
+                                </div>
+                                <div>
+                                    <span class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Fingerprint Machine</span>
+                                    <span id="modalNamaMesin" class="text-sm font-bold text-indigo-900"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            {{-- Foto Masuk --}}
+                            <div class="text-center">
+                                <span class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Foto Masuk</span>
+                                <div class="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm mb-2">
+                                    <img id="modalImgIn" src="" class="w-full h-full object-cover hidden">
+                                    <div id="modalNoImgIn" class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                        <ion-icon name="camera-outline" style="font-size:32px;"></ion-icon>
+                                        <span class="text-[10px] mt-1">No Photo</span>
+                                    </div>
+                                </div>
+                                <span id="modalJamIn" class="text-sm font-bold text-gray-700"></span>
+                            </div>
+                            {{-- Foto Pulang --}}
+                            <div class="text-center">
+                                <span class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Foto Pulang</span>
+                                <div class="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm mb-2">
+                                    <img id="modalImgOut" src="" class="w-full h-full object-cover hidden">
+                                    <div id="modalNoImgOut" class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                        <ion-icon name="camera-outline" style="font-size:32px;"></ion-icon>
+                                        <span class="text-[10px] mt-1">No Photo</span>
+                                    </div>
+                                </div>
+                                <span id="modalJamOut" class="text-sm font-bold text-gray-700"></span>
+                            </div>
+                        </div>
+
+                        <button class="w-full py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold modal-close active:scale-95 transition-all">
+                            Tutup Detail
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- ===== BOTTOM NAV ===== --}}
         <div style="height: 100px;"></div>
         @include('layouts.mobile.bottomNav')
@@ -730,7 +811,90 @@
             e.preventDefault();
             window.location.href = "{{ route('facerecognition.karyawan.create') }}";
         });
+
+        // Presensi Detail Modal Handler
+        $(".presensi-card").click(function() {
+            const data = $(this).data();
+            
+            $("#modalTanggal").text(data.tanggal);
+            $("#modalJamIn").text(data.jamIn);
+            $("#modalJamOut").text(data.jamOut);
+            $("#modalKeterangan").text(data.keterangan);
+            
+            // Machine Info
+            if (data.namaMesin) {
+                $("#modalNamaMesin").text(data.namaMesin);
+                $("#modalMesinSection").show();
+            } else {
+                $("#modalMesinSection").hide();
+            }
+
+            // Status Badge
+            const statusMap = {
+                'h': { text: 'Hadir', color: 'bg-emerald-500' },
+                'i': { text: 'Izin', color: 'bg-blue-500' },
+                's': { text: 'Sakit', color: 'bg-rose-500' },
+                'c': { text: 'Cuti', color: 'bg-orange-500' },
+                'a': { text: 'Alpha', color: 'bg-slate-500' }
+            };
+            
+            const status = statusMap[data.status] || { text: 'Alpha', color: 'bg-slate-500' };
+            $("#modalStatus").text(status.text).removeClass().addClass('px-3 py-1 rounded-full text-xs font-bold text-white ' + status.color);
+
+            // Photo In
+            if (data.fotoIn) {
+                $("#modalImgIn").attr('src', data.fotoIn).show();
+                $("#modalNoImgIn").hide();
+            } else {
+                $("#modalImgIn").hide();
+                $("#modalNoImgIn").show();
+            }
+
+            // Photo Out
+            if (data.fotoOut) {
+                $("#modalImgOut").attr('src', data.fotoOut).show();
+                $("#modalNoImgOut").hide();
+            } else {
+                $("#modalImgOut").hide();
+                $("#modalNoImgOut").show();
+            }
+
+            $("#detailPresensiModal").fadeIn(300);
+        });
+
+        $(".modal-close").click(function() {
+            $("#detailPresensiModal").fadeOut(200);
+        });
     </script>
+
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+    </script>
+
+    @if ($message = Session::get('success'))
+        <script>toastr.success("{{ $message }}");</script>
+    @endif
+
+    @if ($message = Session::get('error'))
+        <script>toastr.error("{{ $message }}");</script>
+    @endif
+
+    @if ($message = Session::get('warning'))
+        <script>toastr.warning("{{ $message }}");</script>
+    @endif
+
+    @if ($errors->any())
+        <script>
+            @foreach ($errors->all() as $error)
+                toastr.error("{{ $error }}");
+            @endforeach
+        </script>
+    @endif
 </body>
 </html>
 

@@ -150,6 +150,81 @@
         </script>
     @endif
 
+    @auth
+    <script>
+        function urlBase64ToUint8Array(base64String) {
+            var padding = '='.repeat((4 - base64String.length % 4) % 4);
+            var base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            var rawData = window.atob(base64);
+            var outputArray = new Uint8Array(rawData.length);
+            for (var i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        function subscribeUserToPush() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                console.warn('Push notification tidak didukung di browser ini.');
+                return;
+            }
+
+            navigator.serviceWorker.ready.then(function(registration) {
+                const VAPID_PUBLIC_KEY = "{{ config('webpush.vapid.public_key') }}";
+                if (!VAPID_PUBLIC_KEY) {
+                    console.error('VAPID_PUBLIC_KEY belum didefinisikan.');
+                    return;
+                }
+
+                if (Notification.permission === 'denied') {
+                    console.warn('Izin notifikasi telah ditolak sebelumnya.');
+                    return;
+                }
+
+                return Notification.requestPermission().then(function(permission) {
+                    if (permission !== 'granted') {
+                        throw new Error('Izin notifikasi ditolak oleh user.');
+                    }
+
+                    const subscribeOptions = {
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                    };
+
+                    return registration.pushManager.subscribe(subscribeOptions);
+                });
+            })
+            .then(function(pushSubscription) {
+                if (!pushSubscription) return;
+
+                return fetch("{{ route('push.store') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    body: JSON.stringify(pushSubscription)
+                });
+            })
+            .then(function(response) {
+                if (response) return response.json();
+            })
+            .then(function(data) {
+                if (data) {
+                    console.log('User berhasil terdaftar ke Push Notification:', data);
+                }
+            })
+            .catch(function(error) {
+                console.error('Gagal melakukan subscribe push notification:', error);
+            });
+        }
+
+        $(document).ready(function() {
+            subscribeUserToPush();
+        });
+    </script>
+    @endauth
+
     @stack('myscript')
 </body>
 </html>

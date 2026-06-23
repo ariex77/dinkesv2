@@ -59,6 +59,16 @@
                         value="{{ $presensi != null ? $presensi->jam_out : '' }}" />
                 </div>
             </div>
+            <div class="row">
+                <div class="col">
+                    <x-input-with-icon icon="ti ti-clock" label="Jam Mulai Istirahat" name="istirahat_out" datepicker="flatpickr-date"
+                        value="{{ $presensi != null ? $presensi->istirahat_out : '' }}" />
+                </div>
+                <div class="col">
+                    <x-input-with-icon icon="ti ti-clock" label="Jam Selesai Istirahat" name="istirahat_in" datepicker="flatpickr-date"
+                        value="{{ $presensi != null ? $presensi->istirahat_in : '' }}" />
+                </div>
+            </div>
             <div class="form-group">
                 <button type="submit" class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i> Submit</button>
             </div>
@@ -66,8 +76,8 @@
     </div>
 </div>
 <script>
-    $("#jam_in,#jam_out").mask("0000-00-00 00:00");
-    $("#jam_in,#jam_out").flatpickr({
+    $("#jam_in,#jam_out,#istirahat_out,#istirahat_in").mask("0000-00-00 00:00");
+    $("#jam_in,#jam_out,#istirahat_out,#istirahat_in").flatpickr({
         enableTime: true,
         dateFormat: "Y-m-d H:i",
         time_24hr: true,
@@ -75,9 +85,9 @@
     })
     $("#status").change(function() {
         if ($(this).val() != 'h') {
-            $("#jam_in,#jam_out").prop('disabled', true);
+            $("#jam_in,#jam_out,#istirahat_out,#istirahat_in").prop('disabled', true);
         } else {
-            $("#jam_in,#jam_out").prop('disabled', false);
+            $("#jam_in,#jam_out,#istirahat_out,#istirahat_in").prop('disabled', false);
         }
     });
     $("#formEditPresensi").submit(function(e) {

@@ -6,6 +6,8 @@ use App\Models\Bpjskesehatan;
 use App\Models\Cabang;
 use App\Models\Departemen;
 use App\Models\Karyawan;
+use App\Imports\BpjskesehatanImport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Redirect;
@@ -28,6 +30,11 @@ class BpjskesehatanController extends Controller
         if (!empty($request->kode_dept)) {
             $query->where('karyawan.kode_dept', $request->kode_dept);
         }
+
+        if (!empty($request->tanggal)) {
+            $query->where('karyawan_bpjskesehatan.tanggal_berlaku', $request->tanggal);
+        }
+
         $bpjskesehatan = $query->paginate(20);
         $bpjskesehatan->appends($request->all());
         $data['bpjskesehatan'] = $bpjskesehatan;
@@ -180,6 +187,77 @@ class BpjskesehatanController extends Controller
             return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
         } catch (\Exception $e) {
             return Redirect::back()->with(messageError('Data Gagal Dihapus ' . $e->getMessage()));
+        }
+    }
+
+    public function import()
+    {
+        return view('datamaster.bpjskesehatan.import');
+    }
+
+    public function import_proses(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        try {
+            Excel::import(new BpjskesehatanImport, $request->file('file'));
+            return Redirect::back()->with(messageSuccess('Data Berhasil Diimport'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError('Data Gagal Diimport: ' . $e->getMessage()));
+        }
+    }
+
+    public function download_template()
+    {
+        $filename = 'template_bpjs_kesehatan.xlsx';
+        $header = [
+            'nik' => 'NIK',
+            'nama_karyawan' => 'NAMA KARYAWAN',
+            'jumlah' => 'JUMLAH',
+            'tanggal_berlaku' => 'TANGGAL BERLAKU'
+        ];
+
+        $karyawan = Karyawan::limit(10)->get();
+        $data = [];
+        foreach ($karyawan as $k) {
+            $data[] = [
+                $k->nik,
+                $k->nama_karyawan,
+                '0',
+                date('Y-m-d')
+            ];
+        }
+
+        return Excel::download(new class($header, $data) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+            private $header;
+            private $data;
+            public function __construct($header, $data) {
+                $this->header = $header;
+                $this->data = $data;
+            }
+            public function collection() {
+                return collect($this->data);
+            }
+            public function headings(): array {
+                return array_values($this->header);
+            }
+        }, $filename);
+    }
+
+    public function delete_multiple(Request $request)
+    {
+        $kode_bpjs_kesehatan = $request->kode_bpjs_kesehatan;
+        if (empty($kode_bpjs_kesehatan)) {
+            return Redirect::back()->with(messageError('Pilih data yang akan dihapus'));
+        }
+
+        try {
+            Bpjskesehatan::whereIn('kode_bpjs_kesehatan', $kode_bpjs_kesehatan)->delete();
+            return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
+        } catch (\Exception $e) {
+            return Redirect::back()->with(messageError('Data Gagal Dihapus: ' . $e->getMessage()));
         }
     }
 }

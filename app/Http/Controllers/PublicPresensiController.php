@@ -12,6 +12,7 @@ use App\Models\Jamkerja;
 use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
 use App\Models\Detailsetjamkerjabydept;
+use App\Models\GlobalJamkerja;
 use App\Jobs\SendWaMessage;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -118,18 +119,31 @@ class PublicPresensiController extends Controller
             ->where('tanggal', $tanggal_kemarin)->first();
 
         $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
-        $batas_presensi_lintashari = $generalsetting->batas_presensi_lintashari;
 
-        $tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
-        $tanggal_pulang = $lintas_hari == 1 ? $tanggal_besok : $tanggal_sekarang;
-        if ($jam_sekarang > $batas_presensi_lintashari && $lintas_hari == 1) {
-            $tanggal_presensi = $tanggal_sekarang;
-            $tanggal_pulang = $tanggal_besok;
-        }
+        // Tentukan Batas Lintas Hari
+        $batas_presensi_lintashari = ($presensi_kemarin && $presensi_kemarin->batas_presensi_pulang)
+            ? $presensi_kemarin->batas_presensi_pulang
+            : $generalsetting->batas_presensi_lintashari;
 
-        $jam_kerja = $this->getJamKerjaKaryawan($karyawan);
+        // Ambil Jam Kerja untuk presensi saat ini
+        $jam_kerja = $this->getJamKerjaKaryawan($karyawan, $tanggal_sekarang);
         if (!$jam_kerja) {
             return response()->json(['status' => 'error', 'message' => 'Jadwal kerja tidak ditemukan'], 200);
+        }
+
+        // --- PENENTUAN TANGGAL PRESENSI ---
+        // Secara default adalah hari ini
+        $tanggal_presensi = $tanggal_sekarang;
+        $jam_kerja_pulang = $jam_kerja->jam_pulang;
+        $tanggal_pulang = $jam_kerja->lintashari == 1 ? $tanggal_besok : $tanggal_sekarang;
+
+        // HANYA jika kemarin lintas hari DAN belum absen pulang DAN belum melewati batas jam, maka dianggap absen kemarin
+        if ($presensi_kemarin && $presensi_kemarin->lintashari == 1 && $presensi_kemarin->jam_out == null) {
+            if ($jam_sekarang < $batas_presensi_lintashari) {
+                $tanggal_presensi = $tanggal_kemarin;
+                $tanggal_pulang = $tanggal_sekarang;
+                $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
+            }
         }
 
         // Determine status (1: Masuk, 2: Pulang)
@@ -151,40 +165,6 @@ class PublicPresensiController extends Controller
         $batas_jam_absen = $generalsetting->batas_jam_absen * 60;
         $batas_jam_absen_pulang = $generalsetting->batas_jam_absen_pulang * 60;
 
-        // Full lintas hari logic (same as PresensiController)
-        if ($presensi_kemarin != null) {
-            if ($presensi_kemarin->lintashari == 1) {
-                if ($jam_sekarang > $generalsetting->batas_presensi_lintashari) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
-                    $tanggal_presensi = $tanggal_kemarin;
-                }
-            } else {
-                if ($jam_kerja->lintashari == 1) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                }
-            }
-        } else {
-            if ($jam_kerja->lintashari == 1) {
-                $tanggal_pulang = $tanggal_besok;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
-            } else {
-                $tanggal_pulang = $tanggal_sekarang;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
-            }
-        }
 
         $fileName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out . ".png";
         $file = $folderPath . $fileName;
@@ -312,9 +292,9 @@ class PublicPresensiController extends Controller
         }
     }
 
-    private function getJamKerjaKaryawan($karyawan)
+    private function getJamKerjaKaryawan($karyawan, $tanggal = null)
     {
-        $hariini = date("Y-m-d");
+        $hariini = $tanggal ?? date("Y-m-d");
         $namahari = $this->getnamaHari(date('D', strtotime($hariini)));
         $kode_dept = $karyawan->kode_dept;
 
@@ -336,6 +316,17 @@ class PublicPresensiController extends Controller
                     ->where('kode_cabang', $karyawan->kode_cabang)
                     ->where('hari', $namahari)
                     ->first();
+            }
+
+            // Fallback: Cek Jadwal Kerja Global
+            if ($jamkerja == null) {
+                $generalsetting = Pengaturanumum::where('id', 1)->first();
+                if ($generalsetting && $generalsetting->global_jamkerja_aktif) {
+                    $globalJk = GlobalJamkerja::where('hari', $namahari)->first();
+                    if ($globalJk && $globalJk->kode_jam_kerja) {
+                        $jamkerja = Jamkerja::where('kode_jam_kerja', $globalJk->kode_jam_kerja)->first();
+                    }
+                }
             }
         }
         return $jamkerja;

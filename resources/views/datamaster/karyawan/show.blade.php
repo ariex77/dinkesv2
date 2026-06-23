@@ -107,7 +107,7 @@
                     <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-friends text-heading"></i><span class="fw-medium mx-2 text-heading">
                             Status Kawin:</span>
-                        <span>{{ $karyawan->keterangan_status_kawin }} </span>
+                        <span>{{ $karyawan->status_kawin }} </span>
                     </li>
                      <li class="d-flex align-items-center mb-3">
                         <i class="ti ti-school text-heading"></i><span class="fw-medium mx-2 text-heading">
@@ -125,6 +125,31 @@
                         <i class="ti ti-phone text-heading"></i><span class="fw-medium mx-2 text-heading">
                             No. HP:</span>
                         <span>{{ $karyawan->no_hp }}</span>
+                    </li>
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="ti ti-mail text-heading"></i><span class="fw-medium mx-2 text-heading">
+                            Email:</span>
+                        <span>{{ $karyawan->email ?? '-' }}</span>
+                    </li>
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="ti ti-phone-call text-heading"></i><span class="fw-medium mx-2 text-heading">
+                            Kontak Darurat:</span>
+                        <span>{{ $karyawan->kontak_darurat ?? '-' }} @if(!empty($karyawan->hubungan_kontak_darurat)) ({{ textCamelCase($karyawan->hubungan_kontak_darurat) }}) @endif</span>
+                    </li>
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="ti ti-building-bank text-heading"></i><span class="fw-medium mx-2 text-heading">
+                            Rekening Bank:</span>
+                        <span>{{ $karyawan->no_rekening ?? '-' }} @if(!empty($karyawan->nama_bank)) ({{ strtoupper($karyawan->nama_bank) }}) @endif</span>
+                    </li>
+                    <li class="d-flex align-items-center mb-3">
+                        <i class="ti ti-receipt-tax text-heading"></i><span class="fw-medium mx-2 text-heading">Hitung PPh 21:</span>
+                        <span>
+                            @if (($karyawan->hitung_pph21 ?? 1) == 1)
+                                <span class="badge bg-label-success">Ya</span>
+                            @else
+                                <span class="badge bg-label-danger">Tidak</span>
+                            @endif
+                        </span>
                     </li>
                 </ul>
             </div>
@@ -180,6 +205,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="javascript:void(0);" onclick="showTab('allowance')"><i class="ti-xs ti ti-report-money me-1"></i> Tunjangan</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0);" onclick="showTab('training')"><i class="ti-xs ti ti-school me-1"></i> Pelatihan</a>
                     </li>
                 </ul>
             </div>
@@ -297,8 +325,31 @@
                 @endforeach
                @endif
             </div>
-        </div>
+         </div>
         <!--/ Mutation History -->
+
+        <!-- Training -->
+        <div class="row" style="display: none;" id="training_completeness">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <a href="#" class="btn btn-primary" id="btnAddTraining">
+                        <i class="ti ti-plus me-1"></i> Tambah Pelatihan
+                    </a>
+                </div>
+                <div class="card shadow-none border">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2" style="background-color: var(--theme-color-1) !important; color: white !important; min-height: 50px;">
+                        <div class="d-flex align-items-center">
+                            <i class="ti ti-school me-2 fs-5"></i>
+                            <h6 class="card-title mb-0 text-white">Data Pelatihan</h6>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="load-training"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--/ Training -->
     </div>
 </div>
 <x-modal-form id="modal" show="loadmodal" size="modal-lg" />
@@ -351,6 +402,7 @@
         // Hide all tabs
         $("#face_completeness").hide();
         $("#mutation_completeness").hide();
+        $("#training_completeness").hide();
         
         // Remove active class from all nav links
         $(".nav-link").removeClass("active");
@@ -368,8 +420,39 @@
         } else if (tab == 'allowance') {
              // Future implementation
              $(".nav-link:contains('Tunjangan')").addClass("active");
+        } else if (tab == 'training') {
+             $("#training_completeness").show();
+             $(".nav-link:contains('Pelatihan')").addClass("active");
+             loadTraining();
         }
     }
+
+    function loadTraining() {
+        var nik = "{{ Crypt::encrypt($karyawan->nik) }}";
+        $("#load-training").html(`<div class="sk-wave sk-primary" style="margin:auto">
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            </div>`);
+        $("#load-training").load('/pelatihan/' + nik + '/index');
+    }
+
+    $(document).on('click', '#btnAddTraining', function(e) {
+        e.preventDefault();
+        var nik = "{{ Crypt::encrypt($karyawan->nik) }}";
+        $('#modal').modal("show");
+        $('#modal').find(".modal-title").text("Tambah Pelatihan");
+        $("#loadmodal").html(`<div class="sk-wave sk-primary" style="margin:auto">
+            <div class="sk-wave-rectSk"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            <div class="sk-wave-rect"></div>
+            </div>`);
+        $("#loadmodal").load('/pelatihan/' + nik + '/create');
+    });
 
     $("#btnAddface").click(function(e) {
         e.preventDefault();

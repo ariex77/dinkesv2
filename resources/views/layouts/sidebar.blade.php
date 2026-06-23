@@ -276,12 +276,37 @@
              </li>
          @endif
  
-         @can('pinjaman.index')
+
+
+          @can('pinjaman.index')
              <li class="menu-item {{ request()->is(['pinjaman', 'pinjaman/*']) ? 'active' : '' }}">
                  <a href="{{ route('pinjaman.index') }}" class="menu-link">
                      <i class="menu-icon tf-icons ti ti-credit-card"></i>
                      <div>Pinjaman Karyawan</div>
                  </a>
+             </li>
+         @endcan
+
+         @can('reimbursement.index')
+             <li class="menu-item {{ request()->is(['reimbursement', 'reimbursement/*', 'jenisreimbursement', 'jenisreimbursement/*']) ? 'open' : '' }}">
+                 <a href="javascript:void(0);" class="menu-link menu-toggle">
+                     <i class="menu-icon tf-icons ti ti-receipt-refund"></i>
+                     <div>Reimbursement</div>
+                 </a>
+                 <ul class="menu-sub">
+                     @can('jenisreimbursement.index')
+                         <li class="menu-item {{ request()->is(['jenisreimbursement', 'jenisreimbursement/*']) ? 'active' : '' }}">
+                             <a href="{{ route('jenisreimbursement.index') }}" class="menu-link">
+                                 <div>Jenis & Aturan</div>
+                             </a>
+                         </li>
+                     @endcan
+                     <li class="menu-item {{ request()->is(['reimbursement', 'reimbursement/*']) ? 'active' : '' }}">
+                         <a href="{{ route('reimbursement.index') }}" class="menu-link">
+                             <div>Pengajuan</div>
+                         </a>
+                     </li>
+                 </ul>
              </li>
          @endcan
          @if (auth()->user()->hasAnyPermission(['kpi.period.index', 'kpi.indicator.index', 'kpi.employee.index']))
@@ -317,6 +342,30 @@
                  </ul>
              </li>
          @endif
+          @if (auth()->user()->hasAnyPermission(['project.index', 'projectcategory.index']))
+              <li class="menu-item {{ request()->is(['project', 'project/*', 'projectcategory', 'projectcategory/*']) ? 'open' : '' }}">
+                  <a href="javascript:void(0);" class="menu-link menu-toggle">
+                      <i class="menu-icon tf-icons ti ti-briefcase"></i>
+                      <div>Project Management</div>
+                  </a>
+                  <ul class="menu-sub">
+                      @can('project.index')
+                          <li class="menu-item {{ request()->is(['project', 'project/*']) ? 'active' : '' }}">
+                              <a href="{{ route('project.index') }}" class="menu-link">
+                                  <div>Projects</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('projectcategory.index')
+                          <li class="menu-item {{ request()->is(['projectcategory', 'projectcategory/*']) ? 'active' : '' }}">
+                              <a href="{{ route('projectcategory.index') }}" class="menu-link">
+                                  <div>Kategori Project</div>
+                              </a>
+                          </li>
+                      @endcan
+                  </ul>
+              </li>
+          @endif
          @can('kunjungan.index')
              <li
                  class="menu-item {{ request()->is(['kunjungan', 'kunjungan/*', 'tracking-kunjungan', 'tracking-kunjungan/*']) ? 'open' : '' }}">
@@ -367,9 +416,9 @@
 
          
          
-         @if (auth()->user()->hasAnyPermission(['izinabsen.index', 'izinsakit.index', 'izincuti.index', 'izindinas.index']))
+         @if (auth()->user()->hasAnyPermission(['izinabsen.index', 'izinsakit.index', 'izincuti.index', 'izindinas.index', 'koreksi.index']))
              <li
-                 class="menu-item {{ request()->is(['izinabsen', 'izinabsen/*', 'izinsakit', 'izincuti', 'izindinas']) ? 'active' : '' }}">
+                 class="menu-item {{ request()->is(['izinabsen', 'izinabsen/*', 'izinsakit', 'izinsakit/*', 'izincuti', 'izincuti/*', 'izindinas', 'izindinas/*', 'koreksi', 'koreksi/*']) ? 'active' : '' }}">
                  <a href="{{ route('izinabsen.index') }}" class="menu-link">
                      <i class="menu-icon tf-icons ti ti-folder-check"></i>
                      <div>Pengajuan</div>
@@ -434,7 +483,7 @@
                      'mesinfingerprint.index',
                  ]))
              <li
-                 class="menu-item {{ request()->is(['harilibur', 'harilibur/*', 'jamkerjabydept', 'jamkerjabydept/*', 'generalsetting', 'denda', 'jamkerja', 'jamkerja/*', 'approvalfeature', 'approvalfeature/*', 'mesin-fingerprint', 'mesin-fingerprint/*', 'lemburaturan', 'lemburaturan/*']) ? 'open' : '' }}">
+                 class="menu-item {{ request()->is(['harilibur', 'harilibur/*', 'jamkerjabydept', 'jamkerjabydept/*', 'generalsetting', 'denda', 'jamkerja', 'jamkerja/*', 'approvalfeature', 'approvalfeature/*', 'mesin-fingerprint', 'mesin-fingerprint/*', 'lemburaturan', 'lemburaturan/*', 'pph21', 'pph21/*']) ? 'open' : '' }}">
                  <a href="javascript:void(0);" class="menu-link menu-toggle">
                      <i class="menu-icon tf-icons ti ti-settings"></i>
                      <div>Konfigurasi</div>
@@ -492,50 +541,71 @@
                              </a>
                          </li>
                      @endcan
-                 </ul>
-             </li>
-         @endif
-         @if (auth()->user()->hasAnyPermission(['laporan.presensi', 'laporan.gaji', 'laporan.cuti', 'laporan.jadwal']))
-             <li class="menu-item {{ request()->is(['laporan', 'laporan/*']) ? 'open' : '' }} ">
-                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                     <i class="menu-icon tf-icons ti ti-adjustments-alt"></i>
-                     <div>Laporan</div>
-                 </a>
-                 <ul class="menu-sub">
-                     @can('laporan.presensi')
-                         <li class="menu-item {{ request()->is(['laporan/presensi']) ? 'active' : '' }}">
-                             <a href="{{ route('laporan.presensi') }}" class="menu-link">
-                                 <div>Laporan Presensi</div>
-                             </a>
-                         </li>
-                     @endcan
-                     @can('laporan.gaji')
-                         <li class="menu-item {{ request()->is(['laporan/gaji']) ? 'active' : '' }}">
-                             <a href="{{ route('laporan.gaji') }}" class="menu-link">
-                                 <div>Laporan Gaji</div>
-                             </a>
-                         </li>
-                     @endcan
-                     @can('laporan.jadwal')
-                         <li class="menu-item {{ request()->is(['laporan/jadwal']) ? 'active' : '' }}">
-                             <a href="{{ route('laporan.jadwal') }}" class="menu-link">
-                                 <div>Laporan Jadwal</div>
-                             </a>
-                         </li>
-                     @endcan
-                     @can('laporan.cuti')
-                         <li class="menu-item {{ request()->is(['laporan/cuti']) ? 'active' : '' }}">
-                             <a href="{{ route('laporan.cuti') }}" class="menu-link">
-                                 <div>Laporan Cuti</div>
+                     @can('pph21.index')
+                         <li class="menu-item {{ request()->is(['pph21', 'pph21/*']) ? 'active' : '' }}">
+                             <a href="{{ route('pph21.index') }}" class="menu-link">
+                                 <div>PPh21</div>
                              </a>
                          </li>
                      @endcan
                  </ul>
              </li>
          @endif
+         @if (auth()->user()->hasAnyPermission(['laporan.presensi', 'laporan.gaji', 'laporan.cuti', 'laporan.jadwal', 'reimbursement.laporan']))
+              <li class="menu-item {{ request()->is(['laporan', 'laporan/*']) ? 'open' : '' }} ">
+                  <a href="javascript:void(0);" class="menu-link menu-toggle">
+                      <i class="menu-icon tf-icons ti ti-adjustments-alt"></i>
+                      <div>Laporan</div>
+                  </a>
+                  <ul class="menu-sub">
+                      @can('laporan.presensi')
+                          <li class="menu-item {{ request()->is(['laporan/presensi']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.presensi') }}" class="menu-link">
+                                  <div>Laporan Presensi</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('laporan.gaji')
+                          <li class="menu-item {{ request()->is(['laporan/gaji']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.gaji') }}" class="menu-link">
+                                  <div>Laporan Gaji</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('laporan.jadwal')
+                          <li class="menu-item {{ request()->is(['laporan/jadwal']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.jadwal') }}" class="menu-link">
+                                  <div>Laporan Jadwal</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('laporan.cuti')
+                          <li class="menu-item {{ request()->is(['laporan/cuti']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.cuti') }}" class="menu-link">
+                                  <div>Laporan Cuti</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('reimbursement.laporan')
+                          <li class="menu-item {{ request()->is(['laporan/reimbursement']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.reimbursement') }}" class="menu-link">
+                                  <div>Laporan Reimbursement</div>
+                              </a>
+                          </li>
+                      @endcan
+                      @can('pinjaman.laporan')
+                          <li class="menu-item {{ request()->is(['laporan/pinjaman']) ? 'active' : '' }}">
+                              <a href="{{ route('laporan.pinjaman') }}" class="menu-link">
+                                  <div>Laporan Pinjaman</div>
+                              </a>
+                          </li>
+                      @endcan
+                  </ul>
+              </li>
+          @endif
          @if (auth()->user()->hasRole(['super admin']))
              <li
-                 class="menu-item {{ request()->is(['roles', 'roles/*', 'permissiongroups', 'permissiongroups/*', 'permissions', 'permissions/*', 'users', 'users/*', 'bersihkanfoto', 'bersihkanfoto/*', 'resetdata', 'resetdata/*', 'backup', 'backup/*', 'userloginlog', 'userloginlog/*']) ? 'open' : '' }} ">
+                 class="menu-item {{ request()->is(['roles', 'roles/*', 'permissiongroups', 'permissiongroups/*', 'permissions', 'permissions/*', 'users', 'users/*', 'bersihkanfoto', 'bersihkanfoto/*', 'resetdata', 'resetdata/*', 'backup', 'backup/*', 'userloginlog', 'userloginlog/*', 'logmesin', 'logmesin/*', 'push-subscription', 'push-subscription/*']) ? 'open' : '' }} ">
                  <a href="javascript:void(0);" class="menu-link menu-toggle">
                      <i class="menu-icon tf-icons ti ti-adjustments-alt"></i>
                      <div>Utilities</div>
@@ -576,6 +646,13 @@
                              </a>
                          </li>
                      @endcan
+                     @can('logmesin.index')
+                         <li class="menu-item {{ request()->is(['logmesin', 'logmesin/*']) ? 'active' : '' }}">
+                             <a href="{{ route('logmesin.index') }}" class="menu-link">
+                                 <div>Log Mesin Presensi</div>
+                             </a>
+                         </li>
+                     @endcan
                      <li class="menu-item {{ request()->is(['backup', 'backup/*']) ? 'active' : '' }}">
                          <a href="{{ route('backup.index') }}" class="menu-link">
                              <div>Backup & Restore</div>
@@ -584,6 +661,11 @@
                      <li class="menu-item {{ request()->is(['resetdata', 'resetdata/*']) ? 'active' : '' }}">
                          <a href="{{ route('resetdata.index') }}" class="menu-link">
                              <div>Reset Data</div>
+                         </a>
+                     </li>
+                     <li class="menu-item {{ request()->is(['push-subscription', 'push-subscription/*']) ? 'active' : '' }}">
+                         <a href="{{ route('push-subscription.index') }}" class="menu-link">
+                             <div>Push Subscriptions</div>
                          </a>
                      </li>
                  </ul>

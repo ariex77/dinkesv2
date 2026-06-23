@@ -86,6 +86,9 @@ class KaryawanController extends Controller
         if (!empty($request->kode_group)) {
             $query->where('karyawan.kode_group', $request->kode_group);
         }
+        if (!empty($request->kode_jabatan)) {
+            $query->where('karyawan.kode_jabatan', $request->kode_jabatan);
+        }
 
         if (!empty($request->nama_karyawan)) {
             $query->where('nama_karyawan', 'like', '%' . $request->nama_karyawan . '%');
@@ -97,6 +100,7 @@ class KaryawanController extends Controller
         $data['karyawan'] = $karyawan;
         $data['cabang'] = $user->getCabang();
         $data['departemen'] = $user->getDepartemen();
+        $data['jabatan'] = Jabatan::orderBy('nama_jabatan')->get();
 
         return view('datamaster.karyawan.index', $data);
     }
@@ -137,7 +141,16 @@ class KaryawanController extends Controller
             'kode_dept' => 'required',
             'kode_jabatan' => 'required',
             'tanggal_masuk' => 'required',
-            'status_karyawan' => 'required'
+            'status_karyawan' => 'required',
+            'npwp' => 'nullable',
+            'alamat_sesuai_ktp' => 'nullable',
+            'jurusan' => 'nullable',
+            'email' => 'nullable|email',
+            'kontak_darurat' => 'nullable',
+            'hubungan_kontak_darurat' => 'nullable',
+            'nama_bank' => 'nullable',
+            'no_rekening' => 'nullable',
+            'hitung_pph21' => 'nullable|boolean'
         ]);
 
         // Validasi akses cabang dan departemen jika bukan super admin
@@ -196,6 +209,15 @@ class KaryawanController extends Controller
                 'kode_jabatan' => $request->kode_jabatan,
                 'tanggal_masuk' => $request->tanggal_masuk,
                 'status_karyawan' => $request->status_karyawan,
+                'npwp' => $request->npwp,
+                'alamat_sesuai_ktp' => $request->alamat_sesuai_ktp,
+                'jurusan' => $request->jurusan,
+                'email' => $request->email,
+                'kontak_darurat' => $request->kontak_darurat,
+                'hubungan_kontak_darurat' => $request->hubungan_kontak_darurat,
+                'nama_bank' => $request->nama_bank,
+                'no_rekening' => $request->no_rekening,
+                'hitung_pph21' => $request->has('hitung_pph21') ? 1 : 0,
                 'lock_location' => 1,
                 'status_aktif_karyawan' => 1,
                 'rfid_uid' => $request->rfid_uid,
@@ -259,7 +281,16 @@ class KaryawanController extends Controller
             'kode_dept' => 'required',
             'kode_jabatan' => 'required',
             'tanggal_masuk' => 'required',
-            'status_karyawan' => 'required'
+            'status_karyawan' => 'required',
+            'npwp' => 'nullable',
+            'alamat_sesuai_ktp' => 'nullable',
+            'jurusan' => 'nullable',
+            'email' => 'nullable|email',
+            'kontak_darurat' => 'nullable',
+            'hubungan_kontak_darurat' => 'nullable',
+            'nama_bank' => 'nullable',
+            'no_rekening' => 'nullable',
+            'hitung_pph21' => 'nullable|boolean'
         ]);
 
         // Validasi akses cabang dan departemen jika bukan super admin
@@ -306,6 +337,15 @@ class KaryawanController extends Controller
                 'tanggal_masuk' => $request->tanggal_masuk,
                 'status_karyawan' => $request->status_karyawan,
                 'status_aktif_karyawan' => $request->status_aktif_karyawan,
+                'npwp' => $request->npwp,
+                'alamat_sesuai_ktp' => $request->alamat_sesuai_ktp,
+                'jurusan' => $request->jurusan,
+                'email' => $request->email,
+                'kontak_darurat' => $request->kontak_darurat,
+                'hubungan_kontak_darurat' => $request->hubungan_kontak_darurat,
+                'nama_bank' => $request->nama_bank,
+                'no_rekening' => $request->no_rekening,
+                'hitung_pph21' => $request->has('hitung_pph21') ? 1 : 0,
                 'rfid_uid' => $request->rfid_uid,
                 'pin' => $request->pin
             ];
@@ -382,11 +422,11 @@ class KaryawanController extends Controller
     {
         $nik = Crypt::decrypt($nik);
         $karyawan = Karyawan::where('nik', $nik)
-            ->join('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
-            ->join('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
-            ->join('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
-            ->join('status_kawin', 'karyawan.kode_status_kawin', '=', 'status_kawin.kode_status_kawin')
-
+            ->select('karyawan.*', 'cabang.nama_cabang', 'departemen.nama_dept', 'jabatan.nama_jabatan', 'status_kawin.status_kawin')
+            ->leftJoin('cabang', 'karyawan.kode_cabang', '=', 'cabang.kode_cabang')
+            ->leftJoin('departemen', 'karyawan.kode_dept', '=', 'departemen.kode_dept')
+            ->leftJoin('jabatan', 'karyawan.kode_jabatan', '=', 'jabatan.kode_jabatan')
+            ->leftJoin('status_kawin', 'karyawan.kode_status_kawin', '=', 'status_kawin.kode_status_kawin')
             ->first();
         $user_karyawan = Userkaryawan::where('nik', $nik)->first();
         $user = $user_karyawan ? User::where('id', $user_karyawan->id_user)->first() : null;

@@ -50,12 +50,17 @@ class SlipgajiController extends Controller
     {
 
         try {
-            Slipgaji::create([
+            $slipgaji = Slipgaji::create([
                 'kode_slip_gaji' => 'GJ' . $request->bulan . $request->tahun,
                 'bulan' => $request->bulan,
                 'tahun' => $request->tahun,
                 'status' => $request->status
             ]);
+
+            if ($request->status == '1') {
+                $this->sendPublishNotification($slipgaji);
+            }
+
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
         } catch (\Exception $e) {
             return Redirect::back()->with(messageError($e->getMessage()));
@@ -75,11 +80,19 @@ class SlipgajiController extends Controller
     {
         $kode_slip_gaji = Crypt::decrypt($kode_slip_gaji);
         try {
+            $slipgaji = Slipgaji::where('kode_slip_gaji', $kode_slip_gaji)->first();
+            $oldStatus = $slipgaji ? $slipgaji->status : null;
+
             Slipgaji::where('kode_slip_gaji', $kode_slip_gaji)->update([
                 'bulan' => $request->bulan,
                 'tahun' => $request->tahun,
                 'status' => $request->status
             ]);
+
+            if ($oldStatus != '1' && $request->status == '1' && $slipgaji) {
+                $this->sendPublishNotification($slipgaji);
+            }
+
             return Redirect::back()->with(messageSuccess('Data Berhasil Disimpan'));
         } catch (\Exception $e) {
             return Redirect::back()->with(messageError($e->getMessage()));
@@ -94,6 +107,18 @@ class SlipgajiController extends Controller
             return Redirect::back()->with(messageSuccess('Data Berhasil Dihapus'));
         } catch (\Exception $e) {
             return Redirect::back()->with(messageError($e->getMessage()));
+        }
+    }
+
+    private function sendPublishNotification($slipgaji)
+    {
+        try {
+            $users = User::role('karyawan')->get();
+            if ($users->isNotEmpty()) {
+                \Illuminate\Support\Facades\Notification::send($users, new \App\Notifications\SlipgajiNotification($slipgaji));
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengirim notifikasi slip gaji: ' . $e->getMessage());
         }
     }
 }

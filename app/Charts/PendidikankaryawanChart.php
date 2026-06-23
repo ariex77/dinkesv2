@@ -60,10 +60,11 @@ class PendidikankaryawanChart
             $labels[] = $label;
             $data[] = $rawData[$key] ?? 0; // Jika tidak ada data, set 0
         }
+        
         return $this->chart->barChart()
-            // ->setTitle('Distribusi Pendidikan Karyawan')
-            // ->setSubtitle('Berdasarkan Tingkat Pendidikan')
-            ->addData('Jumlah Karyawan', array_map('intval', $data))
+            ->setTitle('Distribusi Pendidikan Karyawan')
+            ->setSubtitle('Berdasarkan Tingkat Pendidikan')
+            ->addData(array_map('intval', $data), 'Jumlah Karyawan')
             ->setHeight(328)
             ->setXAxis($labels);
     }

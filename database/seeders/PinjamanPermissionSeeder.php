@@ -25,6 +25,7 @@ class PinjamanPermissionSeeder extends Seeder
             'pinjaman.delete',
             'pinjaman.generate',
             'pinjaman.pembayaran',
+            'pinjaman.laporan',
         ];
 
         foreach ($permissionNames as $name) {

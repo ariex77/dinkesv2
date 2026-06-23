@@ -2,7 +2,7 @@
     @csrf
     @method('PUT')
     <x-input-with-icon icon="ti ti-calendar" label="Tanggal" name="tanggal" datepicker="flatpickr-date" :value="$harilibur->tanggal" />
-    @if ($user->hasRole(['super admin', 'admin pusat']))
+    @if ($user->hasRole(['super admin', 'admin pusat']) || !$cabang->isEmpty())
         <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang" select2="select2Kodecabang"
             upperCase="true" :selected="$harilibur->kode_cabang" />
     @endif

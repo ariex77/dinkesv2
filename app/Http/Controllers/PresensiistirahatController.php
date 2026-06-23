@@ -130,7 +130,7 @@ class PresensiistirahatController extends Controller
 
         $tanggal_selesai_istirahat = $lintas_hari == 1 ? $tanggal_besok : $tanggal_sekarang;
 
-        $in_out = $status == 1 ? "in" : "out";
+        $in_out = $status == 1 ? "out" : "in";
         $image = $request->image;
         $folderPath = "public/uploads/istirahat/";
         $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
@@ -168,33 +168,16 @@ class PresensiistirahatController extends Controller
             ->first();
 
 
-        if ($status_lock_location == 1 && $radius > $cabang->radius_cabang) {
-            return response()->json(['status' => false, 'message' => 'Anda Berada Di Luar Radius Kantor, Jarak Anda ' . formatAngka($radius) . ' Meters Dari Kantor', 'notifikasi' => 'notifikasi_radius'], 400);
-        } else {
+        // Matikan Validasi Radius untuk Istirahat (Permintaan User)
+        // if ($status_lock_location == 1 && $radius > $cabang->radius_cabang) {
+        //     return response()->json(['status' => false, 'message' => 'Anda Berada Di Luar Radius Kantor, Jarak Anda ' . formatAngka($radius) . ' Meters Dari Kantor', 'notifikasi' => 'notifikasi_radius'], 400);
+        // } else {
+        if (true) { // Bypass radius check
             if ($status == 1) {
-                if ($presensi_hariini && $presensi_hariini->istirahat_in != null) {
-                    return response()->json(['status' => false, 'message' => 'Anda Sudah Absen Masuk Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
-                } else if ($jam_presensi < $jam_mulai_istirahat) {
-                    return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Memulai Istirahat, Waktu Istirahat Dimulai Pukul ' . formatIndo3($jam_mulai_istirahat), 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
-                } else {
-                    try {
-                        if ($presensi_hariini != null) {
-                            Presensi::where('id', $presensi_hariini->id)->update([
-                                'istirahat_in' => $jam_presensi,
-                                'lokasi_istirahat_in' => $lokasi,
-                                'foto_istirahat_in' => $fileName
-                            ]);
-                        }
-                        // Storage::put($file, $image_base64);
-
-                        return response()->json(['status' => true, 'message' => 'Berhasil Memulai Istirahat', 'notifikasi' => ''], 200);
-                    } catch (\Exception $e) {
-                        return response()->json(['status' => false, 'message' => $e->getMessage()], 400);
-                    }
-                }
-            } else {
                 if ($presensi_hariini && $presensi_hariini->istirahat_out != null) {
-                    return response()->json(['status' => false, 'message' => 'Anda Sudah Mengakhiri Istirahat Hari Ini', 'notifikasi' => ''], 400);
+                    return response()->json(['status' => false, 'message' => 'Anda Sudah Mencatat Mulai Istirahat Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
+                } else if ($jam_presensi < $jam_mulai_istirahat) {
+                    return response()->json(['status' => false, 'message' => 'Maaf Belum Waktunya Memulai Istirahat. Istirahat dapat dilakukan 30 Menit sebelum jam awal istirahat (Mulai Pukul ' . date('H:i', strtotime($jam_mulai_istirahat)) . ')', 'notifikasi' => 'notifikasi_mulaiabsen'], 400);
                 } else {
                     try {
                         if ($presensi_hariini != null) {
@@ -204,10 +187,29 @@ class PresensiistirahatController extends Controller
                                 'foto_istirahat_out' => $fileName
                             ]);
                         }
-                        // Storage::put($file, $image_base64);
-                        return response()->json(['status' => true, 'message' => 'Berhasil Mengakhiri Istirahat', 'notifikasi' => ''], 200);
+
+                        return response()->json(['status' => true, 'message' => 'Berhasil Memulai Istirahat', 'notifikasi' => 'notifikasi_success'], 200);
                     } catch (\Exception $e) {
-                        return response()->json(['status' => false, 'message' => $e->getMessage()], 400);
+                        return response()->json(['status' => false, 'message' => $e->getMessage(), 'notifikasi' => 'notifikasi_error'], 400);
+                    }
+                }
+            } else {
+                if ($presensi_hariini && $presensi_hariini->istirahat_out == null) {
+                     return response()->json(['status' => false, 'message' => 'Anda belum mencatat Mulai Istirahat hari ini. Silahkan lakukan Mulai Istirahat terlebih dahulu.', 'notifikasi' => 'notifikasi_belummulai'], 400);
+                } else if ($presensi_hariini && $presensi_hariini->istirahat_in != null) {
+                    return response()->json(['status' => false, 'message' => 'Anda Sudah Mengakhiri Istirahat Hari Ini', 'notifikasi' => 'notifikasi_sudahabsen'], 400);
+                } else {
+                    try {
+                        if ($presensi_hariini != null) {
+                            Presensi::where('id', $presensi_hariini->id)->update([
+                                'istirahat_in' => $jam_presensi,
+                                'lokasi_istirahat_in' => $lokasi,
+                                'foto_istirahat_in' => $fileName
+                            ]);
+                        }
+                        return response()->json(['status' => true, 'message' => 'Berhasil Mengakhiri Istirahat', 'notifikasi' => 'notifikasi_success'], 200);
+                    } catch (\Exception $e) {
+                        return response()->json(['status' => false, 'message' => $e->getMessage(), 'notifikasi' => 'notifikasi_error'], 400);
                     }
                 }
             }

@@ -5,6 +5,8 @@
         <x-input-with-icon label="No Kontrak" name="no_kontrak_display" icon="ti ti-file-certificate" :readonly="true"
             value="{{ $kontrak->no_kontrak }}" />
         <input type="hidden" name="no_kontrak" value="{{ old('no_kontrak', $kontrak->no_kontrak) }}">
+        <x-input-with-icon label="No. Dokumen" name="no_dokumen" icon="ti ti-file-description" placeholder="No. Dokumen (Opsional)" 
+            value="{{ old('no_dokumen', $kontrak->no_dokumen) }}" />
 
         <x-input-with-icon label="Tanggal Kontrak" name="tanggal" icon="ti ti-calendar" datepicker="flatpickr-date"
             value="{{ old('tanggal', $kontrak->tanggal) }}" />

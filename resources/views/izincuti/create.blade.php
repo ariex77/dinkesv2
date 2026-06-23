@@ -28,7 +28,9 @@
 
 
     <x-input-with-icon icon="ti ti-sun" label="Jumlah Hari" name="jml_hari" disabled="true" />
-    <x-textarea label="Keterangan" name="keterangan" />
+    <x-input-with-icon icon="ti ti-briefcase" label="Pelimpahan Tugas" name="pelimpahan_tugas" />
+    <x-input-with-icon icon="ti ti-user" label="Nama Kepala Divisi" name="nama_kepala_divisi" />
+    <x-textarea label="Alasan Cuti" name="keterangan" />
 
     <div class="form-group mb-3">
         <button class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i>Submit</button>
@@ -90,6 +92,8 @@
             const dari = form.find("#dari").val();
             const sampai = form.find("#sampai").val();
             const keterangan = form.find("#keterangan").val();
+            const pelimpahan_tugas = form.find("#pelimpahan_tugas").val();
+            const nama_kepala_divisi = form.find("#nama_kepala_divisi").val();
             const kode_cuti = form.find("#kode_cuti").val();
             const kode_cuti_khusus = form.find("#kode_cuti_khusus").val();
             if (nik == '') {
@@ -147,10 +151,32 @@
                     }
                 });
                 return false;
+            } else if (pelimpahan_tugas == '') {
+                Swal.fire({
+                    title: "Oops!",
+                    text: 'Pelimpahan Tugas Harus Diisi !',
+                    icon: "warning",
+                    showConfirmButton: true,
+                    didClose: () => {
+                        form.find("#pelimpahan_tugas").focus();
+                    }
+                });
+                return false;
+            } else if (nama_kepala_divisi == '') {
+                Swal.fire({
+                    title: "Oops!",
+                    text: 'Nama Kepala Divisi Harus Diisi !',
+                    icon: "warning",
+                    showConfirmButton: true,
+                    didClose: () => {
+                        form.find("#nama_kepala_divisi").focus();
+                    }
+                });
+                return false;
             } else if (keterangan == '') {
                 Swal.fire({
                     title: "Oops!",
-                    text: 'Keterangan Harus Diisi !',
+                    text: 'Alasan Cuti Harus Diisi !',
                     icon: "warning",
                     showConfirmButton: true,
                     didClose: () => {

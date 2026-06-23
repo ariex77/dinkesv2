@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" sizes="512x512" href="/assets/img/icons/pwa/icon-512x512.png">
 
     <!-- PWA Manifest -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json?v={{ file_exists(public_path('manifest.json')) ? filemtime(public_path('manifest.json')) : time() }}">
 
     <!-- Service Worker Registration -->
     <script>
@@ -63,6 +63,8 @@
                 navigator.serviceWorker.register('/sw.js')
                     .then(function(registration) {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        // Force update check to sync manifest/icons immediately
+                        registration.update();
                     })
                     .catch(function(err) {
                         console.log('ServiceWorker registration failed: ', err);

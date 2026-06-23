@@ -50,17 +50,21 @@
                     <div class="col-12">
                         <form action="{{ route('karyawan.index') }}">
                             <div class="row g-2">
-                                <div class="col-lg-5 col-sm-12 col-md-12">
+                                <div class="col-lg-4 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}" name="nama_karyawan"
                                         icon="ti ti-search" hideLabel />
                                 </div>
-                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                <div class="col-lg-2 col-sm-12 col-md-12">
                                     <x-select label="Cabang" name="kode_cabang" :data="$cabang" key="kode_cabang" textShow="nama_cabang"
                                         selected="{{ Request('kode_cabang') }}" hideLabel />
                                 </div>
-                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                <div class="col-lg-2 col-sm-12 col-md-12">
                                     <x-select label="Departemen" name="kode_dept" :data="$departemen" key="kode_dept" textShow="nama_dept"
                                         selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
+                                </div>
+                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                    <x-select label="Jabatan" name="kode_jabatan" :data="$jabatan" key="kode_jabatan" textShow="nama_jabatan"
+                                        selected="{{ Request('kode_jabatan') }}" upperCase="true" hideLabel />
                                 </div>
                                 <div class="col-lg-1 col-sm-12 col-md-12">
                                     <button class="btn btn-primary w-100"><i class="ti ti-icons ti-search me-1"></i></button>
@@ -102,7 +106,7 @@
                                                         <span class="badge bg-label-info" style="font-size: 10px;">{{ $d->nama_dept }}</span>
                                                         <span class="badge bg-label-warning" style="font-size: 10px;">{{ $d->nama_cabang }}</span>
                                                         @if ($d->status_karyawan)
-                                                        @php
+                                                                                                                @php
                                                             switch ($d->status_karyawan) {
                                                                 case 'K':
                                                                     $status_karyawan_text = 'PPPK';
@@ -126,7 +130,6 @@
                                                             {{ $status_karyawan_text }}
                                                         </span>
                                                     @endif
-
                                                         @if ($d->jenis_upah)
                                                             @php
                                                                 $upah_class = $d->jenis_upah == 'Harian' ? 'bg-label-info' : 'bg-label-success';

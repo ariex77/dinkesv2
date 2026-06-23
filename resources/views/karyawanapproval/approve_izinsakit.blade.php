@@ -109,6 +109,14 @@
                     <span class="lbl">Keterangan</span>
                     <span class="val">{{ $izinsakit->keterangan }}</span>
                 </div>
+                @if (!empty($izinsakit->doc_sid))
+                <div class="detail-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                    <span class="lbl">Surat Dokter (SID)</span>
+                    <a href="{{ asset('storage/uploads/sid/' . $izinsakit->doc_sid) }}" target="_blank" style="display: block; width: 100%;">
+                        <img src="{{ asset('storage/uploads/sid/' . $izinsakit->doc_sid) }}" alt="SID" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    </a>
+                </div>
+                @endif
                 <div class="catatan-box">
                     <label>Catatan</label>
                     <textarea name="catatan" placeholder="Opsional..."></textarea>

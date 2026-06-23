@@ -54,10 +54,15 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-12">
+                    <div class="row mt-2">
+                        <div class="col-lg-6 col-md-6 col-sm-12 mb-2">
                             <button type="submit" name="submitButton" class="btn btn-primary w-100" id="submitButton">
                                 <i class="ti ti-printer me-1"></i> Cetak Jadwal
+                            </button>
+                        </div>
+                        <div class="col-lg-6 col-md-6 col-sm-12 mb-2">
+                            <button type="submit" name="exportButton" class="btn btn-success w-100" id="exportButton">
+                                <i class="ti ti-download me-1"></i> Export Excel
                             </button>
                         </div>
                     </div>

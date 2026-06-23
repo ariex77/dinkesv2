@@ -93,6 +93,11 @@ class FacerecognitionpresensiController extends Controller
 
         $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
 
+        // Tentukan batas lintas hari: prioritas dari jam kerja kemarin, fallback ke general setting
+        $batas_presensi_lintashari = ($presensi_kemarin && $presensi_kemarin->batas_presensi_pulang)
+            ? $presensi_kemarin->batas_presensi_pulang
+            : $generalsetting->batas_presensi_lintashari;
+
         // Get Lokasi User
         $koordinat_user = explode(",", $lokasi);
         $latitude_user = $koordinat_user[0];
@@ -119,42 +124,21 @@ class FacerecognitionpresensiController extends Controller
         $batas_jam_absen = $generalsetting->batas_jam_absen * 60;
         $batas_jam_absen_pulang = $generalsetting->batas_jam_absen_pulang * 60;
 
-        // Jika Kemarin Melakukan Presensi
-        if ($presensi_kemarin != null) {
-            // Jika Presensi Kemarin Lintas Hari
-            if ($presensi_kemarin->lintashari == 1) {
-                // Jika Jam Sekarang Lebih Besar dari batas_presensi_lintashari
-                if ($jam_sekarang > $generalsetting->batas_presensi_lintashari) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
-                    $tanggal_presensi = $tanggal_kemarin;
-                }
-            } else {
-                if ($jam_kerja->lintashari == 1) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                }
-            }
-        } else {
-            if ($jam_kerja->lintashari == 1) {
-                $tanggal_pulang = $tanggal_besok;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
-            } else {
+        // --- PENENTUAN TANGGAL PRESENSI ---
+        // Secara default adalah hari ini
+        $tanggal_presensi = $tanggal_sekarang;
+        $jam_kerja_pulang = $jam_kerja->jam_pulang;
+        $tanggal_pulang = $jam_kerja->lintashari == 1 ? $tanggal_besok : $tanggal_sekarang;
+
+        // HANYA jika kemarin lintas hari DAN belum absen pulang DAN belum melewati batas jam, maka dianggap absen kemarin
+        if ($presensi_kemarin && $presensi_kemarin->lintashari == 1 && $presensi_kemarin->jam_out == null) {
+            if ($jam_sekarang < $batas_presensi_lintashari) {
+                $tanggal_presensi = $tanggal_kemarin;
                 $tanggal_pulang = $tanggal_sekarang;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
+                $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
             }
         }
+
 
         $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
         $image_parts = explode(";base64", $image);

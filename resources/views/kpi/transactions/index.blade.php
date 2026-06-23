@@ -40,13 +40,17 @@
                     <div class="col-12">
                         <form action="{{ route('kpi.transactions.index') }}" method="GET">
                             <div class="row g-2">
-                                <div class="col-lg-6 col-sm-12 col-md-12">
+                                <div class="col-lg-4 col-sm-12 col-md-12">
                                     <x-input-with-icon label="Cari Nama Karyawan" value="{{ Request('nama_karyawan') }}"
                                         name="nama_karyawan" icon="ti ti-search" hideLabel />
                                 </div>
-                                <div class="col-lg-4 col-sm-12 col-md-12">
+                                <div class="col-lg-3 col-sm-12 col-md-12">
                                     <x-select label="Departemen" name="kode_dept" :data="$departemen" key="kode_dept" textShow="nama_dept"
                                         selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
+                                </div>
+                                <div class="col-lg-3 col-sm-12 col-md-12">
+                                    <x-select label="Jabatan" name="kode_jabatan" :data="$jabatan" key="kode_jabatan" textShow="nama_jabatan"
+                                        selected="{{ Request('kode_jabatan') }}" upperCase="true" hideLabel />
                                 </div>
                                 <div class="col-lg-2 col-sm-12 col-md-12">
                                     <button class="btn btn-primary w-100"><i class="ti ti-icons ti-search me-1"></i> Cari</button>
@@ -109,15 +113,15 @@
                                             <td>
                                                 @if ($active_period)
                                                     <div class="btn-group">
-                                                        @if (empty($item->kpi_id))
-                                                            <a href="{{ route('kpi.transactions.settarget', $item->nik) }}" class="btn btn-sm btn-primary">
-                                                                <i class="ti ti-target me-1"></i> Set Target
-                                                            </a>
-                                                        @else
-                                                            <a href="{{ route('kpi.transactions.show', $item->kpi_id) }}" class="btn btn-sm btn-success">
-                                                                <i class="ti ti-file-analytics me-1"></i> Lihat KPI
-                                                            </a>
-                                                        @endif
+                                                         @if (empty($item->kpi_id))
+                                                             <a href="{{ route('kpi.transactions.settarget', $item->nik) }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-primary">
+                                                                 <i class="ti ti-target me-1"></i> Set Target
+                                                             </a>
+                                                         @else
+                                                             <a href="{{ route('kpi.transactions.show', $item->kpi_id) }}?{{ http_build_query(request()->query()) }}" class="btn btn-sm btn-success">
+                                                                 <i class="ti ti-file-analytics me-1"></i> Lihat KPI
+                                                             </a>
+                                                         @endif
                                                     </div>
                                                 @else
                                                     <span class="text-muted">Periode Non-Aktif</span>

@@ -42,6 +42,14 @@
             <option value="0" @selected($jamkerja->lintashari == 0)>Tidak</option>
         </select>
     </div>
+    <div id="sectionLintasHari" style="display: none;">
+        <x-input-with-icon icon="ti ti-clock-pause" label="Batas Jam Pulang Lintas Hari" name="batas_presensi_pulang"
+            :value="$jamkerja->batas_presensi_pulang ? date('H:i', strtotime($jamkerja->batas_presensi_pulang)) : ''"
+            placeholder="Contoh: 10:00 (Opsional, jika kosong menggunakan General Setting)" />
+        <small class="text-muted d-block mb-3" style="margin-top: -10px;">
+            <i class="ti ti-info-circle me-1"></i>Jika dikosongkan, sistem akan menggunakan batas dari General Setting.
+        </small>
+    </div>
     <div class="row">
         <div class="col">
             <button type="submit" class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i> Simpan</button>
@@ -66,6 +74,20 @@
             toogleIstirahat();
         });
 
-        $("#jam_masuk,#jam_pulang,#jam_awal_istirahat,#jam_akhir_istirahat").mask("00:00");
+        function toggleLintasHari() {
+            if ($('#lintashari').val() == '1') {
+                $('#sectionLintasHari').slideDown();
+            } else {
+                $('#sectionLintasHari').slideUp();
+                $('#batas_presensi_pulang').val('');
+            }
+        }
+        toggleLintasHari();
+
+        $('#lintashari').on('change', function() {
+            toggleLintasHari();
+        });
+
+        $("#jam_masuk,#jam_pulang,#jam_awal_istirahat,#jam_akhir_istirahat,#batas_presensi_pulang").mask("00:00");
     });
 </script>

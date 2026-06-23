@@ -49,13 +49,13 @@
                     <x-input-with-icon icon="ti ti-calendar" label="Sampai" name="sampai" datepicker="flatpickr-date"
                         :value="Request('sampai')" hideLabel />
                 </div>
-                @if ($user->hasRole(['super admin', 'gm administrasi']))
+                @if ($user->hasRole(['super admin', 'gm administrasi']) || !$cabang->isEmpty())
                     <div class="col-lg-4 col-md-9 col-sm-12">
-                        <select name="kode_cabang_search" id="kode_cabang_search" class="form-select select2Kodecabangsearch">
+                        <select name="kode_cabang" id="kode_cabang" class="form-select select2Kodecabangsearch">
                             <option value="">Semua Cabang</option>
                             @foreach ($cabang as $c)
                                 <option value="{{ $c->kode_cabang }}"
-                                    {{ Request('kode_cabang_search') == $c->kode_cabang ? 'selected' : '' }}>
+                                    {{ Request('kode_cabang') == $c->kode_cabang ? 'selected' : '' }}>
                                     {{ textUpperCase($c->nama_cabang) }}
                                 </option>
                             @endforeach

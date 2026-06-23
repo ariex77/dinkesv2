@@ -176,8 +176,8 @@ class ShortcutController extends Controller
         $periode_dari = $tahun . '-' . $bulan . '-01';
         $periode_sampai = date('Y-m-t', strtotime($periode_dari));
 
-        // 1) Jadwal by-date per karyawan
-        $jadwal_bydate = DB::table('presensi_jamkerja_bydate')
+        // 1) Jadwal by-date per karyawan (presensi_jamkerja_bydate)
+        $jadwal_bydate_raw = DB::table('presensi_jamkerja_bydate')
             ->join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
             ->select(
                 'presensi_jamkerja_bydate.tanggal',
@@ -188,8 +188,25 @@ class ShortcutController extends Controller
             )
             ->where('presensi_jamkerja_bydate.nik', $nik)
             ->whereBetween('presensi_jamkerja_bydate.tanggal', [$periode_dari, $periode_sampai])
-            ->get()
-            ->keyBy('tanggal');
+            ->get();
+
+        // 1.5) Jadwal approved from ajuan_jadwal
+        $jadwal_ajuan_raw = DB::table('ajuan_jadwal')
+            ->join('presensi_jamkerja', 'ajuan_jadwal.kode_jam_kerja_tujuan', '=', 'presensi_jamkerja.kode_jam_kerja')
+            ->select(
+                'ajuan_jadwal.tanggal',
+                'presensi_jamkerja.nama_jam_kerja',
+                'presensi_jamkerja.jam_masuk',
+                'presensi_jamkerja.jam_pulang',
+                'presensi_jamkerja.color'
+            )
+            ->where('ajuan_jadwal.nik', $nik)
+            ->where('ajuan_jadwal.status', 'a')
+            ->whereBetween('ajuan_jadwal.tanggal', [$periode_dari, $periode_sampai])
+            ->get();
+
+        // Merge both into jadwal_bydate map
+        $jadwal_bydate = $jadwal_bydate_raw->concat($jadwal_ajuan_raw)->keyBy('tanggal');
 
         // 2) Jadwal grup by-date
         $jadwal_grup_bydate = DB::table('grup_detail')
@@ -265,6 +282,20 @@ class ShortcutController extends Controller
                 $info = $jadwal_byday[$dayName];
             } elseif (isset($jadwal_bydept[$dayName])) {
                 $info = $jadwal_bydept[$dayName];
+            }
+
+            // 5) Global Schedule
+            if ($info === null) {
+                $generalsetting = \App\Models\Pengaturanumum::where('id', 1)->first();
+                if ($generalsetting && $generalsetting->global_jamkerja_aktif) {
+                    $globalJk = \App\Models\GlobalJamkerja::where('hari', $dayName)
+                        ->join('presensi_jamkerja', 'global_jamkerja.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
+                        ->select('presensi_jamkerja.nama_jam_kerja', 'presensi_jamkerja.jam_masuk', 'presensi_jamkerja.jam_pulang', 'presensi_jamkerja.color')
+                        ->first();
+                    if ($globalJk) {
+                        $info = $globalJk;
+                    }
+                }
             }
 
             // Check if holiday

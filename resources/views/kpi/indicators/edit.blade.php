@@ -118,6 +118,7 @@
                                 <input type="text" class="form-control" id="satuan" placeholder="Contoh: Rupiah, %, Unit" required>
                                 <label for="satuan">Satuan <span class="text-danger">*</span></label>
                             </div>
+                            <small class="text-muted mt-1 d-block" style="font-size: 11px;">Gunakan <strong>Skala</strong> untuk input dropdown pilihan 1-5 pada realisasi.</small>
                         </div>
                         <div class="col-md-6">
                             <div class="form-floating">
@@ -158,7 +159,7 @@
                                      <option value="attendance_izin">Total Izin (Hari)</option>
                                      <option value="attendance_alpa">Total Alpa (Hari)</option>
                                      <option value="attendance_cuti">Total Cuti (Hari)</option>
-                                     <option value="attendance_terlambat">Total Keterlambatan (Menit)</option>
+                                     <option value="attendance_terlambat">Total Keterlambatan (Hari/Kali)</option>
                                      <option value="attendance_hadir">Total Kehadiran (Hari)</option>
                                  </select>
                                  <label for="metric_source">Sumber Data Otomatis</label>

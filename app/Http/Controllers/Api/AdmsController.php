@@ -12,11 +12,13 @@ use App\Models\Jamkerja;
 use App\Models\Setjamkerjabydate;
 use App\Models\Setjamkerjabyday;
 use App\Models\Detailsetjamkerjabydept;
+use App\Models\GlobalJamkerja;
 use App\Models\GrupDetail;
 use App\Models\GrupJamkerjaBydate;
 use App\Models\MesinFingerprint;
 use App\Models\LogMesinPresensi;
 use App\Jobs\SendWaMessage;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AdmsController extends Controller
@@ -84,7 +86,10 @@ class AdmsController extends Controller
      * Method baru: Langsung masukkan data tanpa validasi SN/IP yang ribet
      * (Asumsi: Menggunakan mesin aktif pertama jika SN tidak terbaca)
      */
-    public function capture(Request $request, $any = null)
+    /**
+     * Backup capture method dengan validasi SN wajib terdaftar
+     */
+    public function captureV2(Request $request, $any = null)
     {
         // 1. Identifikasi Serial Number Mesin (Multi-Format Support)
         $devId = $request->header('dev-id') ??
@@ -96,7 +101,13 @@ class AdmsController extends Controller
             '';
 
         $rawBody = $request->getContent();
-
+        Log::debug('FULL REQUEST', [
+            'method' => request()->method(),
+            'url' => request()->fullUrl(),
+            'query' => request()->query(),
+            'headers' => request()->headers->all(),
+            'body' => request()->getContent(),
+        ]);
         // 2. Parse JSON dari body
         $jsonStart = strpos($rawBody, '{');
         $jsonEnd = strrpos($rawBody, '}');
@@ -129,34 +140,25 @@ class AdmsController extends Controller
                 ->header('Connection', 'close');
         }
 
-        // 5. Proses Data Absensi (Ada user_id dan io_time)
-        if (isset($jsonData['user_id']) && isset($jsonData['io_time'])) {
-            if ($mesin) {
-                // Format waktu: 20260326011015 -> 2026-03-26 01:10:15
-                $io_time_str = $jsonData['io_time'];
-                $scan = (strlen($io_time_str) == 14)
-                    ? substr($io_time_str, 0, 4) . '-' . substr($io_time_str, 4, 2) . '-' . substr($io_time_str, 6, 2) . ' ' . substr($io_time_str, 8, 2) . ':' . substr($io_time_str, 10, 2) . ':' . substr($io_time_str, 12, 2)
-                    : date('Y-m-d H:i:s');
+        try {
+            // 5. Proses Data Absensi (Ada user_id dan io_time)
+            if (isset($jsonData['user_id']) && isset($jsonData['io_time'])) {
+                if ($mesin) {
+                    // Format waktu: 2026-03-26 01:10:15
+                    $io_time_str = $jsonData['io_time'];
+                    $scan = (strlen($io_time_str) == 14)
+                        ? substr($io_time_str, 0, 4) . '-' . substr($io_time_str, 4, 2) . '-' . substr($io_time_str, 6, 2) . ' ' . substr($io_time_str, 8, 2) . ':' . substr($io_time_str, 10, 2) . ':' . substr($io_time_str, 12, 2)
+                        : date('Y-m-d H:i:s');
 
-                $io_mode = $jsonData['io_mode'] ?? 0;
-                $status = ($io_mode >= 16777216) ? ($io_mode / 16777216) - 1 : ($jsonData['status_scan'] ?? 0);
+                    $io_mode = $jsonData['io_mode'] ?? 0;
+                    $status = ($io_mode >= 16777216) ? ($io_mode / 16777216) - 1 : ($jsonData['status_scan'] ?? 0);
 
-                // Eksekusi Simpan Absensi
-                $this->processAttendance($jsonData['user_id'], $scan, $status, $mesin);
-
-                Log::info('ADMS CAPTURE SUCCESS', [
-                    'sn' => $mesin->sn,
-                    'user_id' => $jsonData['user_id'],
-                    'time' => $scan
-                ]);
-            } else {
-                Log::error('ADMS CAPTURE FAILED: No active machine configuration found');
+                    // Eksekusi Simpan Absensi
+                    $this->processAttendance($jsonData['user_id'], $scan, $status, $mesin);
+                }
             }
-        }
-
-        // 6. Jika ini Heartbeat (fk_info), Log status online
-        if (isset($jsonData['fk_info']) && $mesin) {
-            Log::debug('Machine Heartbeat', ['machine' => $mesin->nama_mesin, 'sn' => $mesin->sn]);
+        } catch (\Exception $e) {
+            Log::error('ADMS CAPTURE ERROR: ' . $e->getMessage());
         }
 
         return response("OK", 200)
@@ -166,11 +168,191 @@ class AdmsController extends Controller
     }
 
     /**
+     * Method baru: Langsung masukkan data tanpa validasi SN/IP yang ribet
+     * (Asumsi: Menggunakan mesin aktif pertama jika SN tidak terbaca)
+     */
+    public function capture(Request $request, $any = null)
+    {
+        // 1. Identifikasi Serial Number Mesin (Multi-Format Support)
+        $devId = $request->header('dev-id') ??
+            $request->header('dev_id') ??
+            $request->header('X-Dev-Id') ??
+            $_SERVER['HTTP_DEV_ID'] ??
+            $_SERVER['DEV_ID'] ??
+            $request->query('sn') ??
+            '';
+
+        $rawBody = $request->getContent();
+        Log::debug('FULL REQUEST', [
+            'method' => request()->method(),
+            'url' => request()->fullUrl(),
+            'query' => request()->query(),
+            'headers' => request()->headers->all(),
+            'body' => request()->getContent(),
+        ]);
+        Log::debug('devid: ' . $devId);
+        // 2. Parse JSON dari body
+        $jsonStart = strpos($rawBody, '{');
+        $jsonEnd = strrpos($rawBody, '}');
+        $jsonData = [];
+        if ($jsonStart !== false && $jsonEnd !== false) {
+            $jsonString = substr($rawBody, $jsonStart, $jsonEnd - $jsonStart + 1);
+            $jsonData = json_decode($jsonString, true) ?? [];
+        }
+
+        // 3. Cari Data Mesin di Database
+        $mesin = MesinFingerprint::where('sn', $devId)->where('status', 'Aktif')->first();
+
+        // Jika tidak ditemukan berdasarkan SN, gunakan mesin aktif pertama sebagai fallback
+        if (!$mesin) {
+            $mesin = MesinFingerprint::where('status', 'Aktif')->first();
+        }
+
+        // Jika tidak ada mesin aktif sama sekali di database
+        if (!$mesin) {
+            Log::warning('No active machine found in database to process data', [
+                'sn' => $devId,
+                'ip' => $request->ip(),
+                'path' => $request->path()
+            ]);
+
+            return response("OK", 200)
+                ->header('Content-Type', 'application/octet-stream; charset=utf-8')
+                ->header('response_code', 'OK')
+                ->header('Connection', 'close');
+        }
+
+        // 4. Jika tidak ada isi JSON (Heartbeat Mentah)
+        if (empty($jsonData)) {
+            return response("OK", 200)
+                ->header('Content-Type', 'application/octet-stream; charset=utf-8')
+                ->header('response_code', 'OK')
+                ->header('Connection', 'close');
+        }
+
+        try {
+            // 5. Proses Data Absensi (Ada user_id dan io_time)
+            if (isset($jsonData['user_id']) && isset($jsonData['io_time'])) {
+                if ($mesin) {
+                    // Format waktu: 2026-03-26 01:10:15
+                    $io_time_str = $jsonData['io_time'];
+                    $scan = (strlen($io_time_str) == 14)
+                        ? substr($io_time_str, 0, 4) . '-' . substr($io_time_str, 4, 2) . '-' . substr($io_time_str, 6, 2) . ' ' . substr($io_time_str, 8, 2) . ':' . substr($io_time_str, 10, 2) . ':' . substr($io_time_str, 12, 2)
+                        : date('Y-m-d H:i:s');
+
+                    $io_mode = $jsonData['io_mode'] ?? 0;
+                    $status = ($io_mode >= 16777216) ? ($io_mode / 16777216) - 1 : ($jsonData['status_scan'] ?? 0);
+
+                    // Eksekusi Simpan Absensi
+                    $this->processAttendance($jsonData['user_id'], $scan, $status, $mesin);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('ADMS CAPTURE ERROR: ' . $e->getMessage());
+        }
+
+        $transId = $request->header('trans-id') ?? $request->header('trans_id') ?? 'undefined';
+        $cmdCode = $request->header('cmd-code') ?? $request->header('cmd_code') ?? 'undefined';
+        $blkNo = $request->header('blk-no') ?? $request->header('blk_no');
+        $blkLen = $request->header('blk-len') ?? $request->header('blk_len');
+
+        // Bypass Laravel/Symfony Response Header Normalization to preserve underscores
+        header('Content-Type: application/octet-stream; charset=utf-8');
+        header('response_code: OK');
+        header('trans_id: ' . $transId);
+        header('cmd_code: ' . $cmdCode);
+        header('Connection: close');
+
+        if ($blkNo !== null) {
+            header('blk_no: ' . $blkNo);
+        }
+        if ($blkLen !== null) {
+            header('blk_len: ' . $blkLen);
+        }
+
+        echo "OK";
+        exit;
+    }
+
+    /**
      * Endpoint untuk format asli ADMS ZKTeco / Solution (X100C Plain Text ATTLOG Format)
      */
     public function receiveX100c(Request $request)
     {
+        // X100C hardcoded ke timezone +8 (China) tanpa opsi ubah.
+        // Kompensasi: kirim UTC-1jam agar mesin +8 = WIB (+7)
+        // $dateForX100c = now()->format('D, d M Y H:i:s');
+
+        $dateForX100c = now()->timezone('UTC')->subHour()->format('D, d M Y H:i:s') . ' GMT';
+
         // 1. Ambil SN dari query parameter jika ada, supaya bisa cari data mesin
+        $devId = $request->query('SN', '');
+        // 2. Jika method GET (Initialization handshake / heartbeat), balas OK
+        if ($request->isMethod('GET')) {
+            return response("OK\n", 200)
+                ->header('Content-Type', 'text/plain')
+                ->header('Date', $dateForX100c);
+
+        }
+
+        // 3. Jika POST (Data Push)
+        $rawBody = $request->getContent();
+
+        $mesin = MesinFingerprint::where('sn', $devId)->where('status', 'Aktif')->first();
+        if (!$mesin) {
+            Log::warning('Unregistered X100C machine attempted to send data', [
+                'sn' => $devId,
+                'ip' => $request->ip()
+            ]);
+            return response("OK\n", 200)
+                ->header('Content-Type', 'text/plain')
+                ->header('Date', $dateForX100c);
+        }
+
+        try {
+            // Parse Plain Text ATTLOG format: PIN \t Time \t Status \t VerifyType \n
+            $lines = explode("\n", $rawBody);
+            foreach ($lines as $line) {
+                $line = trim($line);
+
+                // Abaikan jika baris kosong atau merupakan Operation Log (OPLOG)
+                if (empty($line) || str_starts_with($line, 'OPLOG'))
+                    continue;
+
+                $parts = explode("\t", $line);
+                if (count($parts) >= 3) {
+                    $pin = $parts[0];
+                    $scan = $parts[1];
+                    $status = (int) $parts[2];
+
+                    // Validasi format tanggal agar tidak menyebabkan error SQL
+                    if (!strtotime($scan)) {
+                        continue;
+                    }
+
+                    // Panggil core logic
+                    $this->processAttendance($pin, $scan, $status, $mesin);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('X100C DATA PROCESS ERROR: ' . $e->getMessage());
+        }
+
+        // Standard ADMS expect "OK" as response for success
+        // Tetap balas OK agar mesin tidak mengirim data yang sama berulang kali
+        return response("OK\n", 200)
+            ->header('Content-Type', 'text/plain')
+            ->header('Date', $dateForX100c);
+    }
+
+    /**
+     * Endpoint ADMS ZKTeco STANDAR (untuk mesin baru: X904, dll)
+     * Versi bersih TANPA kompensasi timezone.
+     * Gunakan endpoint ini untuk mesin yang timezone-nya sudah benar / bisa diatur.
+     */
+    public function receiveZktecoStandard(Request $request)
+    {
+        // 1. Ambil SN dari query parameter
         $devId = $request->query('SN', '');
 
         // 2. Jika method GET (Initialization handshake / heartbeat), balas OK
@@ -183,35 +365,42 @@ class AdmsController extends Controller
 
         $mesin = MesinFingerprint::where('sn', $devId)->where('status', 'Aktif')->first();
         if (!$mesin) {
-            Log::warning('Unregistered X100C machine attempted to send data', [
+            Log::warning('Unregistered ZKTeco machine attempted to send data', [
                 'sn' => $devId,
                 'ip' => $request->ip()
             ]);
             return response("OK\n", 200)->header('Content-Type', 'text/plain');
         }
 
-        // Parse Plain Text ATTLOG format: PIN \t Time \t Status \t VerifyType \n
-        $lines = explode("\n", $rawBody);
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line))
-                continue;
+        try {
+            // Parse Plain Text ATTLOG format: PIN \t Time \t Status \t VerifyType \n
+            $lines = explode("\n", $rawBody);
+            foreach ($lines as $line) {
+                $line = trim($line);
 
-            $parts = explode("\t", $line);
-            if (count($parts) >= 3) {
-                // $parts[0] = PIN
-                // $parts[1] = 2026-03-19 16:01:23
-                // $parts[2] = Status (0, 1, dll)
-                $pin = $parts[0];
-                $scan = $parts[1];
-                $status = (int)$parts[2];
+                // Abaikan jika baris kosong atau merupakan Operation Log (OPLOG)
+                if (empty($line) || str_starts_with($line, 'OPLOG'))
+                    continue;
 
-                // Panggil core logic
-                $this->processAttendance($pin, $scan, $status, $mesin);
+                $parts = explode("\t", $line);
+                if (count($parts) >= 3) {
+                    $pin = $parts[0];
+                    $scan = $parts[1];
+                    $status = (int) $parts[2];
+
+                    // Validasi format tanggal agar tidak menyebabkan error SQL
+                    if (!strtotime($scan)) {
+                        continue;
+                    }
+
+                    // Panggil core logic
+                    $this->processAttendance($pin, $scan, $status, $mesin);
+                }
             }
+        } catch (\Exception $e) {
+            Log::error('ZKTECO STANDARD DATA PROCESS ERROR: ' . $e->getMessage());
         }
 
-        // Standard ADMS expect "OK" as response for success
         return response("OK\n", 200)->header('Content-Type', 'text/plain');
     }
 
@@ -237,21 +426,44 @@ class AdmsController extends Controller
                 ->where('presensi.tanggal', $tanggal_kemarin)->first();
 
             $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
-            $batas_presensi_lintashari = $generalsetting->batas_presensi_lintashari;
 
-            $tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
+            // Tentukan batas lintas hari: prioritas dari jam kerja kemarin, fallback ke general setting
+            $batas_presensi_lintashari = ($presensi_kemarin && $presensi_kemarin->batas_presensi_pulang)
+                ? $presensi_kemarin->batas_presensi_pulang
+                : $generalsetting->batas_presensi_lintashari;
 
-            if ($jam_sekarang > $batas_presensi_lintashari && $lintas_hari == 1) {
-                $tanggal_presensi = $tanggal_sekarang;
+            // --- PENENTUAN TANGGAL PRESENSI ---
+            // Secara default adalah hari ini
+            $tanggal_presensi = $tanggal_sekarang;
+
+            // HANYA jika kemarin lintas hari DAN belum absen pulang DAN belum melewati batas jam, maka dianggap absen kemarin
+            if ($presensi_kemarin && $presensi_kemarin->lintashari == 1 && $presensi_kemarin->jam_out == null) {
+                if ($jam_sekarang < $batas_presensi_lintashari) {
+                    $tanggal_presensi = $tanggal_kemarin;
+                }
             }
+
 
             $namahari = getnamaHari(date('D', strtotime($tanggal_presensi)));
 
-            //Cek Jam Kerja By Date
+            // 1) Cek Jam Kerja By Date (presensi_jamkerja_bydate)
             $jamkerja = Setjamkerjabydate::join('presensi_jamkerja', 'presensi_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
                 ->where('nik', $karyawan->nik)
                 ->where('tanggal', $tanggal_presensi)
                 ->first();
+
+            // 1.5) Cek Approved Ajuan Jadwal
+            if ($jamkerja == null) {
+                $ajuan = DB::table('ajuan_jadwal')
+                    ->join('presensi_jamkerja', 'ajuan_jadwal.kode_jam_kerja_tujuan', '=', 'presensi_jamkerja.kode_jam_kerja')
+                    ->where('nik', $karyawan->nik)
+                    ->where('tanggal', $tanggal_presensi)
+                    ->where('status', 'a')
+                    ->first();
+                if ($ajuan) {
+                    $jamkerja = $ajuan;
+                }
+            }
 
             if ($jamkerja == null) {
                 $cek_group = GrupDetail::where('nik', $karyawan->nik)->first();
@@ -260,8 +472,7 @@ class AdmsController extends Controller
                         ->where('tanggal', $tanggal_presensi)
                         ->join('presensi_jamkerja', 'grup_jamkerja_bydate.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
                         ->first();
-                }
-                else {
+                } else {
                     $jamkerja = null;
                 }
 
@@ -276,6 +487,16 @@ class AdmsController extends Controller
                         ->where('kode_dept', $karyawan->kode_dept)
                         ->where('kode_cabang', $karyawan->kode_cabang)
                         ->where('hari', $namahari)->first();
+                }
+
+                // Fallback: Cek Jadwal Kerja Global
+                if ($jamkerja == null) {
+                    if ($generalsetting && $generalsetting->global_jamkerja_aktif) {
+                        $globalJk = GlobalJamkerja::where('hari', $namahari)->first();
+                        if ($globalJk && $globalJk->kode_jam_kerja) {
+                            $jamkerja = Jamkerja::where('kode_jam_kerja', $globalJk->kode_jam_kerja)->first();
+                        }
+                    }
                 }
             }
 
@@ -307,8 +528,7 @@ class AdmsController extends Controller
                     // otomatis kita anggap ini sebagai absen PULANG.
                     if (($scan_time - $jam_in_time) > 1800) {
                         $is_even = false; // Override jadi absen pulang
-                    }
-                    else {
+                    } else {
                         // Kalau kurang dari 30 menit, ini cuma spam scan masuk. Abaikan saja supaya tidak error.
                         Log::info('Abaikan scan berulang (SPAM IN)', ['pin' => $pin, 'time' => $scan]);
                         $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Spam Scan IN (Abaikan scan berulang)');
@@ -329,21 +549,19 @@ class AdmsController extends Controller
                     $jam_akhir_masuk_carbon = Carbon::parse($jam_akhir_masuk_carbon->format('Y-m-d H:i'));
                 }
 
-                $tanggal_pulang = $tanggal_sekarang;
+                // --- PENENTUAN TANGGAL PULANG ---
+                // Default berdasarkan shift hari ini
+                $tanggal_pulang = $jam_kerja->lintashari == 1 ? $tanggal_besok : $tanggal_sekarang;
                 $jam_kerja_pulang = $jam_kerja->jam_pulang;
 
-                if ($presensi_kemarin != null && $presensi_kemarin->lintashari == 1) {
-                    if ($jam_sekarang > $generalsetting->batas_presensi_lintashari) {
-                        $tanggal_pulang = $tanggal_besok;
-                    }
-                    else {
+                // Jika kemarin lintas hari DAN belum absen pulang DAN masih dalam batas, pakai jam pulang kemarin
+                if ($presensi_kemarin && $presensi_kemarin->lintashari == 1 && $presensi_kemarin->jam_out == null) {
+                    if ($jam_sekarang < $batas_presensi_lintashari) {
                         $tanggal_pulang = $tanggal_sekarang;
                         $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
                     }
                 }
-                else if ($jam_kerja->lintashari == 1) {
-                    $tanggal_pulang = $tanggal_besok;
-                }
+
 
                 $jam_pulang_string = $tanggal_pulang . " " . $jam_kerja_pulang;
                 $jam_pulang_carbon = Carbon::parse($jam_pulang_string);
@@ -364,8 +582,7 @@ class AdmsController extends Controller
                             $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Masuk ditolak: Waktu absen masuk sudah habis');
                             return;
                         }
-                    }
-                    else {
+                    } else {
                         // Cek Pulang
                         if ($jam_presensi_carbon->lt($jam_mulai_pulang_carbon)) {
                             Log::info('Tolak Pulang: Belum waktunya', ['pin' => $pin]);
@@ -391,8 +608,7 @@ class AdmsController extends Controller
                                 ]);
                                 Log::info('Berhasil update masuk');
                                 $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 1, 'Berhasil update absen masuk');
-                            }
-                            else {
+                            } else {
                                 Presensi::create([
                                     'nik' => $karyawan->nik,
                                     'tanggal' => $tanggal_presensi,
@@ -416,19 +632,16 @@ class AdmsController extends Controller
                                     $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen masuk (Fingerprint) pada " . $jam_presensi . " Semangat Bekerja";
                                     dispatch(new SendWaMessage($karyawan->no_hp, $message));
                                     Log::info('WA masuk queued');
-                                }
-                                catch (\Exception $waException) {
+                                } catch (\Exception $waException) {
                                     Log::error('WA Error', ['nik' => $karyawan->nik, 'error' => $waException->getMessage()]);
                                 }
                             }
-                        }
-                        catch (\Throwable $e) { // Ubah jadi Throwable agar bisa tangkap Error juga
+                        } catch (\Throwable $e) { // Ubah jadi Throwable agar bisa tangkap Error juga
                             Log::error('Gagal simpan absen masuk ADMS', ['nik' => $karyawan->nik, 'error' => $e->getMessage()]);
                             $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Gagal simpan absen masuk: ' . $e->getMessage());
                         }
                     }
-                }
-                else {
+                } else {
                     // ABSEN PULANG
                     try {
                         if ($presensi_hariini != null) {
@@ -438,8 +651,7 @@ class AdmsController extends Controller
                                 'id_mesin' => $mesin->id,
                             ]);
                             $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 1, 'Berhasil update absen pulang');
-                        }
-                        else {
+                        } else {
                             Presensi::create([
                                 'nik' => $karyawan->nik,
                                 'tanggal' => $tanggal_presensi,
@@ -463,24 +675,20 @@ class AdmsController extends Controller
                                 try {
                                     $message = "Terimakasih, Hari ini " . $karyawan->nama_karyawan . " absen Pulang (Fingerprint) pada " . $jam_presensi . " Hati-hati di Jalan";
                                     dispatch(new SendWaMessage($karyawan->no_hp, $message));
-                                }
-                                catch (\Exception $waException) {
+                                } catch (\Exception $waException) {
                                     Log::error('WA Error', ['nik' => $karyawan->nik, 'error' => $waException->getMessage()]);
                                 }
                             }
                         }
-                    }
-                    catch (\Exception $e) {
+                    } catch (\Exception $e) {
                         Log::error('Gagal simpan absen pulang ADMS', ['nik' => $karyawan->nik, 'error' => $e->getMessage()]);
                         $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Gagal simpan absen pulang: ' . $e->getMessage());
                     }
                 }
-            }
-            else {
+            } else {
                 $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Jam kerja karyawan tidak ditemukan');
             }
-        }
-        else {
+        } else {
             Log::info('Karyawan ADMS Fingerprint Tidak Ditemukan', ['pin' => $pin]);
             $this->recordLogMesin($pin, $scan, $normalized_status, $mesin ? $mesin->id : null, 0, 'Karyawan tidak ditemukan');
         }
@@ -497,8 +705,7 @@ class AdmsController extends Controller
                 'status' => $status,
                 'keterangan' => $keterangan,
             ]);
-        }
-        catch (\Exception $ex) {
+        } catch (\Exception $ex) {
             Log::error('Gagal mencatat log mesin presensi', ['error' => $ex->getMessage()]);
         }
     }

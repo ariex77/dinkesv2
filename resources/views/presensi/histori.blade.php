@@ -124,7 +124,16 @@
                     }
                 @endphp
 
-                <div class="fade-up card press mb-1 overflow-hidden"
+                <div class="fade-up card press mb-1 overflow-hidden cursor-pointer presensi-card"
+                     data-tanggal="{{ DateToIndo($d->tanggal) }}"
+                     data-jam-in="{{ $d->jam_in != null ? date('H:i', strtotime($d->jam_in)) : '-' }}"
+                     data-jam-out="{{ $d->jam_out != null ? date('H:i', strtotime($d->jam_out)) : '-' }}"
+                     data-foto-in="{{ !empty($d->foto_in) ? url('/storage/uploads/absensi/' . $d->foto_in) : '' }}"
+                     data-foto-out="{{ !empty($d->foto_out) ? url('/storage/uploads/absensi/' . $d->foto_out) : '' }}"
+                     data-status="{{ $d->status }}"
+                     data-jam-kerja="{{ $d->nama_jam_kerja }}"
+                     data-keterangan="{{ $d->status == 'h' ? 'Hadir' : ($d->status == 'i' ? 'Izin: ' . $d->keterangan_izin : ($d->status == 's' ? 'Sakit: ' . $d->keterangan_izin_sakit : ($d->status == 'c' ? 'Cuti: ' . $d->keterangan_izin_cuti : 'Alpha'))) }}"
+                     data-nama-mesin="{{ $d->nama_mesin }}"
                      style="border: 1px solid {{ $t['primary'] }}; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); background: #fff; animation-delay: {{ $index * 0.04 }}s;">
 
                     <div class="card-body p-1 flex items-center gap-2">
@@ -199,6 +208,75 @@
             @endif
         </div>
     </div>
+    
+    {{-- ===== DETAIL PRESENSI MODAL ===== --}}
+    <div id="detailPresensiModal" class="fixed inset-0 z-[1000] flex items-center justify-center p-4" style="display:none;">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm modal-close"></div>
+        <div class="relative bg-white rounded-[30px] w-full max-w-[360px] overflow-hidden shadow-2xl transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-bold text-gray-800">Detail Presensi</h3>
+                    <button class="text-gray-400 hover:text-gray-600 modal-close">
+                        <ion-icon name="close-circle-outline" style="font-size:28px;"></ion-icon>
+                    </button>
+                </div>
+
+                <div id="modalContent">
+                    <div class="mb-4">
+                        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Tanggal & Status</span>
+                        <div class="flex justify-between items-center">
+                            <span id="modalTanggal" class="text-lg font-bold text-gray-800"></span>
+                            <span id="modalStatus" class="px-3 py-1 rounded-full text-xs font-bold text-white"></span>
+                        </div>
+                        <p id="modalKeterangan" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+
+                    <div id="modalMesinSection" class="mb-4 p-3 rounded-2xl bg-indigo-50 border border-indigo-100 hidden">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0">
+                                <ion-icon name="finger-print" style="font-size:20px;"></ion-icon>
+                            </div>
+                            <div>
+                                <span class="block text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Fingerprint Machine</span>
+                                <span id="modalNamaMesin" class="text-sm font-bold text-indigo-900"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        {{-- Foto Masuk --}}
+                        <div class="text-center">
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Foto Masuk</span>
+                            <div class="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm mb-2">
+                                <img id="modalImgIn" src="" class="w-full h-full object-cover hidden">
+                                <div id="modalNoImgIn" class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                    <ion-icon name="camera-outline" style="font-size:32px;"></ion-icon>
+                                    <span class="text-[10px] mt-1">No Photo</span>
+                                </div>
+                            </div>
+                            <span id="modalJamIn" class="text-sm font-bold text-gray-700"></span>
+                        </div>
+                        {{-- Foto Pulang --}}
+                        <div class="text-center">
+                            <span class="block text-[10px] font-bold text-gray-400 uppercase mb-2">Foto Pulang</span>
+                            <div class="aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-sm mb-2">
+                                <img id="modalImgOut" src="" class="w-full h-full object-cover hidden">
+                                <div id="modalNoImgOut" class="w-full h-full flex flex-col items-center justify-center text-gray-300">
+                                    <ion-icon name="camera-outline" style="font-size:32px;"></ion-icon>
+                                    <span class="text-[10px] mt-1">No Photo</span>
+                                </div>
+                            </div>
+                            <span id="modalJamOut" class="text-sm font-bold text-gray-700"></span>
+                        </div>
+                    </div>
+
+                    <button class="w-full py-4 rounded-2xl bg-gray-100 text-gray-600 font-bold modal-close active:scale-95 transition-all">
+                        Tutup Detail
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('myscript')
@@ -221,5 +299,59 @@
         $('#formHistori').on('submit', function() { showSkeleton(); });
         $(document).ready(function() { setTimeout(hideSkeleton, 400); });
         $(window).on('load', function() { setTimeout(hideSkeleton, 250); });
+
+        // Presensi Detail Modal Handler
+        $(".presensi-card").click(function() {
+            const data = $(this).data();
+            
+            $("#modalTanggal").text(data.tanggal);
+            $("#modalJamIn").text(data.jamIn);
+            $("#modalJamOut").text(data.jamOut);
+            $("#modalKeterangan").text(data.keterangan);
+            
+            // Machine Info
+            if (data.namaMesin) {
+                $("#modalNamaMesin").text(data.namaMesin);
+                $("#modalMesinSection").show();
+            } else {
+                $("#modalMesinSection").hide();
+            }
+
+            // Status Badge
+            const statusMap = {
+                'h': { text: 'Hadir', color: 'bg-emerald-500' },
+                'i': { text: 'Izin', color: 'bg-blue-500' },
+                's': { text: 'Sakit', color: 'bg-rose-500' },
+                'c': { text: 'Cuti', color: 'bg-orange-500' },
+                'a': { text: 'Alpha', color: 'bg-slate-500' }
+            };
+            
+            const status = statusMap[data.status] || { text: 'Alpha', color: 'bg-slate-500' };
+            $("#modalStatus").text(status.text).removeClass().addClass('px-3 py-1 rounded-full text-xs font-bold text-white ' + status.color);
+
+            // Photo In
+            if (data.fotoIn) {
+                $("#modalImgIn").attr('src', data.fotoIn).show();
+                $("#modalNoImgIn").hide();
+            } else {
+                $("#modalImgIn").hide();
+                $("#modalNoImgIn").show();
+            }
+
+            // Photo Out
+            if (data.fotoOut) {
+                $("#modalImgOut").attr('src', data.fotoOut).show();
+                $("#modalNoImgOut").hide();
+            } else {
+                $("#modalImgOut").hide();
+                $("#modalNoImgOut").show();
+            }
+
+            $("#detailPresensiModal").fadeIn(300);
+        });
+
+        $(".modal-close").click(function() {
+            $("#detailPresensiModal").fadeOut(200);
+        });
     </script>
 @endpush

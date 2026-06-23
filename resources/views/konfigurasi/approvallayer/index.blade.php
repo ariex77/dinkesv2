@@ -6,16 +6,23 @@
     <span>Approval Layer</span>
 @endsection
 <div class="row mb-3">
-    <div class="col-12 d-flex justify-content-end">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 fw-bold">
+            @if($feature)
+                <span class="text-muted fw-normal">Filter:</span> {{ $feature }}
+            @else
+                Semua Konfigurasi
+            @endif
+        </h4>
         @can('approvallayer.create')
-            <a href="#" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i> Tambah Konfigurasi</a>
+            <a href="{{ route('approvallayer.create', ['feature' => $feature]) }}" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i> Tambah Konfigurasi</a>
         @endcan
     </div>
 </div>
 
 @php
     $groupedLayers = $approvalLayers->groupBy(function($item) {
-        return ($item->kode_cabang ?? 'ALL') . '|' . ($item->kode_dept ?? 'ALL') . '|' . ($item->kode_jabatan ?? 'ALL');
+        return $item->feature . '|' . ($item->kode_cabang ?? 'ALL') . '|' . ($item->kode_dept ?? 'ALL') . '|' . ($item->kode_jabatan ?? 'ALL');
     });
 @endphp
 
@@ -39,13 +46,16 @@
             <div class="card h-100 shadow-sm border-0" style="border-radius: 12px; overflow: hidden;">
                 <div class="card-header p-3 d-flex align-items-center" style="background-color: var(--theme-color-1); border-bottom: 3px solid rgba(0,0,0,0.1);">
                     <div class="bg-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                        <i class="ti ti-git-merge" style="font-size: 1.5rem; color: var(--theme-color-1);"></i>
+                        <i class="ti ti-{{ $first->feature === 'REIMBURSEMENT' ? 'wallet' : 'git-merge' }}" style="font-size: 1.5rem; color: var(--theme-color-1);"></i>
                     </div>
-                    <div>
-                        <h5 class="mb-1 text-white fw-bold" style="letter-spacing: 0.5px;">{{ strtoupper($nama_cabang) }}</h5>
-                        <div class="text-white d-flex align-items-center flex-wrap gap-2">
-                            <span class="badge bg-light text-dark rounded-pill px-2 py-1" style="font-weight: 600;"><i class="ti ti-briefcase me-1" style="opacity: 0.7;"></i>{{ strtoupper($nama_dept) }}</span>
-                            <span class="badge bg-light text-dark rounded-pill px-2 py-1" style="font-weight: 600;"><i class="ti ti-id-badge me-1" style="opacity: 0.7;"></i>{{ strtoupper($nama_jabatan) }}</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <h5 class="mb-0 text-white fw-bold" style="letter-spacing: 0.5px; font-size: 14px;">{{ strtoupper($nama_cabang) }}</h5>
+                            <span class="badge bg-white text-primary" style="font-size: 10px; font-weight: 800;">{{ $first->feature }}</span>
+                        </div>
+                        <div class="text-white d-flex align-items-center flex-wrap gap-1 mt-1">
+                            <span class="badge bg-light text-dark rounded-pill px-2 py-0" style="font-weight: 600; font-size: 10px;">{{ strtoupper($nama_dept) }}</span>
+                            <span class="badge bg-light text-dark rounded-pill px-2 py-0" style="font-weight: 600; font-size: 10px;">{{ strtoupper($nama_jabatan) }}</span>
                         </div>
                     </div>
                 </div>
@@ -81,12 +91,13 @@
                         <a href="#" class="btnEdit btn btn-sm btn-outline-primary me-2" 
                            data-cabang="{{ $first->kode_cabang ?? 'ALL' }}" 
                            data-dept="{{ $first->kode_dept ?? 'ALL' }}" 
-                           data-jabatan="{{ $first->kode_jabatan ?? 'ALL' }}">
+                           data-jabatan="{{ $first->kode_jabatan ?? 'ALL' }}"
+                           data-feature="{{ $first->feature }}">
                             <i class="ti ti-edit me-1"></i> Edit Alur
                         </a>
                     @endcan
                     @can('approvallayer.delete')
-                        <form method="POST" action="{{ route('approvallayer.destroyGroup', ['cabang' => $first->kode_cabang ?? 'ALL', 'dept' => $first->kode_dept ?? 'ALL', 'jabatan' => $first->kode_jabatan ?? 'ALL']) }}" class="delete-form m-0 p-0">
+                        <form method="POST" action="{{ route('approvallayer.destroyGroup', ['cabang' => $first->kode_cabang ?? 'ALL', 'dept' => $first->kode_dept ?? 'ALL', 'jabatan' => $first->kode_jabatan ?? 'ALL', 'feature' => $first->feature]) }}" class="delete-form m-0 p-0">
                             @csrf
                             @method('DELETE')
                             <a href="#" class="delete-confirm btn btn-sm btn-outline-danger">
@@ -128,9 +139,10 @@
             var cabang = $(this).attr("data-cabang");
             var dept = $(this).attr("data-dept");
             var jabatan = $(this).attr("data-jabatan");
+            var feature = $(this).attr("data-feature");
             
             // Build query string
-            var url = "{{ route('approvallayer.editGroup') }}?cabang=" + cabang + "&dept=" + dept + "&jabatan=" + jabatan;
+            var url = "{{ route('approvallayer.editGroup') }}?cabang=" + cabang + "&dept=" + dept + "&jabatan=" + jabatan + "&feature=" + feature;
             window.location.href = url;
         });
         

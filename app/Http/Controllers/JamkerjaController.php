@@ -56,6 +56,10 @@ class JamkerjaController extends Controller
                 'required',
                 'in:0,1'
             ],
+            'batas_presensi_pulang' => [
+                'nullable',
+                'date_format:H:i'
+            ],
             'total_jam' => [
                 'required',
                 'integer',
@@ -96,6 +100,7 @@ class JamkerjaController extends Controller
             'istirahat.in' => 'Nilai Istirahat tidak valid',
             'lintashari.required' => 'Lintas Hari wajib dipilih',
             'lintashari.in' => 'Nilai Lintas Hari tidak valid',
+            'batas_presensi_pulang.date_format' => 'Format Batas Jam Pulang Lintas Hari harus HH:mm',
             'total_jam.required' => 'Total Jam wajib diisi',
             'total_jam.integer' => 'Total Jam harus berupa angka',
             'total_jam.min' => 'Total Jam minimal 1 jam',
@@ -156,6 +161,7 @@ class JamkerjaController extends Controller
                 'jam_pulang' => $request->jam_pulang,
                 'istirahat' => $request->istirahat,
                 'lintashari' => $request->lintashari,
+                'batas_presensi_pulang' => $request->lintashari == '1' ? $request->batas_presensi_pulang : null,
                 'total_jam' => $total_jam,
                 'jam_awal_istirahat' => $request->istirahat == '1' ? $request->jam_awal_istirahat : null,
                 'jam_akhir_istirahat' => $request->istirahat == '1' ? $request->jam_akhir_istirahat : null,
@@ -224,6 +230,10 @@ class JamkerjaController extends Controller
                 'required',
                 'in:0,1'
             ],
+            'batas_presensi_pulang' => [
+                'nullable',
+                'date_format:H:i'
+            ],
             'total_jam' => [
                 'required',
                 'integer',
@@ -261,6 +271,7 @@ class JamkerjaController extends Controller
             'istirahat.in' => 'Nilai Istirahat tidak valid',
             'lintashari.required' => 'Lintas Hari wajib dipilih',
             'lintashari.in' => 'Nilai Lintas Hari tidak valid',
+            'batas_presensi_pulang.date_format' => 'Format Batas Jam Pulang Lintas Hari harus HH:mm',
             'total_jam.required' => 'Total Jam wajib diisi',
             'total_jam.integer' => 'Total Jam harus berupa angka',
             'total_jam.min' => 'Total Jam minimal 1 jam',
@@ -306,6 +317,7 @@ class JamkerjaController extends Controller
                 'jam_pulang' => $request->jam_pulang,
                 'istirahat' => $request->istirahat,
                 'lintashari' => $request->lintashari,
+                'batas_presensi_pulang' => $request->lintashari == '1' ? $request->batas_presensi_pulang : null,
                 'total_jam' => $total_jam,
                 'jam_awal_istirahat' => $request->istirahat == '1' ? $request->jam_awal_istirahat : null,
                 'jam_akhir_istirahat' => $request->istirahat == '1' ? $request->jam_akhir_istirahat : null,

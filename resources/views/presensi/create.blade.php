@@ -729,6 +729,8 @@
     <!-- Face Recognition dengan Caching -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="{{ asset('assets/external/js/face-model-cache.js') }}"></script>
+    <!-- html2canvas untuk capture map sebagai watermark -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script type="text/javascript">
         // Fungsi yang dijalankan ketika halaman selesai dimuat
         // Menggunakan DOMContentLoaded untuk memastikan DOM sudah siap
@@ -2745,6 +2747,175 @@
                 });
             }
 
+            /**
+             * Menambahkan watermark koordinat dan mini map ke foto presensi
+             * @param {string} imageDataURI - Data URI dari foto webcam
+             * @param {string} koordinat - Koordinat GPS user (lat,lng)
+             * @returns {Promise<string>} - Data URI foto dengan watermark
+             */
+            async function addWatermarkToImage(imageDataURI, koordinat) {
+                return new Promise(async (resolve) => {
+                    try {
+                        const img = new Image();
+                        img.onload = async function() {
+                            // Buat canvas dengan ukuran foto
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+
+                            // Gambar foto asli
+                            ctx.drawImage(img, 0, 0);
+
+                            // === WATERMARK KOORDINAT (kiri bawah) ===
+                            const coords = koordinat.split(',');
+                            const lat = parseFloat(coords[0]).toFixed(6);
+                            const lng = parseFloat(coords[1]).toFixed(6);
+                            const now = new Date();
+                            const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                            // Background semi-transparan untuk teks koordinat
+                            const fontSize = Math.max(12, Math.floor(canvas.width / 40));
+                            const padding = 8;
+                            const lineHeight = fontSize + 4;
+                            const textLines = [
+                                `${lat}, ${lng}`,
+                                `${dateStr}  ${timeStr}`
+                            ];
+
+                            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+                            // Hitung lebar teks terpanjang
+                            let maxTextWidth = 0;
+                            textLines.forEach(line => {
+                                const w = ctx.measureText(line).width;
+                                if (w > maxTextWidth) maxTextWidth = w;
+                            });
+
+                            const boxWidth = maxTextWidth + padding * 2;
+                            const boxHeight = textLines.length * lineHeight + padding * 2;
+                            const boxX = 8;
+                            const boxY = canvas.height - boxHeight - 8;
+
+                            // Background box
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                            ctx.beginPath();
+                            const r = 8;
+                            ctx.moveTo(boxX + r, boxY);
+                            ctx.lineTo(boxX + boxWidth - r, boxY);
+                            ctx.quadraticCurveTo(boxX + boxWidth, boxY, boxX + boxWidth, boxY + r);
+                            ctx.lineTo(boxX + boxWidth, boxY + boxHeight - r);
+                            ctx.quadraticCurveTo(boxX + boxWidth, boxY + boxHeight, boxX + boxWidth - r, boxY + boxHeight);
+                            ctx.lineTo(boxX + r, boxY + boxHeight);
+                            ctx.quadraticCurveTo(boxX, boxY + boxHeight, boxX, boxY + boxHeight - r);
+                            ctx.lineTo(boxX, boxY + r);
+                            ctx.quadraticCurveTo(boxX, boxY, boxX + r, boxY);
+                            ctx.closePath();
+                            ctx.fill();
+
+                            // Teks koordinat
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+                            ctx.textBaseline = 'top';
+                            textLines.forEach((line, i) => {
+                                ctx.fillText(line, boxX + padding, boxY + padding + (i * lineHeight));
+                            });
+
+                            // === MINI MAP (kanan bawah) ===
+                            try {
+                                const mapEl = document.getElementById('map');
+                                if (mapEl && typeof html2canvas !== 'undefined') {
+                                    const mapCanvas = await html2canvas(mapEl, {
+                                        useCORS: true,
+                                        allowTaint: true,
+                                        scale: 1,
+                                        logging: false,
+                                        backgroundColor: '#ffffff'
+                                    });
+
+                                    // Ukuran mini map di foto (kecil di sudut kanan bawah)
+                                    const miniMapSize = Math.floor(canvas.width * 0.30); // 30% lebar foto
+                                    const miniMapHeight = Math.floor(miniMapSize * 0.75); // Rasio 4:3
+                                    const miniMapX = canvas.width - miniMapSize - 8;
+                                    const miniMapY = canvas.height - miniMapHeight - 8;
+                                    const miniMapRadius = 8;
+
+                                    // Border dan shadow untuk mini map
+                                    ctx.save();
+                                    // Shadow
+                                    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+                                    ctx.shadowBlur = 6;
+                                    ctx.shadowOffsetX = 2;
+                                    ctx.shadowOffsetY = 2;
+
+                                    // Rounded rectangle clip path
+                                    ctx.beginPath();
+                                    ctx.moveTo(miniMapX + miniMapRadius, miniMapY);
+                                    ctx.lineTo(miniMapX + miniMapSize - miniMapRadius, miniMapY);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY, miniMapX + miniMapSize, miniMapY + miniMapRadius);
+                                    ctx.lineTo(miniMapX + miniMapSize, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY + miniMapHeight, miniMapX + miniMapSize - miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.lineTo(miniMapX + miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY + miniMapHeight, miniMapX, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.lineTo(miniMapX, miniMapY + miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY, miniMapX + miniMapRadius, miniMapY);
+                                    ctx.closePath();
+
+                                    // Fill white bg first (for shadow)
+                                    ctx.fillStyle = '#ffffff';
+                                    ctx.fill();
+                                    ctx.restore();
+
+                                    // Clip and draw map
+                                    ctx.save();
+                                    ctx.beginPath();
+                                    ctx.moveTo(miniMapX + miniMapRadius, miniMapY);
+                                    ctx.lineTo(miniMapX + miniMapSize - miniMapRadius, miniMapY);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY, miniMapX + miniMapSize, miniMapY + miniMapRadius);
+                                    ctx.lineTo(miniMapX + miniMapSize, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY + miniMapHeight, miniMapX + miniMapSize - miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.lineTo(miniMapX + miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY + miniMapHeight, miniMapX, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.lineTo(miniMapX, miniMapY + miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY, miniMapX + miniMapRadius, miniMapY);
+                                    ctx.closePath();
+                                    ctx.clip();
+                                    ctx.drawImage(mapCanvas, miniMapX, miniMapY, miniMapSize, miniMapHeight);
+                                    ctx.restore();
+
+                                    // Border mini map
+                                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                                    ctx.lineWidth = 2;
+                                    ctx.beginPath();
+                                    ctx.moveTo(miniMapX + miniMapRadius, miniMapY);
+                                    ctx.lineTo(miniMapX + miniMapSize - miniMapRadius, miniMapY);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY, miniMapX + miniMapSize, miniMapY + miniMapRadius);
+                                    ctx.lineTo(miniMapX + miniMapSize, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX + miniMapSize, miniMapY + miniMapHeight, miniMapX + miniMapSize - miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.lineTo(miniMapX + miniMapRadius, miniMapY + miniMapHeight);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY + miniMapHeight, miniMapX, miniMapY + miniMapHeight - miniMapRadius);
+                                    ctx.lineTo(miniMapX, miniMapY + miniMapRadius);
+                                    ctx.quadraticCurveTo(miniMapX, miniMapY, miniMapX + miniMapRadius, miniMapY);
+                                    ctx.closePath();
+                                    ctx.stroke();
+                                }
+                            } catch (mapError) {
+                                console.warn('Gagal capture mini map untuk watermark:', mapError);
+                                // Tetap lanjut tanpa mini map
+                            }
+
+                            // Convert canvas ke data URI
+                            resolve(canvas.toDataURL('image/jpeg', 0.92));
+                        };
+                        img.src = imageDataURI;
+                    } catch (error) {
+                        console.error('Error menambahkan watermark:', error);
+                        // Jika gagal, kembalikan foto asli tanpa watermark
+                        resolve(imageDataURI);
+                    }
+                });
+            }
+
             $("#absenmasuk").click(function() {
                 if (cameraPermissionDenied) {
                     showPermissionWarning('camera');
@@ -2796,63 +2967,66 @@
                     })
                     return false;
                 } else {
-                    var blob = dataURItoBlob(image);
-                    var formData = new FormData();
-                    formData.append('image', blob, 'image.png'); // Send as file
-                    formData.append('_token', "{{ csrf_token() }}");
-                    formData.append('status', status);
-                    formData.append('lokasi', lokasi);
-                    formData.append('lokasi_cabang', lokasi_cabang);
-                    formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
+                    // Tambahkan watermark koordinat + mini map ke foto
+                    addWatermarkToImage(image, lokasi).then(function(watermarkedImage) {
+                        var blob = dataURItoBlob(watermarkedImage);
+                        var formData = new FormData();
+                        formData.append('image', blob, 'image.png'); // Send as file
+                        formData.append('_token', "{{ csrf_token() }}");
+                        formData.append('status', status);
+                        formData.append('lokasi', lokasi);
+                        formData.append('lokasi_cabang', lokasi_cabang);
+                        formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
 
-                    $.ajax({
-                        type: 'POST',
-                        url: "{{ route('presensi.store') }}",
-                        data: formData, // Use FormData
-                        processData: false, // Prevent jQuery from processing the data
-                        contentType: false, // Prevent jQuery from setting contentType
-                        cache: false,
-                        success: function(data) {
-                            if (data.status == true) {
-                                notifikasi_absenmasuk.play();
+                        $.ajax({
+                            type: 'POST',
+                            url: "{{ route('presensi.store') }}",
+                            data: formData, // Use FormData
+                            processData: false, // Prevent jQuery from processing the data
+                            contentType: false, // Prevent jQuery from setting contentType
+                            cache: false,
+                            success: function(data) {
+                                if (data.status == true) {
+                                    notifikasi_absenmasuk.play();
+                                    swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: data.message,
+                                        showConfirmButton: false,
+                                        timer: 4000
+                                    }).then(function() {
+                                        window.location.href = '/dashboard';
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
+                                    notifikasi_radius.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
+                                    notifikasi_mulaiabsen.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
+                                    notifikasi_akhirabsen.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
+                                    notifikasi_sudahabsen.play();
+                                }
                                 swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: data.message,
-                                    showConfirmButton: false,
-                                    timer: 4000
-                                }).then(function() {
-                                    window.location.href = '/dashboard';
+                                    icon: 'error',
+                                    title: 'Oops...',
+                                    text: xhr.responseJSON.message,
+                                    didClose: function() {
+                                        $("#absenmasuk").prop('disabled', false);
+                                        $("#absenpulang").prop('disabled', false);
+                                        $("#absenmasuk").html(
+                                            '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Masuk</span>'
+                                        );
+                                        $("#absenpulang").html(
+                                            '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
+                                        )
+                                    }
+
                                 });
                             }
-                        },
-                        error: function(xhr) {
-                            if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
-                                notifikasi_radius.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
-                                notifikasi_mulaiabsen.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
-                                notifikasi_akhirabsen.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
-                                notifikasi_sudahabsen.play();
-                            }
-                            swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message,
-                                didClose: function() {
-                                    $("#absenmasuk").prop('disabled', false);
-                                    $("#absenpulang").prop('disabled', false);
-                                    $("#absenmasuk").html(
-                                        '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Masuk</span>'
-                                    );
-                                    $("#absenpulang").html(
-                                        '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
-                                    )
-                                }
-
-                            });
-                        }
+                        });
                     });
                 }
 
@@ -2903,60 +3077,63 @@
                     })
                     return false;
                 } else {
-                    var blob = dataURItoBlob(image);
-                    var formData = new FormData();
-                    formData.append('image', blob, 'image.png');
-                    formData.append('_token', "{{ csrf_token() }}");
-                    formData.append('status', status);
-                    formData.append('lokasi', lokasi);
-                    formData.append('lokasi_cabang', lokasi_cabang);
-                    formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
+                    // Tambahkan watermark koordinat + mini map ke foto
+                    addWatermarkToImage(image, lokasi).then(function(watermarkedImage) {
+                        var blob = dataURItoBlob(watermarkedImage);
+                        var formData = new FormData();
+                        formData.append('image', blob, 'image.png');
+                        formData.append('_token', "{{ csrf_token() }}");
+                        formData.append('status', status);
+                        formData.append('lokasi', lokasi);
+                        formData.append('lokasi_cabang', lokasi_cabang);
+                        formData.append('kode_jam_kerja', "{{ $jam_kerja->kode_jam_kerja }}");
 
-                    $.ajax({
-                        type: 'POST',
-                        url: "{{ route('presensi.store') }}",
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        cache: false,
-                        success: function(data) {
-                            if (data.status == true) {
-                                notifikasi_absenpulang.play();
+                        $.ajax({
+                            type: 'POST',
+                            url: "{{ route('presensi.store') }}",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            cache: false,
+                            success: function(data) {
+                                if (data.status == true) {
+                                    notifikasi_absenpulang.play();
+                                    swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: data.message,
+                                        showConfirmButton: false,
+                                        timer: 4000
+                                    }).then(function() {
+                                        window.location.href = '/dashboard';
+                                    });
+                                }
+                            },
+                            error: function(xhr) {
+                                if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
+                                    notifikasi_radius.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
+                                    notifikasi_mulaiabsen.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
+                                    notifikasi_akhirabsen.play();
+                                } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
+                                    notifikasi_sudahabsenpulang.play();
+                                }
                                 swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: data.message,
-                                    showConfirmButton: false,
-                                    timer: 4000
-                                }).then(function() {
-                                    window.location.href = '/dashboard';
+                                    icon: 'error',
+                                    title: 'Oops...',
+                                    text: xhr.responseJSON.message,
+                                    didClose: function() {
+                                        $("#absenmasuk").prop('disabled', false);
+                                        $("#absenpulang").prop('disabled', false);
+                                        $("#absenpulang").html(
+                                            '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
+                                        );
+                                    }
+
                                 });
                             }
-                        },
-                        error: function(xhr) {
-                            if (xhr.responseJSON.notifikasi == "notifikasi_radius") {
-                                notifikasi_radius.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_mulaiabsen") {
-                                notifikasi_mulaiabsen.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_akhirabsen") {
-                                notifikasi_akhirabsen.play();
-                            } else if (xhr.responseJSON.notifikasi == "notifikasi_sudahabsen") {
-                                notifikasi_sudahabsenpulang.play();
-                            }
-                            swal.fire({
-                                icon: 'error',
-                                title: 'Oops...',
-                                text: xhr.responseJSON.message,
-                                didClose: function() {
-                                    $("#absenmasuk").prop('disabled', false);
-                                    $("#absenpulang").prop('disabled', false);
-                                    $("#absenpulang").html(
-                                        '<ion-icon name="finger-print-outline" style="font-size: 24px !important"></ion-icon><span style="font-size:14px">Pulang</span>'
-                                    );
-                                }
-
-                            });
-                        }
+                        });
                     });
                 }
             });

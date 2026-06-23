@@ -42,6 +42,16 @@
                 <th>Keterangan</th>
                 <td class="text-end">{{ $izinsakit->keterangan }}</td>
             </tr>
+            @if (!empty($izinsakit->doc_sid))
+            <tr>
+                <th>SID</th>
+                <td class="text-end">
+                    <a href="{{ asset('storage/uploads/sid/' . $izinsakit->doc_sid) }}" target="_blank">
+                        <img src="{{ asset('storage/uploads/sid/' . $izinsakit->doc_sid) }}" alt="SID" class="img-fluid" style="max-width: 150px; border-radius: 8px; border: 1px solid #e0e0e0;">
+                    </a>
+                </td>
+            </tr>
+            @endif
         </table>
 
     </div>

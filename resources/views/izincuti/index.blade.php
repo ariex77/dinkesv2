@@ -45,7 +45,7 @@
                                     </div>
                                 </div>
                                 <div class="row g-2">
-                                    <div class="col-lg-3 col-md-6 col-sm-12">
+                                    <div class="col-lg-2 col-md-6 col-sm-12">
                                         <div class="form-group">
                                             <select name="status" id="status" class="form-select">
                                                 <option value="">Status</option>
@@ -64,7 +64,10 @@
                                             selected="{{ Request('kode_dept') }}" upperCase="true" hideLabel />
                                     </div>
                                     <div class="col-lg-1 col-md-12 col-sm-12">
-                                        <button class="btn btn-primary w-100"><i class="ti ti-search"></i></button>
+                                        <button class="btn btn-primary w-100" type="submit"><i class="ti ti-search"></i></button>
+                                    </div>
+                                    <div class="col-lg-1 col-md-12 col-sm-12">
+                                        <button class="btn btn-warning w-100" id="btnCetakReport" type="button"><i class="ti ti-printer"></i></button>
                                     </div>
                                 </div>
                             </form>
@@ -192,8 +195,11 @@
                                                 @endcan
                                                 @can('izincuti.index')
                                                     <a href="#" class="btn btn-sm btn-outline-info btnShow py-1 px-2 rounded-0"
-                                                        kode_izin_cuti="{{ Crypt::encrypt($d->kode_izin_cuti) }}"><i
+                                                        kode_izin_cuti="{{ Crypt::encrypt($d->kode_izin_cuti) }}" title="Detail"><i
                                                             class="ti ti-file-description"></i></a>
+                                                    <a href="{{ route('izincuti.print', Crypt::encrypt($d->kode_izin_cuti)) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-0" title="Cetak Ajuan Cuti">
+                                                        <i class="ti ti-printer"></i>
+                                                    </a>
                                                 @endcan
                                                 @can('izincuti.delete')
                                                     @if ($d->status == 0)
@@ -321,6 +327,20 @@
             loading();
             $("#modal").find(".modal-title").text("Detail Izin cuti");
             $("#loadmodal").load(`/izincuti/${kode_izin_cuti}/show`);
+        });
+
+        $('#btnCetakReport').click(function(e) {
+            e.preventDefault();
+            var form = $(this).closest('form');
+            var originalAction = form.attr('action');
+            
+            form.attr('action', "{{ route('izincuti.print-report') }}");
+            form.attr('target', '_blank');
+            form.submit();
+            
+            // Restore original action for subsequent searches
+            form.attr('action', originalAction);
+            form.removeAttr('target');
         });
     });
 </script>

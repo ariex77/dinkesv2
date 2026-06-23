@@ -45,6 +45,13 @@
             <option value="0">Tidak</option>
         </select>
     </div>
+    <div id="sectionLintasHari" style="display: none;">
+        <x-input-with-icon icon="ti ti-clock-pause" label="Batas Jam Pulang Lintas Hari" name="batas_presensi_pulang"
+            placeholder="Contoh: 10:00 (Opsional, jika kosong menggunakan General Setting)" />
+        <small class="text-muted d-block mb-3" style="margin-top: -10px;">
+            <i class="ti ti-info-circle me-1"></i>Jika dikosongkan, sistem akan menggunakan batas dari General Setting.
+        </small>
+    </div>
     <div class="row">
         <div class="col">
             <button type="submit" class="btn btn-primary w-100" id="btnSimpan"><i class="ti ti-send me-1"></i> Simpan</button>
@@ -56,19 +63,20 @@
 <script src="{{ asset('assets/vendor/libs/flatpickr/flatpickr.js') }}"></script>
 <script>
     $(document).ready(function() {
-        // function toogleIstirahat() {
-        //     if ($('#istirahat').val() == 1) {
-        //         $('#sectionIstirahat').show();
-        //     } else {
-        //         $('#sectionIstirahat').hide();
-        //     }
-        // }
-        // toogleIstirahat();
+        function toggleLintasHari() {
+            if ($('#lintashari').val() == '1') {
+                $('#sectionLintasHari').slideDown();
+            } else {
+                $('#sectionLintasHari').slideUp();
+                $('#batas_presensi_pulang').val('');
+            }
+        }
+        toggleLintasHari();
 
-        // $('#istirahat').on('change', function() {
-        //     toogleIstirahat();
-        // });
+        $('#lintashari').on('change', function() {
+            toggleLintasHari();
+        });
 
-        $("#jam_masuk,#jam_pulang,#jam_awal_istirahat,#jam_akhir_istirahat").mask("00:00");
+        $("#jam_masuk,#jam_pulang,#jam_awal_istirahat,#jam_akhir_istirahat,#batas_presensi_pulang").mask("00:00");
     });
 </script>

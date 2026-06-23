@@ -3,6 +3,72 @@
 
 
 <style>
+    .digital-clock {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 1rem 1.5rem;
+        border-radius: 20px;
+        color: #fff;
+        font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 1.25rem;
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        position: absolute;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        min-width: 220px;
+        transition: all 0.3s ease;
+    }
+
+    .digital-clock:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: translateY(-52%);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .clock-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+    }
+
+    .clock-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .clock-time {
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -1px;
+        margin-bottom: 0.2rem;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .clock-format {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        opacity: 0.9;
+    }
+
     .stat-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -341,18 +407,49 @@
     $tanggalHariIni = getnamaHari(date('D')) . ', ' . DateToIndo(date('Y-m-d'));
 @endphp
 
+@if(isset($expired_alert) && $expired_alert !== null)
+    <div class="alert alert-danger d-flex align-items-center mb-3" role="alert" style="border-radius: 15px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.05); padding: 1.25rem;">
+        <span class="alert-icon text-danger me-3" style="font-size: 2rem;">
+            <i class="ti ti-alert-triangle"></i>
+        </span>
+        <div>
+            <h6 class="alert-heading mb-1" style="font-weight: 700; color: inherit;">
+                {{ $expired_alert['is_expired'] ? 'Aplikasi Telah Kadaluarsa!' : 'Peringatan Masa Aktif Aplikasi!' }}
+            </h6>
+            <span>
+                @if($expired_alert['is_expired'])
+                    Masa aktif aplikasi ini telah berakhir pada <strong>{{ $expired_alert['date'] }}</strong>. Silakan perpanjang lisensi Anda agar seluruh pengguna tetap dapat menggunakan aplikasi ini.
+                @else
+                    Masa aktif aplikasi ini akan berakhir dalam <strong>{{ $expired_alert['days_left'] }} hari</strong> lagi (pada tanggal <strong>{{ $expired_alert['date'] }}</strong>).
+                @endif
+                Hubungi Admin Adam Adifa 089670444321
+            </span>
+        </div>
+    </div>
+@endif
+
 <!-- Welcome Card -->
 <div class="welcome-card">
     <div class="welcome-card__content">
         <div class="welcome-card__greeting">{{ $greeting }},</div>
-        <div class="welcome-card__name">{{ $userName }} 👋</div>
+        <div class="welcome-card__name">{{ $userName }}</div>
         <div class="welcome-card__date">
             <i class="ti ti-calendar"></i>
             <span>{{ $tanggalHariIni }}</span>
         </div>
     </div>
-    <div class="welcome-card__icon">
-        <i class="ti ti-user"></i>
+    <div class="digital-clock" id="digital-clock">
+        <div class="clock-icon" id="clock-icon">
+            <i class="ti ti-sun"></i>
+        </div>
+        <div class="clock-content">
+            <div class="clock-time">
+                <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+            </div>
+            <div class="clock-format">
+                <span id="ampm">AM</span>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -392,7 +489,7 @@
         ],
     ];
 
-    if (isset($storage_info)) {
+    if (isset($storage_info) && $authUser->hasRole('master admin')) {
         $storageColor = '#22c55e'; // Green
         $storageBg = 'rgba(34, 197, 94, 0.1)';
         if ($storage_info['percentage'] >= 90) {
@@ -933,5 +1030,49 @@
                 });
             });
     }
+
+    function updateClock() {
+        const now = new Date();
+        const hours24 = now.getHours();
+        let hours = hours24;
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        const hoursStr = String(hours).padStart(2, '0');
+
+        document.getElementById('hours').textContent = hoursStr;
+        document.getElementById('minutes').textContent = minutes;
+        document.getElementById('seconds').textContent = seconds;
+        document.getElementById('ampm').textContent = ampm;
+
+        // Dynamic Icon & Theme Logic
+        const iconContainer = document.getElementById('clock-icon');
+        let iconClass = '';
+        let iconColor = '';
+        
+        if (hours24 >= 5 && hours24 < 10) {
+            iconClass = 'ti ti-sunrise';
+            iconColor = '#ffb74d'; // Morning orange
+        } else if (hours24 >= 10 && hours24 < 15) {
+            iconClass = 'ti ti-sun';
+            iconColor = '#ffd54f'; // Day yellow
+        } else if (hours24 >= 15 && hours24 < 18) {
+            iconClass = 'ti ti-sunset';
+            iconColor = '#fb8c00'; // Sunset orange
+        } else {
+            iconClass = 'ti ti-moon-stars';
+            iconColor = '#e1f5fe'; // Night blue
+        }
+        
+        if (iconContainer) {
+            iconContainer.innerHTML = `<i class="${iconClass}" style="color: ${iconColor};"></i>`;
+        }
+    }
+
+    setInterval(updateClock, 1000);
+    updateClock(); // Initial call
 </script>
 @endpush

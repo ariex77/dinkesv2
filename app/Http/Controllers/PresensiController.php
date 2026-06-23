@@ -9,6 +9,7 @@ use App\Models\Detailharilibur;
 use App\Models\Detailsetjamkerjabydept;
 use App\Models\Device;
 use App\Models\Facerecognition;
+use App\Models\GlobalJamkerja;
 use App\Models\GrupDetail;
 use App\Models\GrupJamkerjaBydate;
 use App\Models\Harilibur;
@@ -65,6 +66,10 @@ class PresensiController extends Controller
             ->where('presensi.tanggal', $tanggal);
 
         $query = Karyawan::query();
+        $query->where(function($q) use ($tanggal) {
+            $q->where('karyawan.status_aktif_karyawan', 1)
+              ->orWhere('karyawan.tanggal_nonaktif', '>=', $tanggal);
+        });
         $query->select(
             'presensi.id',
             'karyawan.nik',
@@ -141,7 +146,13 @@ class PresensiController extends Controller
         $karyawan = Karyawan::where('nik', $userkaryawan->nik)->first();
 
         if ($karyawan->lock_jam_kerja == 0 && $kode_jam_kerja == null) {
-            $presensi = Presensi::where('nik', $karyawan->nik)->where('tanggal', date('Y-m-d'))->first();
+            $cabang = Cabang::where('kode_cabang', $karyawan->kode_cabang)->first();
+            $general_setting = Pengaturanumum::where('id', 1)->first();
+            $timezone_cabang = $cabang->timezone ?? $general_setting->timezone ?? config('app.timezone');
+            $carbon_now = Carbon::now($timezone_cabang);
+            $tgl_cabang = $carbon_now->format('Y-m-d');
+
+            $presensi = Presensi::where('nik', $karyawan->nik)->where('tanggal', $tgl_cabang)->first();
             if ($presensi != null) {
                 return redirect('/presensi/create?kode_jam_kerja=' . $presensi->kode_jam_kerja);
             }
@@ -169,8 +180,10 @@ class PresensiController extends Controller
         // dd($cekpresensi_sebelumnya);
         $ceklintashari_presensi = $cekpresensi_sebelumnya != null  ? $cekpresensi_sebelumnya->lintashari : 0;
 
-        if ($ceklintashari_presensi == 1) {
-            if ($jamsekarang < $general_setting->batas_presensi_lintashari) {
+        if ($ceklintashari_presensi == 1 && ($cekpresensi_sebelumnya->jam_out == null)) {
+            // Tentukan batas: prioritas dari jam kerja, fallback ke general setting
+            $batas_lh = $cekpresensi_sebelumnya->batas_presensi_pulang ?? $general_setting->batas_presensi_lintashari;
+            if ($jamsekarang < $batas_lh) {
                 $hariini = $tgl_sebelumnya;
             }
         }
@@ -228,6 +241,17 @@ class PresensiController extends Controller
                             ->where('kode_dept', $kode_dept)
                             ->where('kode_cabang', $karyawan->kode_cabang)
                             ->where('hari', $namahari)->first();
+                    }
+
+                    // Fallback: Cek Jadwal Kerja Global
+                    if ($jamkerja == null) {
+                        $gs = Pengaturanumum::where('id', 1)->first();
+                        if ($gs && $gs->global_jamkerja_aktif) {
+                            $globalJk = GlobalJamkerja::where('hari', $namahari)->first();
+                            if ($globalJk && $globalJk->kode_jam_kerja) {
+                                $jamkerja = Jamkerja::where('kode_jam_kerja', $globalJk->kode_jam_kerja)->first();
+                            }
+                        }
                     }
                 }
             }
@@ -296,24 +320,35 @@ class PresensiController extends Controller
         $tanggal_kemarin = $carbon_now->copy()->subDay()->format('Y-m-d');
         $tanggal_besok = $carbon_now->copy()->addDay()->format('Y-m-d');
 
-        //Cek Presensi Kemarin
+        // Cek Presensi Kemarin
         $presensi_kemarin = Presensi::where('nik', $karyawan->nik)
             ->join('presensi_jamkerja', 'presensi.kode_jam_kerja', '=', 'presensi_jamkerja.kode_jam_kerja')
-            ->where('nik', $karyawan->nik)
-            ->where('tanggal', $tanggal_kemarin)->first();
+            ->where('presensi.nik', $karyawan->nik)
+            ->where('presensi.tanggal', $tanggal_kemarin)->first();
 
-        $lintas_hari = $presensi_kemarin ? $presensi_kemarin->lintashari : 0;
+        // Tentukan Batas Lintas Hari
+        $batas_presensi_lintashari = ($presensi_kemarin && $presensi_kemarin->batas_presensi_pulang)
+            ? $presensi_kemarin->batas_presensi_pulang
+            : $generalsetting->batas_presensi_lintashari;
 
-        $batas_presensi_lintashari = $generalsetting->batas_presensi_lintashari;
-        $tanggal_presensi = $lintas_hari == 1 ? $tanggal_kemarin : $tanggal_sekarang;
-        $tanggal_pulang = $lintas_hari == 1 ? $tanggal_besok : $tanggal_sekarang;
-        if ($jam_sekarang > $batas_presensi_lintashari && $lintas_hari == 1) {
-            $tanggal_presensi = $tanggal_sekarang;
-            $tanggal_pulang = $tanggal_besok;
+        // Ambil Jam Kerja untuk presensi saat ini
+        $jam_kerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
+
+        // --- PENENTUAN TANGGAL PRESENSI ---
+        // Secara default adalah hari ini
+        $tanggal_presensi = $tanggal_sekarang;
+        $jam_kerja_pulang = $jam_kerja->jam_pulang;
+        $tanggal_pulang = $jam_kerja->lintashari == 1 ? $tanggal_besok : $tanggal_sekarang;
+
+        // HANYA jika kemarin lintas hari DAN belum absen pulang DAN belum melewati batas jam, maka dianggap absen kemarin
+        if ($presensi_kemarin && $presensi_kemarin->lintashari == 1 && $presensi_kemarin->jam_out == null) {
+            if ($jam_sekarang < $batas_presensi_lintashari) {
+                $tanggal_presensi = $tanggal_kemarin;
+                $tanggal_pulang = $tanggal_sekarang;
+                $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
+            }
         }
-
-        //dd($jam_sekarang);
-        //Get Lokasi User
+        // Get Lokasi User
         $koordinat_user = explode(",", $lokasi);
         $latitude_user = $koordinat_user[0];
         $longitude_user = $koordinat_user[1];
@@ -323,11 +358,7 @@ class PresensiController extends Controller
         $longitude_kantor = $koordinat_kantor[1];
 
         $jarak = hitungjarak($latitude_kantor, $longitude_kantor, $latitude_user, $longitude_user);
-
-
         $radius = round($jarak["meters"]);
-
-
 
         $in_out = $status == 1 ? "in" : "out";
         $image = $request->image;
@@ -338,54 +369,10 @@ class PresensiController extends Controller
             chmod($path, 0775);
         }
 
-
-        $jam_kerja = Jamkerja::where('kode_jam_kerja', $kode_jam_kerja)->first();
-
         $jam_presensi = $tanggal_sekarang . " " . $jam_sekarang;
-
-
         $batas_jam_absen = $generalsetting->batas_jam_absen * 60;
         $batas_jam_absen_pulang = $generalsetting->batas_jam_absen_pulang * 60;
 
-
-        //Jamulai Absen Pulang adalah Berapa Jam Sebelum Jam Pulang
-
-        //Jiak Kemarin Melakukan Presensi
-        if ($presensi_kemarin != null) {
-            //Jika Presensi Kemarin Lintas Hari
-            if ($presensi_kemarin->lintashari == 1) {
-                //Jika Jam Sekarang Lebih Besar dari batas_presensi_lintashari
-                if ($jam_sekarang > $generalsetting->batas_presensi_lintashari) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $presensi_kemarin->jam_pulang;
-                    $tanggal_presensi = $tanggal_kemarin;
-                }
-            } else {
-                if ($jam_kerja->lintashari == 1) {
-                    $tanggal_pulang = $tanggal_besok;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                } else {
-                    $tanggal_pulang = $tanggal_sekarang;
-                    $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                    $tanggal_presensi = $tanggal_sekarang;
-                }
-            }
-        } else {
-            if ($jam_kerja->lintashari == 1) {
-                $tanggal_pulang = $tanggal_besok;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
-            } else {
-                $tanggal_pulang = $tanggal_sekarang;
-                $jam_kerja_pulang = $jam_kerja->jam_pulang;
-                $tanggal_presensi = $tanggal_sekarang;
-            }
-        }
         $formatName = $karyawan->nik . "-" . $tanggal_presensi . "-" . $in_out;
         if ($request->hasFile('image')) {
             $image = $request->file('image');
@@ -623,6 +610,8 @@ class PresensiController extends Controller
         $kode_jam_kerja = $request->kode_jam_kerja;
         $jam_in = $request->jam_in;
         $jam_out = $request->jam_out;
+        $istirahat_out = $request->istirahat_out;
+        $istirahat_in = $request->istirahat_in;
         $status = $request->status;
 
         try {
@@ -631,6 +620,8 @@ class PresensiController extends Controller
                 Presensi::where('nik', $nik)->where('tanggal', $tanggal)->update([
                     'jam_in' => $jam_in,
                     'jam_out' => $jam_out,
+                    'istirahat_out' => $istirahat_out,
+                    'istirahat_in' => $istirahat_in,
                     'status' => $status,
                     'kode_jam_kerja' => $kode_jam_kerja,
                 ]);
@@ -640,6 +631,8 @@ class PresensiController extends Controller
                     'tanggal' => $tanggal,
                     'jam_in' => $jam_in,
                     'jam_out' => $jam_out,
+                    'istirahat_out' => $istirahat_out,
+                    'istirahat_in' => $istirahat_in,
                     'kode_jam_kerja' => $kode_jam_kerja,
                     'status' => $status
                 ]);
@@ -779,6 +772,7 @@ class PresensiController extends Controller
 
             ->leftJoin('presensi_izincuti_approve', 'presensi.id', '=', 'presensi_izincuti_approve.id_presensi')
             ->leftJoin('presensi_izincuti', 'presensi_izincuti_approve.kode_izin_cuti', '=', 'presensi_izincuti.kode_izin_cuti')
+            ->leftJoin('mesin_fingerprints', 'presensi.id_mesin', '=', 'mesin_fingerprints.id')
             ->select(
                 'presensi.*',
                 'presensi_jamkerja.nama_jam_kerja',
@@ -788,7 +782,8 @@ class PresensiController extends Controller
                 'presensi_jamkerja.lintashari',
                 'presensi_izinabsen.keterangan as keterangan_izin',
                 'presensi_izinsakit.keterangan as keterangan_izin_sakit',
-                'presensi_izincuti.keterangan as keterangan_izin_cuti'
+                'presensi_izincuti.keterangan as keterangan_izin_cuti',
+                'mesin_fingerprints.nama_mesin'
             )
             ->when(!empty($request->dari) && !empty($request->sampai), function ($q) use ($request) {
                 $q->whereBetween('presensi.tanggal', [$request->dari, $request->sampai]);
@@ -858,7 +853,18 @@ class PresensiController extends Controller
 
             // Jika Jam Kerja Harian Kosong
             if ($jamkerja == null) {
-                $jamkerja = Jamkerja::where('kode_jam_kerja', 'JK01')->first();
+                // Fallback: Cek Jadwal Kerja Global
+                $gs = Pengaturanumum::where('id', 1)->first();
+                if ($gs && $gs->global_jamkerja_aktif) {
+                    $globalJk = GlobalJamkerja::where('hari', $namahari)->first();
+                    if ($globalJk && $globalJk->kode_jam_kerja) {
+                        $jamkerja = Jamkerja::where('kode_jam_kerja', $globalJk->kode_jam_kerja)->first();
+                    }
+                }
+                // Legacy fallback jika global tidak aktif
+                if ($jamkerja == null) {
+                    $jamkerja = Jamkerja::where('kode_jam_kerja', 'JK01')->first();
+                }
             }
         }
 

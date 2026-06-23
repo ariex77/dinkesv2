@@ -1,4 +1,4 @@
-@if (auth()->user()->hasAnyPermission(['izinabsen.index', 'izinkeluar.index', 'izinpulang.index']))
+@if (auth()->user()->hasAnyPermission(['izinabsen.index', 'izinsakit.index', 'izincuti.index', 'izindinas.index', 'koreksi.index']))
     <ul class="nav nav-tabs" role="tablist">
 
         @can('izinabsen.index')
@@ -47,6 +47,16 @@
                     <i class="tf-icons ti ti-calendar-stats ti-md me-1"></i> Ajuan Jadwal
                     @if (!empty($notifikasi_ajuan_jadwal))
                         <span class="badge bg-danger rounded-pill ms-2">{{ $notifikasi_ajuan_jadwal }}</span>
+                    @endif
+                </a>
+            </li>
+        @endcan
+        @can('koreksi.index')
+            <li class="nav-item" role="presentation">
+                <a href="{{ route('koreksi.index') }}" class="nav-link {{ request()->is(['koreksi', 'koreksi/*']) ? 'active' : '' }}">
+                    <i class="tf-icons ti ti-calendar-stats ti-md me-1"></i> Koreksi Absen
+                    @if (!empty($notifikasi_koreksi))
+                        <span class="badge bg-danger rounded-pill ms-2">{{ $notifikasi_koreksi }}</span>
                     @endif
                 </a>
             </li>

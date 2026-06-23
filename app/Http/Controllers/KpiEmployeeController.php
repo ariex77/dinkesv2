@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Departemen;
+use App\Models\Jabatan;
 use App\Models\Karyawan;
 use App\Models\KpiDetail;
 use App\Models\KpiEmployee;
@@ -71,10 +72,15 @@ class KpiEmployeeController extends Controller
             $query->where('karyawan.kode_dept', $request->kode_dept);
         }
 
-        $karyawan = $query->paginate(10);
-        $departemen = Departemen::orderBy('nama_dept')->get();
+        if (!empty($request->kode_jabatan)) {
+            $query->where('karyawan.kode_jabatan', $request->kode_jabatan);
+        }
 
-        return view('kpi.transactions.index', compact('karyawan', 'departemen', 'active_period'));
+        $karyawan = $query->paginate(10)->withQueryString();
+        $departemen = Departemen::orderBy('nama_dept')->get();
+        $jabatan = Jabatan::orderBy('nama_jabatan')->get();
+
+        return view('kpi.transactions.index', compact('karyawan', 'departemen', 'jabatan', 'active_period'));
     }
 
     /**
@@ -97,10 +103,14 @@ class KpiEmployeeController extends Controller
         }
 
         // Cek jika target sudah ada untuk periode ini
-        $existing_kpi = KpiEmployee::where('nik', $nik)->where('kpi_period_id', $period->id)->first();
+        $existing_kpi = KpiEmployee::with('details')->where('nik', $nik)->where('kpi_period_id', $period->id)->first();
         if ($existing_kpi) {
-            // Jika ada, alihkan ke Edit/Input Realisasi
-             return Redirect::route('kpi.transactions.show', $existing_kpi->id);
+            if ($existing_kpi->details->isEmpty()) {
+                $existing_kpi->delete();
+            } else {
+                // Jika ada, alihkan ke Edit/Input Realisasi
+                return Redirect::route('kpi.transactions.show', $existing_kpi->id);
+            }
         }
 
         // Ambil Indikator khusus untuk Jabatan DAN Departemen (Header -> Detail)
@@ -162,12 +172,13 @@ class KpiEmployeeController extends Controller
                         'kpi_indicator_detail_id' => $id_indikator_detail,
                         'target' => $target,
                         'bobot' => $bobot,
+                        'skor' => 0,
                     ]);
                 }
             }
 
             DB::commit();
-            return Redirect::route('kpi.transactions.index')->with(['success' => 'Target KPI Berhasil Disimpan']);
+            return Redirect::route('kpi.transactions.index', $request->query())->with(['success' => 'Target KPI Berhasil Disimpan']);
         } catch (\Exception $e) {
             DB::rollBack();
             return Redirect::back()->with(['warning' => $e->getMessage()]);
@@ -313,6 +324,11 @@ class KpiEmployeeController extends Controller
                  $score = ($detail->target / $realisasi) * $detail->bobot;
              }
         }
+
+        // Skor tidak boleh melebihi bobot (poin maksimal)
+        if ($score > $detail->bobot) {
+            $score = $detail->bobot;
+        }
         
         $detail->update([
              'realisasi' => $realisasi,
@@ -364,17 +380,20 @@ class KpiEmployeeController extends Controller
                     ->select('presensi.*', 'presensi_jamkerja.jam_masuk')
                     ->get();
                 
-                $total_late_minutes = 0;
+                $total_late_days = 0;
                 foreach ($presensi as $p) {
                     $jam_masuk = $p->tanggal . ' ' . $p->jam_masuk;
                     // hitungjamterlambat adalah fungsi pembantu
                     $terlambat = hitungjamterlambat($p->jam_in, $jam_masuk);
                     
                     if ($terlambat && isset($terlambat['jamterlambat'])) {
-                        $total_late_minutes += ($terlambat['jamterlambat'] * 60) + $terlambat['menitterlambat'];
+                        $late_minutes = ($terlambat['jamterlambat'] * 60) + $terlambat['menitterlambat'];
+                        if ($late_minutes > 0) {
+                            $total_late_days++;
+                        }
                     }
                 }
-                return $total_late_minutes;
+                return $total_late_days;
             default:
                 return 0;
         }
@@ -436,6 +455,11 @@ class KpiEmployeeController extends Controller
                                     ->where('nik', $nik)
                                     ->where('kpi_period_id', $period->id)
                                     ->first();
+
+        if ($kpi_employee && $kpi_employee->details->isEmpty()) {
+            $kpi_employee->delete();
+            $kpi_employee = null;
+        }
 
         if ($kpi_employee) {
              // Hitung otomatis metrik otomatis (Gunakan kembali logika dari show)

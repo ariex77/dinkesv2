@@ -12,7 +12,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade active show" id="navs-justified-home" role="tabpanel">
                     @can('ajuanjadwal.create')
-                        <a href="{{ route('ajuanjadwal.create') }}" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i>
+                        <a href="#" class="btn btn-primary" id="btnCreate"><i class="fa fa-plus me-2"></i>
                             Tambah Data</a>
                     @endcan
                     <div class="row mt-2">
@@ -166,4 +166,17 @@
         </div>
     </div>
 </div>
+<x-modal-form id="mdlCreateAjuanJadwal" size="" show="loadCreateAjuanJadwal" title="Tambah Ajuan Jadwal" />
 @endsection
+
+@push('myscript')
+<script>
+    $(function() {
+        $("#btnCreate").click(function(e) {
+            e.preventDefault();
+            $('#mdlCreateAjuanJadwal').modal("show");
+            $("#loadCreateAjuanJadwal").load('/ajuanjadwal/create');
+        });
+    });
+</script>
+@endpush
